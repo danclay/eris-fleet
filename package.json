@@ -1,0 +1,20 @@
+{
+  "name": "eris-fleet",
+  "version": "0.1.0",
+  "dependencies": {
+    "eris": "^0.13.1"
+  },
+  "description": "Package for clustering and sharding Eris bots with ease",
+  "main": "dist/index.js",
+  "repository": "https://github.com/danclay/eris-fleet",
+  "author": "danclay",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^14.0.1",
+    "dotenv": "^8.2.0",
+    "typescript": "^3.9.3"
+  },
+  "scripts": {
+    "start": "node dist/index.js"
+  }
+}
