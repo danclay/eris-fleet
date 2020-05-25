@@ -19,6 +19,8 @@ or with yarn: `yarn add eris-fleet`
 
 # Basics
 
+Some working examples are in [test/](https://github.com/danclay/eris-fleet/tree/master/test).
+
 ## Naming Conventions
 | Term | Description |
 |-----------|----------------------------------------------------------------------------|
