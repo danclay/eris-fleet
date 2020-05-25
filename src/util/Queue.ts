@@ -10,16 +10,17 @@ interface ClusterConnectMessage {
     shardCount: number;
     token: string;
     clientOptions: ClientOptions;
-    timeout: number;
     path: string;
 };
 
 interface ServiceConnectMessage {
     serviceName: string;
     path: string;
+    op: "connect";
+    timeout: number;
 }
 
-interface QueueItem {
+export interface QueueItem {
     type: "service" | "cluster";
     workerID: number;
     message: ClusterConnectMessage | ServiceConnectMessage;
@@ -27,7 +28,7 @@ interface QueueItem {
 
 export class Queue extends EventEmitter {
     /** The queue */
-    queue: QueueItem[];
+    public queue: QueueItem[];
 
     public constructor() {
         super();
@@ -41,8 +42,8 @@ export class Queue extends EventEmitter {
         this.emit("execute", item);
     }
 
-    public item(item: QueueItem) {
+    public item(item: QueueItem, overrideLocation?: number) {
         this.queue.push(item);
-        if (this.queue.length == 0) this.execute(true);
+        if (this.queue.length == 1) this.execute(true);
     }
 }

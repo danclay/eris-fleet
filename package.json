@@ -4,7 +4,7 @@
   "dependencies": {
     "eris": "^0.13.1"
   },
-  "description": "Package for clustering and sharding Eris bots with ease",
+  "description": "Cluster management for Discord bots running using the Eris library.",
   "main": "dist/index.js",
   "repository": "https://github.com/danclay/eris-fleet",
   "author": "danclay",
@@ -15,6 +15,9 @@
     "typescript": "^3.9.3"
   },
   "scripts": {
-    "start": "node dist/index.js"
-  }
+    "start": "node dist/index.js",
+    "prepublishOnly": "yarn build",
+    "build": "tsc"
+  },
+  "keywords": ["discord", "bot", "clustering", "sharding"]
 }
