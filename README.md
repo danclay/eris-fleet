@@ -243,3 +243,23 @@ Gets the latest stats. This is an alternative to [registering](#register) the "s
 ```js
 await this.ipc.getStats();
 ```
+
+## Using a specific version of eris or a modified version of eris
+
+Eris-fleet is able to use packages such as eris-additions if you desire. To do so, modify your bot file to match the following template:
+```js
+const { BaseClusterWorker } = require('eris-fleet');
+
+// Example using eris-additions
+const Eris = require("eris-additions")(require("eris"));
+
+class BotWorker extends BaseClusterWorker {
+    constructor(setup) {
+        super(setup);
+        // Your cool stuff
+    }
+}
+
+// This export is needed for this to work.
+module.exports = {BotWorker, Eris};
+```
