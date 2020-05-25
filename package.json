@@ -1,6 +1,6 @@
 {
   "name": "eris-fleet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "eris": "^0.13.1"
   },
@@ -19,5 +19,10 @@
     "prepublishOnly": "yarn build",
     "build": "tsc"
   },
-  "keywords": ["discord", "bot", "clustering", "sharding"]
+  "keywords": [
+    "discord",
+    "bot",
+    "clustering",
+    "sharding"
+  ]
 }
