@@ -236,10 +236,14 @@ Send a command to a service. The arguments are as follows:
 | 1st       | Name of the service            | No        |         |
 | 2nd       | Message to send to the command | Yes       | null    |
 | 3rd       | If you want a response or not  | Yes       | false   |
+Be sure to use `await` or `.then()`, especially if you expect a response.
+```js
+await this.ipc.command("ServiceName", "hello service!", true); 
+```
 
 ### Get the latest stats
 
-Gets the latest stats. This is an alternative to [registering](#register) the "stats" event.
+Gets the latest stats. This is an alternative to [registering](#register) the "stats" event. Be sure to use `await` or `.then()`
 ```js
 await this.ipc.getStats();
 ```
