@@ -1,5 +1,4 @@
 import {EventEmitter} from 'events';
-import { resolve } from 'dns';
 import {UUID as Gen} from './UUID';
 
 export class IPC extends EventEmitter {
@@ -12,7 +11,7 @@ export class IPC extends EventEmitter {
         this.commandUUID = new Map();
 
         process.on('message', msg => {
-            let event = this.events.get(msg.op);
+            const event = this.events.get(msg.op);
             if (event) {
                 event.fn(msg);
             }
@@ -156,5 +155,40 @@ export class IPC extends EventEmitter {
             //@ts-ignore
             this.on("statsReturn", callback);
         })
+    }
+
+    public restartCluster(clusterID: number, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartCluster", clusterID, hard: hard ? true : false});
+    }
+
+    public restartAllClusters(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartAllClusters", hard: hard ? true : false});
+    }
+
+    public restartService(serviceName: string, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartService", serviceName, hard: hard ? true : false});
+    }
+
+    public restartAllServices(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartAllServices", hard: hard ? true : false});
+    }
+
+    public shutdownCluster(clusterID: number, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "shutdownCluster", clusterID, hard: hard ? true : false});
+    }
+
+    public shutdownService(serviceName: string, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "shutdownService", serviceName, hard: hard ? true : false});
+    }
+
+    public totalShutdown(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "totalShutdown", hard: hard ? true : false});
     }
 }

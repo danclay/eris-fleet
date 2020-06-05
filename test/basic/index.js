@@ -16,7 +16,7 @@ if (isMaster) {
     // Code to only run for your master process
     Admiral.on('log', m => console.log(m));
     Admiral.on('debug', m => console.debug(m));
-    Admiral.on('debug', m => console.warn(m));
+    Admiral.on('warn', m => console.warn(m));
     Admiral.on('error', m => console.error(inspect(m)));
 
     

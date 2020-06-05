@@ -16,4 +16,9 @@ module.exports = class BotWorker extends BaseClusterWorker {
             this.bot.createMessage(msg.channel.id, reply);
         }
     }
+
+    shutdown(done) {
+        // Optional function to gracefully shutdown things if you need to.
+        done(); // Use this function when you are done gracefully shutting down.
+    }
 }

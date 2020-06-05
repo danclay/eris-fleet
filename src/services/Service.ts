@@ -54,6 +54,34 @@ export class Service {
                         } else {
                             console.error(`Service ${this.serviceName} | I can't handle commands!`);
                         }
+
+                        break;
+                    }
+                    case "shutdown": {
+                        if (this.app.shutdown) {
+                            let safe = false;
+                            // Ask app to shutdown
+                            this.app.shutdown(() => {
+                                safe = true;
+                                //@ts-ignore
+                                process.send({op: "shutdown"});
+                            });
+                            if (message.killTimeout > 0) {
+                                setTimeout(() => {
+                                    if (!safe) {
+                                        console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
+                                        
+                                        //@ts-ignore
+                                        process.send({op: "shutdown"});
+                                    };
+                                }, message.killTimeout);
+                            }
+                        } else {
+                            //@ts-ignore
+                            process.send({op: "shutdown"});
+                        }
+
+                        break;
                     }
                 }
             }
@@ -79,6 +107,9 @@ export class Service {
             //@ts-ignore
             process.send({op: "connected"});
             ready = true;
+        }).catch((err: any) => {
+            console.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
+            process.kill(0);
         });
 
         // Timeout
@@ -86,7 +117,7 @@ export class Service {
             setTimeout(() => {
                 if (!ready) {
                     console.error(`Service ${this.serviceName} took too long to start.`);
-                    process.exit(1);
+                    process.kill(0);
                 };
             }, this.timeout);
         }

@@ -14,6 +14,11 @@ interface ClusterConnectMessage {
     whatToLog: string[];
 };
 
+interface ShutdownMessage {
+    op: "shutdown";
+    killTimeout: number;
+};
+
 interface ServiceConnectMessage {
     serviceName: string;
     path: string;
@@ -25,7 +30,7 @@ interface ServiceConnectMessage {
 export interface QueueItem {
     type: "service" | "cluster";
     workerID: number;
-    message: ClusterConnectMessage | ServiceConnectMessage;
+    message: ClusterConnectMessage | ServiceConnectMessage | ShutdownMessage;
 };
 
 export class Queue extends EventEmitter {

@@ -87,6 +87,11 @@ module.exports = class BotWorker extends BaseClusterWorker {
             this.bot.createMessage(msg.channel.id, "Pong!");
         }
     }
+
+    shutdown(done) {
+        // Optional function to gracefully shutdown things if you need to.
+        done(); // Use this function when you are done gracefully shutting down.
+    }
 }
 ```
 The bot above will respond with "Pong!" when it recieves the command "!ping". **Make sure your bot file extends BaseClusterWorker!**
@@ -136,6 +141,8 @@ This command is being sent using the IPC. In this command, the first argument is
 
 ### Handling service errors
 
+If you encounter an error while starting your service, run `this.serviceStartingError('error here')` instead of `this.serviceReady()`. Using this will report an error and restart the worker. **Note that services always start before the clusters, so if your service keeps having starting errors your bot will be stuck in a loop.** This issue may be fixed in the future from some sort of maxRestarts option, but this is currently not a functionality.
+
 If you encounter an error when processing a command within your service, you can do the following to reject the promise:
 ```js
 // handleCommand function within the ServiceWorker class
@@ -180,10 +187,11 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
 | lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
 | whatToLog      | Choose what to log (see details below)                                                                                                       | Yes       |                           |
+| killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
 
 ### Choose what to log
 
-You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are `['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart']`. Here is an example of choosing what to log:
+You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are `['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart', 'service_shutdown', 'cluster_shutdown', 'total_shutdown']`. Here is an example of choosing what to log:
 ```js
 const options = {
     // Your other options
@@ -208,12 +216,60 @@ Clusters and services can use IPC to interact with other clusters, the Admiral, 
 | error | `process.send({op: "error", msg: "uh oh!"})` | Logs an error event your `index.js` file can process. |
 | warn  | `process.send({op: "warn", msg: "stuff"})`   | Logs a warn event your `index.js` file can process.   |
 
-### Restart other clusters
+### Restart clusters
 
-To restart other clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.
+To restart clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.
 ```js
-this.restartCluster(0);
+this.ipc.restartCluster(0);
 ```
+The above code will restart the cluster while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. If you want to kill the worker immediately, use `this.ipc.restartCluster(0, true)`. The second argument is whether you want to preform a hard restart. This is false by default. 
+
+You can also restart all the clusters. You can do this by using
+```js
+this.ipc.restartAllClusters();
+```
+If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
+
+### Shutdown clusters
+
+You can shutdown clusters. Use the following to shutdown clusters:
+```js
+this.ipc.shutdownCluster(0);
+```
+The above code will shutdown the cluster gracefully. If you would like to kill the worker immediately, use `this.ipc.shutdownCluster(0, true)`.
+**You cannot restart a cluster after shutting it down.** A future update may allow this.
+
+### Restart services
+
+To restart services, you can do the following in your bot.js file. "myService" is a placeholder for the name of the service you wish to restart.
+```js
+this.ipc.restartService("myService");
+```
+The above code will restart the service while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. All commands will be sent to the original worker until the new worker is ready. If you want to kill the worker immediately, use `this.ipc.restartService("myService", true)`. The second argument is whether you want to preform a hard restart. This is false by default. 
+
+You can also restart all the clusters. You can do this by using 
+```js
+this.ipc.restartAllServices();
+```
+If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
+
+### Shutdown services
+
+You can shutdown services. Use the following to shutdown services:
+```js
+this.ipc.shutdownService("myService");
+```
+The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use `this.ipc.shutdownService("myService", true)`.
+**You cannot restart a service after shutting it down.** A future update may allow this.
+
+### Total shutdown
+
+You can totally shutdown your fleet using the following:
+```js
+this.ipc.totalShutdown();
+```
+The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use `this.ipc.totalShutdown(true)`.
+**A total shutdown exits all processes, including the master process.**
 
 ### Register
 

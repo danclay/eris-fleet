@@ -11,15 +11,12 @@ export class BaseClusterWorker {
     clusterID: number;
     workerID: number;
     ipc: IPC;
+    shutdown?: Function;
 
     public constructor(setup: Setup) {
         this.bot = setup.bot;
         this.clusterID = setup.clusterID;
         this.workerID = setup.workerID;
         this.ipc = new IPC();
-    }
-
-    public restartCluster(clusterID: number) {
-        this.ipc.sendTo(clusterID, "restart");
     }
 }

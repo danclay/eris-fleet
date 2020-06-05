@@ -16,6 +16,7 @@ export class Cluster {
     bot!: Eris.Client;
     private token!: string;
     app!: BaseClusterWorker;
+    shutdown?: Boolean;
 
     constructor() {
         //@ts-ignore
@@ -40,7 +41,7 @@ export class Cluster {
 
 
         
-        process.on("message", message => {
+        process.on("message", async message => {
             if (message.op) {
                 switch (message.op) {
                     case "connect": {
@@ -134,8 +135,35 @@ export class Cluster {
 
                         break;
                     }
-                    case "restart": {
-                        process.exit(1);
+                    case "shutdown": {
+                        this.shutdown = true;
+                        if (this.app.shutdown) {
+                            let safe = false;
+                            // Ask app to shutdown
+                            this.app.shutdown(() => {
+                                safe = true;
+                                this.bot.disconnect({reconnect: false});
+                                //@ts-ignore
+                                process.send({op: "shutdown"});
+                            });
+                            if (message.killTimeout > 0) {
+                                setTimeout(() => {
+                                    if (!safe) {
+                                        console.error(`Cluster ${this.clusterID} took too long to shutdown. Performing shutdown anyway.`);
+                                        
+                                        this.bot.disconnect({reconnect: false});
+                                        //@ts-ignore
+                                        process.send({op: "shutdown"});
+                                    };
+                                }, message.killTimeout);
+                            }
+                        } else {
+                            this.bot.disconnect({reconnect: false});
+                            //@ts-ignore
+                            process.send({op: "shutdown"});
+                        }
+
+                        break;
                     }
                 }
             }
@@ -172,7 +200,7 @@ export class Cluster {
 
         bot.on("shardDisconnect", (err: Error, id: number) => {
             //@ts-ignore
-            if (this.whatToLog.includes('shard_disconnect')) console.log(`Cluster ${this.clusterID} | Shard ${id} disconnected with error: ${inspect(err)}`);
+            if (!this.shutdown) if (this.whatToLog.includes('shard_disconnect')) console.log(`Cluster ${this.clusterID} | Shard ${id} disconnected with error: ${inspect(err)}`);
         });
 
         bot.on("shardReady", (id: number) => {
