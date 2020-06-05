@@ -11,6 +11,7 @@ interface ClusterConnectMessage {
     token: string;
     clientOptions: ClientOptions;
     path: string;
+    whatToLog: string[];
 };
 
 interface ServiceConnectMessage {
@@ -18,6 +19,7 @@ interface ServiceConnectMessage {
     path: string;
     op: "connect";
     timeout: number;
+    whatToLog: string[];
 }
 
 export interface QueueItem {

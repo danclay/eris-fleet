@@ -7,6 +7,7 @@ export class Service {
     serviceName!: string;
     app!: BaseServiceWorker;
     timeout!: number;
+    whatToLog!: string[];
 
     constructor() {
         //@ts-ignore
@@ -15,6 +16,8 @@ export class Service {
         console.debug = (str: any) => process.send({op: "debug", msg: str});
         //@ts-ignore
         console.error = (str: any) => process.send({op: "error", msg: str});
+        //@ts-ignore
+        console.warn = (str: any) => process.send({op: "warn", msg: str});
 
         //Spawns
         process.on('uncaughtException', (err: Error) => {
@@ -34,6 +37,7 @@ export class Service {
                         this.path = message.path;
                         this.serviceName = message.serviceName;
                         this.timeout = message.timeout;
+                        this.whatToLog = message.whatToLog;
                         this.loadCode();
                         break;
                     }
@@ -58,7 +62,7 @@ export class Service {
  
     private async loadCode() {
         //@ts-ignore
-        process.send({op: "log", msg: `Starting service ${this.serviceName}`});
+        if (this.whatToLog.includes('service_start')) console.log(`Starting service ${this.serviceName}`);
 
         let App = (await import(this.path));
         if (App.ServiceWorker) {
@@ -71,7 +75,7 @@ export class Service {
         let ready = false;
         this.app.readyPromise.then(() => {
             //@ts-ignore
-            process.send({op: "log", msg: `Service ${this.serviceName} is ready!`});
+            if (this.whatToLog.includes('service_ready')) console.log(`Service ${this.serviceName} is ready!`);
             //@ts-ignore
             process.send({op: "connected"});
             ready = true;

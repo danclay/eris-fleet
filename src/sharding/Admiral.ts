@@ -45,6 +45,10 @@ interface Options {
     firstShardID?: number;
     /** Last shard ID to use on this instance of eris-fleet */
     lastShardID?: number;
+    /** Option to have less logging show up */
+    lessLogging?: Boolean;
+    /** Allows for more logging customization (overrides generic lessLogging option) */
+    whatToLog?: any;
 }
 
 interface ShardStats {
@@ -117,6 +121,7 @@ export class Admiral extends EventEmitter {
     private statsClustersCounted?: number;
     private chunks?: number[][];
     private statsAlreadyStarted?: Boolean;
+    private whatToLog: string[];
 
     public constructor(options: Options) {
         super();
@@ -133,6 +138,7 @@ export class Admiral extends EventEmitter {
         this.firstShardID = options.firstShardID || 0;
         this.lastShardID = options.lastShardID || 0;
 
+        // Deals with needed components
         if (!options.token) throw "No token!";
         if (!path.isAbsolute(options.path)) throw "The path needs to be absolute!";
         if (options.services) {
@@ -144,6 +150,19 @@ export class Admiral extends EventEmitter {
 
         if (options.timeout) this.clientOptions.connectionTimeout = options.timeout;
 
+        const allLogOptions = ['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart'];
+        this.whatToLog = allLogOptions;
+        if (options.lessLogging) {
+            this.whatToLog = ['admiral_start', 'shard_disconnect', 'shard_resume', 'cluster_ready', 'service_ready', 'cluster_start', 'all_services_launched', 'all_clusters_launched'];
+        }
+
+        if (options.whatToLog) {
+            if (options.whatToLog.blacklist) {
+                options.whatToLog.blacklist.forEach((t: string) => {
+                    if (this.whatToLog.includes(t)) this.whatToLog.splice(this.whatToLog.indexOf(t), 1);
+                })
+            } else if (options.whatToLog.whitelist) this.whatToLog = options.whatToLog.whitelist
+        }
         if (options.services) this.servicesToCreate = options.services;
 
             this.clusters = new Collection();
@@ -175,7 +194,7 @@ export class Admiral extends EventEmitter {
             process.on("uncaughtException", e => this.error(e));
 
             process.nextTick(() => {
-                this.log("Fleet | Started Admiral");
+                if (this.whatToLog.includes('admiral_start')) this.log("Fleet | Started Admiral");
                 this.calculateShards().then(shards => {
                 if (this.lastShardID === 0) {
                     this.lastShardID = shards - 1;
@@ -190,7 +209,7 @@ export class Admiral extends EventEmitter {
                 this.chunks = this.chunk(shardsByID, Number(this.clusterCount));
                 this.clusterCount = this.chunks.length;
 
-                this.log(`Admiral | Starting ${shards} shard(s) in ${this.clusterCount} cluster(s)`);
+                if (this.whatToLog.includes('admiral_start')) this.log(`Admiral | Starting ${shards} shard(s) in ${this.clusterCount} cluster(s)`);
 
                 let opts;
                 if (this.nodeArgs) {
@@ -232,6 +251,9 @@ export class Admiral extends EventEmitter {
                         break;
                     case "error":
                         this.error(message.msg);
+                        break;
+                    case "warn":
+                        this.warn(message.msg);
                         break;
                     case "connected": {
                         if (this.queue.queue[1]) {
@@ -301,7 +323,7 @@ export class Admiral extends EventEmitter {
                             };
                             this.stats = Object.assign(this.prelimStats, {clusters: this.prelimStats!.clusters.sort(compare)});
                             this.emit("stats", this.stats);
-                            this.log("Admiral | Stats updated.");
+                            if (this.whatToLog.includes('stats_update')) this.log("Admiral | Stats updated.");
 
                             // Sends the clusters the latest stats
                             this.broadcast("stats", this.stats);
@@ -333,9 +355,9 @@ export class Admiral extends EventEmitter {
             const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
             const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
             if (cluster) {
-                this.error(`Admiral | Cluster ${cluster.clusterID} disconnected :(`);
+                this.warn(`Admiral | Cluster ${cluster.clusterID} disconnected :(`);
             } else if (service) {
-                this.error(`Admiral | Service ${service.serviceName} disconnected :(`);
+                this.warn(`Admiral | Service ${service.serviceName} disconnected :(`);
             }
         });
 
@@ -350,7 +372,7 @@ export class Admiral extends EventEmitter {
 
     private startService(i: number) {
         if (i === this.servicesToCreate!.length) {
-            this.log("Admiral | All services launched!");
+            if (this.whatToLog.includes('all_services_launched')) this.log("Admiral | All services launched!");
             this.startCluster(0);
         } else {
             const service = this.servicesToCreate![i];
@@ -371,11 +393,12 @@ export class Admiral extends EventEmitter {
                     serviceName: service.name,
                     path: service.path,
                     op: "connect",
-                    timeout: this.serviceTimeout
+                    timeout: this.serviceTimeout,
+                    whatToLog: this.whatToLog
                 }
             });
 
-            this.log("Admiral | Launching service " + service.name);
+            if (this.whatToLog.includes('service_launch')) this.log("Admiral | Launching service " + service.name);
             i++;
 
             this.startService(i);
@@ -384,7 +407,7 @@ export class Admiral extends EventEmitter {
 
     private startCluster(clusterID: number) {
         if (clusterID === this.clusterCount) {
-            this.log("Admiral | All clusters launched!");
+            if (this.whatToLog.includes('all_clusters_launched')) this.log("Admiral | All clusters launched!");
 
             
             this.chunks!.forEach((chunk, clusterID) => {
@@ -418,12 +441,13 @@ export class Admiral extends EventEmitter {
                         shardCount: Number(this.shardCount),
                         token: this.token,
                         path: this.path,
-                        clientOptions: this.clientOptions
+                        clientOptions: this.clientOptions,
+                        whatToLog: this.whatToLog
                     }
                 });
             }
 
-            this.log("Admiral | All shards spread!");
+            if (this.whatToLog.includes('shards_spread')) this.log("Admiral | All shards spread!");
         } else {
             const worker = master.fork({
                 type: "cluster",
@@ -435,7 +459,7 @@ export class Admiral extends EventEmitter {
                 lastShardID: 0,
                 clusterID: clusterID
             });
-            this.log("Admiral | Launching cluster " + clusterID);
+            if (this.whatToLog.includes('cluster_launch')) this.log("Admiral | Launching cluster " + clusterID);
             clusterID++;
 
             this.startCluster(clusterID);
@@ -446,7 +470,7 @@ export class Admiral extends EventEmitter {
         let shards = this.shardCount;
         if (shards === 'auto') {
             const gateway = await this.eris.getBotGateway();
-            this.log(`Admiral | Gateway recommends ${gateway.shards} shards.`);
+            if (this.whatToLog.includes('gateway_shards')) this.log(`Admiral | Gateway recommends ${gateway.shards} shards.`);
             shards = gateway.shards;
             if (shards === 1) {
                 return Promise.resolve(shards);
@@ -491,10 +515,10 @@ export class Admiral extends EventEmitter {
                 NODE_ENV: process.env.NODE_ENV,
                 type: "cluster"
             });
-            this.error(`Admiral | Cluster ${cluster.clusterID} died :(`);
+            this.warn(`Admiral | Cluster ${cluster.clusterID} died :(`);
             this.clusters.delete(cluster.clusterID);
             this.clusters.set(cluster.clusterID, Object.assign(cluster, {workerID: newWorker.id}));
-            this.log(`Admiral | Restarting cluster ${cluster.clusterID}`);
+            if (this.whatToLog.includes('cluster_restart')) this.log(`Admiral | Restarting cluster ${cluster.clusterID}`);
 
             item = {
                 workerID: newWorker.id,
@@ -509,6 +533,7 @@ export class Admiral extends EventEmitter {
                     token: this.token,
                     path: this.path,
                     clientOptions: this.clientOptions,
+                    whatToLog: this.whatToLog
                 }
             };
         } else if (service) {
@@ -516,10 +541,10 @@ export class Admiral extends EventEmitter {
                 NODE_ENV: process.env.NODE_ENV,
                 type: "service"
             });
-            this.error(`Admiral | Service ${service.serviceName} died :(`);
+            this.warn(`Admiral | Service ${service.serviceName} died :(`);
             this.services.delete(service.serviceName);
             this.services.set(service.serviceName, Object.assign(service, {workerID: newWorker.id}));
-            this.log(`Admiral | Restarting service ${service.serviceName}`);
+            if (this.whatToLog.includes('service_restart')) this.log(`Admiral | Restarting service ${service.serviceName}`);
             //Removes old queue item if worker crashed during connect
             item = {
                 workerID: newWorker.id,
@@ -528,7 +553,8 @@ export class Admiral extends EventEmitter {
                     serviceName: service.serviceName,
                     path: service.path,
                     op: "connect",
-                    timeout: this.serviceTimeout
+                    timeout: this.serviceTimeout,
+                    whatToLog: this.whatToLog
                 }
             };
         }
@@ -600,5 +626,9 @@ export class Admiral extends EventEmitter {
 
     public log(message: any) {
         this.emit("log", message);
+    }
+
+    public warn(message: any) {
+        this.emit("warn", message);
     }
 }

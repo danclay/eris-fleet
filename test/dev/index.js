@@ -7,7 +7,10 @@ require('dotenv').config();
 
 const options = {
     path: path.join(__dirname, "./bot.js"),
-    token: process.env.token
+    token: process.env.token,
+    clusters: 2,
+    shards: 2,
+    whatToLog: {blacklist: ['admiral_start']}
 }
 
 const Admiral = new Fleet(options);

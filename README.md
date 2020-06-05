@@ -57,6 +57,7 @@ if (isMaster) {
     // Code to only run for your master process
     Admiral.on('log', m => console.log(m));
     Admiral.on('debug', m => console.debug(m));
+    Admiral.on('warn', m => console.warn(m));
     Admiral.on('error', m => console.error(inspect(m)));
 
     // Logs stats when they arrive
@@ -133,6 +134,27 @@ this.bot.createMessage(msg.channel.id, reply);
 ```
 This command is being sent using the IPC. In this command, the first argument is the name of the service to send the command to, the second argument is the message to send it (in this case a simple object), and the third argument is whether you want a response (this will default to false unless you specify "true"). If you want a response, you must `await` the command or use `.then()`.
 
+### Handling service errors
+
+If you encounter an error when processing a command within your service, you can do the following to reject the promise:
+```js
+// handleCommand function within the ServiceWorker class
+async handleCommand(dataSentInCommand) {
+    // Rejects the promise
+    return {err: "Uh oh.. an error!"};
+}
+```
+When sending the command, you can do the following to deal with the error:
+```js
+this.ipc.command("myService", {smileyFace: ":)"}, true).then((reply) => {
+    // A successful response
+    this.bot.createMessage(msg.channel.id, reply);
+}).catch((e) => {
+    // Do whatever you want with the error
+    console.error(e);
+});
+```
+
 # In-depth
 
 Below is more in-depth documentation.
@@ -156,6 +178,22 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | services       | Services to register. An array of the following object:  `{name: "name of your service", path: "absolute path to your service"}`             | Yes       |                           |
 | firstShardID   | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | 0                         |
 | lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
+| lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
+| whatToLog      | Choose what to log (see details below)                                                                                                       | Yes       |                           |
+
+### Choose what to log
+
+You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are `['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart']`. Here is an example of choosing what to log:
+```js
+const options = {
+    // Your other options
+    whatToLog: {
+        // This will only log when the admiral starts, when clusters are ready, and when services are ready.
+        whitelist: ['admiral_start', 'cluster_ready', 'service_ready']
+    }
+};
+```
+Change `whitelist` to `blacklist` if you want to use a blacklist. Change the array as you wish. **Errors and warnings will always be sent.**
 
 ## IPC
 
@@ -168,6 +206,14 @@ Clusters and services can use IPC to interact with other clusters, the Admiral, 
 | log   | `process.send({op: "log", msg: "hello!"})`   | Logs an event your `index.js` file can process.       |
 | debug | `process.send({op: "debug", msg: "hello!"})` | Logs a debug event your `index.js` file can process.  |
 | error | `process.send({op: "error", msg: "uh oh!"})` | Logs an error event your `index.js` file can process. |
+| warn  | `process.send({op: "warn", msg: "stuff"})`   | Logs a warn event your `index.js` file can process.   |
+
+### Restart other clusters
+
+To restart other clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.
+```js
+this.restartCluster(0);
+```
 
 ### Register
 
