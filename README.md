@@ -129,7 +129,7 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
         // Return a response if you want to respond
         return dataSentInCommand.smileyFace;
     }
-    
+
     shutdown(done) {
         // Optional function to gracefully shutdown things if you need to.
         done(); // Use this function when you are done gracefully shutting down.
@@ -192,6 +192,8 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
 | lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
 | whatToLog      | Choose what to log (see details below)                                                                                                       | Yes       |                           |
+| whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
+| whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
 | killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
 
 ### Choose what to log

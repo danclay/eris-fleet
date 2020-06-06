@@ -267,10 +267,10 @@ export class Admiral extends EventEmitter {
                             this.softKills.get(workerID)!.fn();
                         }
                         if (this.queue.queue[1]) {
-                            if (this.queue.queue[1].type === "service") {
-                                this.queue.execute();
-                            } else {
+                            if (this.queue.queue[1].type == "cluster" && this.queue.queue[0].type == "cluster") {
                                 setTimeout(() => this.queue.execute(), this.clusterTimeout);
+                            } else {
+                                this.queue.execute();
                             }
                         } else {
                             this.queue.execute();

@@ -1,3 +1,5 @@
+// This file is used for testing eris-fleet and should not be used as a practical example.
+
 const { BaseClusterWorker } = require('../../dist/index');
 
 module.exports = class BotWorker extends BaseClusterWorker {
@@ -5,25 +7,20 @@ module.exports = class BotWorker extends BaseClusterWorker {
         // Do not delete this super.
         super(setup);
 
-        console.log(this.workerID + " is good to go!");
-
         this.bot.on('messageCreate', this.handleMessage.bind(this));
     }
 
     async handleMessage(msg) {
-        if (msg.content === "!ping" && !msg.author.bot) {
-            const r = await this.ipc.command("service1", null, true);
-            this.bot.createMessage(msg.channel.id, r);
-        } else if (msg.content == "!restartServices" && !msg.author.bot) {
-            this.restartService('service1');
-        } else if (msg.content == "!shutdownCluster" && !msg.author.bot) {
-            this.totalShutdown();
+        if (msg.content === "!sendCommand" && !msg.author.bot) {
+            // Sends a command to the example service: "myService"
+            const reply = await this.ipc.command("myService", {smileyFace: ":)"}, true);
+            //console.log(reply);
+            this.bot.createMessage(msg.channel.id, reply);
         }
     }
 
-    async shutdown(safe) {
-        setTimeout(() => {
-            safe();
-        }, 5000);
+    shutdown(done) {
+        // Optional function to gracefully shutdown things if you need to.
+        done(); // Use this function when you are done gracefully shutting down.
     }
 }

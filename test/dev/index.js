@@ -1,3 +1,5 @@
+// This file is used for testing eris-fleet and should not be used as a practical example.
+
 const { isMaster } = require('cluster');
 const { Fleet } = require('../../dist/index');
 const path = require('path');
@@ -8,13 +10,9 @@ require('dotenv').config();
 const options = {
     path: path.join(__dirname, "./bot.js"),
     token: process.env.token,
-    clusters: 1,
-    shards: 1,
-    whatToLog: {blacklist: ['stats_update']},
-    //services: [{name: 'service1', path: path.join(__dirname, "./service.js")}],
-    serviceTimeout: 1000,
-    killTimeout: 1000
+    services: [{name: "myService", path: path.join(__dirname, "./service.js")}]
 }
+
 const Admiral = new Fleet(options);
 
 if (isMaster) {
@@ -26,5 +24,5 @@ if (isMaster) {
 
     
     // Logs stats when they arrive
-    //Admiral.on('stats', m => console.log(m));
+    Admiral.on('stats', m => console.log(m));
 }
