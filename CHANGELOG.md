@@ -22,3 +22,4 @@
 - Added shard disconnection errors being logged
 - Added error reporting for an error occuring while starting a service `this.serviceStartingError(Error)`
 - Moved `this.restartCluster(Number)` to the IPC, so it is now `this.ipc.restartCluster(Number)`
+- Added fetch functionality to services

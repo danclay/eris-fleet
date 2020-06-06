@@ -7,6 +7,7 @@ export class Service {
     serviceName!: string;
     app!: BaseServiceWorker;
     timeout!: number;
+    fetchTimeout!: number;
     whatToLog!: string[];
 
     constructor() {
@@ -37,8 +38,13 @@ export class Service {
                         this.path = message.path;
                         this.serviceName = message.serviceName;
                         this.timeout = message.timeout;
+                        this.fetchTimeout = message.fetchTimeout;
                         this.whatToLog = message.whatToLog;
                         this.loadCode();
+                        break;
+                    }
+                    case "return": {
+                        this.app.ipc.emit(message.id, message.value);
                         break;
                     }
                     case "command": {
@@ -99,6 +105,9 @@ export class Service {
             App = App.default ? App.default : App;
         }
         this.app = new App({serviceName: this.serviceName, workerID: worker.id});
+        
+        // Add fetch timeout to ipc
+        this.app.ipc.fetchTimeout = this.fetchTimeout;
 
         let ready = false;
         this.app.readyPromise.then(() => {

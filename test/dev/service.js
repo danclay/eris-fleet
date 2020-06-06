@@ -12,7 +12,8 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
     }
     async handleCommand(dataSentInCommand) {
         // Return a response if you want to respond
-        return dataSentInCommand.smileyFace;
+        const u = await this.ipc.fetchUser(dataSentInCommand);
+        return u.username;
     }
 
     shutdown(done) {

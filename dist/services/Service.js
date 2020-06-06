@@ -48,8 +48,13 @@ class Service {
                         this.path = message.path;
                         this.serviceName = message.serviceName;
                         this.timeout = message.timeout;
+                        this.fetchTimeout = message.fetchTimeout;
                         this.whatToLog = message.whatToLog;
                         this.loadCode();
+                        break;
+                    }
+                    case "return": {
+                        this.app.ipc.emit(message.id, message.value);
                         break;
                     }
                     case "command": {
@@ -110,6 +115,8 @@ class Service {
             App = App.default ? App.default : App;
         }
         this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id });
+        // Add fetch timeout to ipc
+        this.app.ipc.fetchTimeout = this.fetchTimeout;
         let ready = false;
         this.app.readyPromise.then(() => {
             //@ts-ignore

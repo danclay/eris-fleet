@@ -7,7 +7,6 @@ import {Queue} from '../util/Queue';
 import * as Eris from 'eris';
 import {Cluster} from '../clusters/Cluster';
 import {Service} from '../services/Service';
-import {UUID as Gen} from '../util/UUID';
 import { runInThisContext } from 'vm';
 import * as path from 'path';
 
@@ -51,6 +50,8 @@ interface Options {
     whatToLog?: any;
     /** Amount of time to wait before doing a forced shutdown during shutdowns */
     killTimeout?: number;
+    /** How long to wait before forgetting about an IPC fetch or command */
+    fetchTimeout?: number;
 }
 
 interface ShardStats {
@@ -101,7 +102,7 @@ export class Admiral extends EventEmitter {
     /** Map of services by name to worker ID */
     public services: Collection;
     /** Array of callbacks */
-    private callbacks: Map<string, number>;
+    private callbacks: Array<{workerID: number, timeout: number}|null>;
     private path: string;
     private token: string;
     public guildsPerShard: number;
@@ -113,6 +114,7 @@ export class Admiral extends EventEmitter {
     public serviceTimeout: number;
     public clusterTimeout: number;
     public killTimeout: number;
+    public fetchTimeout: number;
     private nodeArgs?: string[];
     private statsInterval: number | 'disable';
     public stats?: Stats;
@@ -138,6 +140,7 @@ export class Admiral extends EventEmitter {
         this.clusterTimeout = options.clusterTimeout || 5e3;
         this.serviceTimeout = options.serviceTimeout || 0;
         this.killTimeout = options.killTimeout || 0;
+        this.fetchTimeout = options.fetchTimeout || 60e3;
         this.nodeArgs = options.nodeArgs;
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
@@ -173,7 +176,7 @@ export class Admiral extends EventEmitter {
             this.clusters = new Collection();
             this.services = new Collection();
             this.queue = new Queue();
-            this.callbacks = new Map();
+            this.callbacks = [];
             this.softKills = new Map();
             
             if (this.statsInterval !== 'disable') {
@@ -287,15 +290,15 @@ export class Admiral extends EventEmitter {
                         break;
                     }
                     case "fetchUser" || "fetchGuild" || "fetchChannel": {
-                        const UUID = String(new Gen());
-                        this.callbacks.set(UUID, worker.id);
+                        const UUID = this.callbacks.push({workerID: worker.id, timeout: Date.now() + this.fetchTimeout}) - 1;
+                        //this.callbacks.set(UUID, worker.id);
                         this.fetchInfo(message.op, message.id, UUID);
 
                         break;
                     }
                     case "fetchMember": {
-                        const UUID = String(new Gen());
-                        this.callbacks.set(UUID, worker.id);
+                        const UUID = this.callbacks.push({workerID: worker.id, timeout: Date.now() + this.fetchTimeout}) - 1;
+                        //this.callbacks.set(UUID, worker.id);
                         this.fetchInfo("fetchMember", [message.guildID, message.memberID], UUID);
 
                         break;
@@ -303,8 +306,8 @@ export class Admiral extends EventEmitter {
                     case "serviceCommand": {
                         const service = this.services.get(message.command.service);
                         if (service) {
-                            const UUID = String(new Gen());
-                            this.callbacks.set(UUID, worker.id);
+                            const UUID = this.callbacks.push({workerID: worker.id, timeout: Date.now() + this.fetchTimeout}) - 1;
+                            //this.callbacks.set(UUID, worker.id);
                             master.workers[service.workerID]!.send({op: "command", command: message.command, UUID});
                         } else {
                             this.error(`Cluster ${this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
@@ -313,10 +316,22 @@ export class Admiral extends EventEmitter {
                         break;
                     }
                     case "return": {
-                        const worker = this.callbacks.get(message.UUID);
-                        if (worker) {
-                            this.callbacks.delete(message.UUID);
-                            master.workers[worker]!.send({op: "return", id: message.value.id, value: message.value});
+                        const UUID = message.UUID;
+                        if (this.callbacks[UUID]) {
+                            const worker = this.callbacks[UUID]!.workerID;
+                            if (worker) {
+                                this.callbacks[UUID] = null;
+                                // Clean out callbacks which have expired
+                                this.callbacks.forEach((e, i) => {
+                                    if (e) if (e.timeout < Date.now()) {
+                                        this.callbacks[i] = null;
+                                    }
+                                });
+                                // Clean callback array if there are none in progress
+                                if (this.callbacks.every(e => e == null)) this.callbacks = [];
+                                //this.callbacks.delete(message.UUID);
+                                master.workers[worker]!.send({op: "return", id: message.value.id, value: message.value});
+                            }
                         }
 
                         break;
@@ -775,7 +790,7 @@ export class Admiral extends EventEmitter {
         }
     }
 
-    private fetchInfo(op: string, id: number | [number, number], UUID: string) {
+    private fetchInfo(op: string, id: number | [number, number], UUID: number) {
         for (let i = 0; this.clusters.get(i); i++) {
             process.nextTick(() => {
                 const cluster = this.clusters.get(i);

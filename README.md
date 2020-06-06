@@ -195,6 +195,7 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
 | whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
 | killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
+| fetchTimeout   | How long to wait for a fetch return before removing the callback                                                                             | Yes       | 60000                     |
 
 ### Choose what to log
 

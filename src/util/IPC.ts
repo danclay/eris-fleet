@@ -1,14 +1,14 @@
 import {EventEmitter} from 'events';
-import {UUID as Gen} from './UUID';
 
 export class IPC extends EventEmitter {
-    events: Map<string | number, {fn: Function}>;
-    commandUUID: Map<string, string>;
+    private events: Map<string | number, {fn: Function}>;
+    private commandUUID: Array<{service: string, timeout: number} | null>;
+    public fetchTimeout!: number;
 
     public constructor() {
         super();
         this.events = new Map();
-        this.commandUUID = new Map();
+        this.commandUUID = [];
 
         process.on('message', msg => {
             const event = this.events.get(msg.op);
@@ -110,8 +110,8 @@ export class IPC extends EventEmitter {
     public async command(service: string, message?: any, receptive?: Boolean) {
         if (!message) message = null;
         if (!receptive) receptive = false;
-        const UUID = String(new Gen());
-        this.commandUUID.set(UUID, service);
+        const UUID = this.commandUUID.push({service, timeout: Date.now() + this.fetchTimeout}) - 1;
+        //this.commandUUID.set(UUID, service);
         //@ts-ignore
         process.send({op: "serviceCommand", 
             command: {
@@ -125,9 +125,17 @@ export class IPC extends EventEmitter {
         if (receptive) {
             return new Promise((resolve, reject) => {
                 const callback = (r: any) => {
-                    this.commandUUID.delete(UUID);
+                    this.commandUUID[UUID] = null;
+                    // Clean out callbacks which have expired
+                    this.commandUUID.forEach((e, i) => {
+                        if (e) if (e.timeout < Date.now()) {
+                            this.commandUUID[i] = null;
+                        }
+                    });
+                    // Clean callback array if there are none in progress
+                    if (this.commandUUID.every(e => e == null)) this.commandUUID = [];
                     //@ts-ignore
-                    this.removeListener(UUID, callback);
+                    this.removeListener(String(UUID), callback);
                     if (r.err) {
                         reject(r.err);
                     } else {
@@ -135,8 +143,7 @@ export class IPC extends EventEmitter {
                     }
                 };
     
-                //@ts-ignore
-                this.on(UUID, callback);
+                this.on(String(UUID), callback);
             })
         }
     }
@@ -187,6 +194,7 @@ export class IPC extends EventEmitter {
         process.send({op: "shutdownService", serviceName, hard: hard ? true : false});
     }
 
+    /** Total shutdown of fleet */
     public totalShutdown(hard?: Boolean) {
         //@ts-ignore
         process.send({op: "totalShutdown", hard: hard ? true : false});

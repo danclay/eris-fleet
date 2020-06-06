@@ -13,9 +13,8 @@ module.exports = class BotWorker extends BaseClusterWorker {
     async handleMessage(msg) {
         if (msg.content === "!sendCommand" && !msg.author.bot) {
             // Sends a command to the example service: "myService"
-            const reply = await this.ipc.command("myService", {smileyFace: ":)"}, true);
-            //console.log(reply);
-            this.bot.createMessage(msg.channel.id, reply);
+            const r = await this.ipc.command("myService", msg.author.id, true)
+            console.log("test " + r)
         }
     }
 

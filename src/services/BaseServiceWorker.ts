@@ -6,14 +6,17 @@ interface Setup {
 }
 
 export class BaseServiceWorker {
-    workerID: number;
-    ipc: IPC;
-    serviceName: string;
-    serviceReady!: Function;
-    serviceStartingError!: Function;
-    readyPromise!: any;
-    handleCommand!: Function;
-    shutdown?: Function;
+    public workerID: number;
+    public ipc: IPC;
+    public serviceName: string;
+    /** Function to report a service being ready */
+    public serviceReady!: Function;
+    /** Function to report error during service launch */
+    public serviceStartingError!: Function;
+    public readyPromise!: any;
+    public handleCommand!: Function;
+    /** Function called for graceful shutdown of the service */
+    public shutdown?: Function;
 
     public constructor(setup: Setup) {
         this.serviceName = setup.serviceName;
