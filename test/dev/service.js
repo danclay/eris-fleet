@@ -1,3 +1,5 @@
+// This file is used for testing eris-fleet and should not be used as a practical example.
+
 const { BaseServiceWorker } = require('../../dist/index');
 
 module.exports = class ServiceWorker extends BaseServiceWorker {
@@ -10,7 +12,8 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
     }
     async handleCommand(dataSentInCommand) {
         // Return a response if you want to respond
-        return dataSentInCommand.smileyFace;
+        const u = await this.ipc.fetchUser(dataSentInCommand);
+        return u.username;
     }
 
     shutdown(done) {

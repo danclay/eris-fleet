@@ -1,36 +1,47 @@
-import {worker} from 'cluster';
-import {BaseServiceWorker} from './BaseServiceWorker';
-import {inspect} from 'util';
-
-export class Service {
-    path!: string;
-    serviceName!: string;
-    app!: BaseServiceWorker;
-    timeout!: number;
-    whatToLog!: string[];
-
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Service = void 0;
+const cluster_1 = require("cluster");
+const util_1 = require("util");
+class Service {
     constructor() {
         //@ts-ignore
-        console.log = (str: any) => process.send({op: "log", msg: str});
+        console.log = (str) => process.send({ op: "log", msg: str });
         //@ts-ignore
-        console.debug = (str: any) => process.send({op: "debug", msg: str});
+        console.debug = (str) => process.send({ op: "debug", msg: str });
         //@ts-ignore
-        console.error = (str: any) => process.send({op: "error", msg: str});
+        console.error = (str) => process.send({ op: "error", msg: str });
         //@ts-ignore
-        console.warn = (str: any) => process.send({op: "warn", msg: str});
-
+        console.warn = (str) => process.send({ op: "warn", msg: str });
         //Spawns
-        process.on('uncaughtException', (err: Error) => {
+        process.on('uncaughtException', (err) => {
             //@ts-ignore
-            process.send({op: "error", msg: inspect(err)});
+            process.send({ op: "error", msg: util_1.inspect(err) });
         });
-
         process.on('unhandledRejection', (reason, promise) => {
             //@ts-ignore
-            process.send({op: "error", msg: 'Unhandled Rejection at: ' + inspect(promise) + ' reason: ' + reason});
+            process.send({ op: "error", msg: 'Unhandled Rejection at: ' + util_1.inspect(promise) + ' reason: ' + reason });
         });
-
-        process.on("message", async message => {
+        process.on("message", async (message) => {
             if (message.op) {
                 switch (message.op) {
                     case "connect": {
@@ -50,15 +61,15 @@ export class Service {
                             const res = await this.app.handleCommand(message.command.msg);
                             if (message.command.receptive) {
                                 //@ts-ignore
-                                process.send({op: "return", value: {
-                                    id: message.command.UUID,
-                                    value: res
-                                }, UUID: message.UUID});
+                                process.send({ op: "return", value: {
+                                        id: message.command.UUID,
+                                        value: res
+                                    }, UUID: message.UUID });
                             }
-                        } else {
+                        }
+                        else {
                             console.error(`Service ${this.serviceName} | I can't handle commands!`);
                         }
-
                         break;
                     }
                     case "shutdown": {
@@ -68,64 +79,63 @@ export class Service {
                             this.app.shutdown(() => {
                                 safe = true;
                                 //@ts-ignore
-                                process.send({op: "shutdown"});
+                                process.send({ op: "shutdown" });
                             });
                             if (message.killTimeout > 0) {
                                 setTimeout(() => {
                                     if (!safe) {
                                         console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
-                                        
                                         //@ts-ignore
-                                        process.send({op: "shutdown"});
-                                    };
+                                        process.send({ op: "shutdown" });
+                                    }
+                                    ;
                                 }, message.killTimeout);
                             }
-                        } else {
-                            //@ts-ignore
-                            process.send({op: "shutdown"});
                         }
-
+                        else {
+                            //@ts-ignore
+                            process.send({ op: "shutdown" });
+                        }
                         break;
                     }
                 }
             }
         });
     }
- 
-    private async loadCode() {
+    async loadCode() {
         //@ts-ignore
-        if (this.whatToLog.includes('service_start')) console.log(`Starting service ${this.serviceName}`);
-
-        let App = (await import(this.path));
+        if (this.whatToLog.includes('service_start'))
+            console.log(`Starting service ${this.serviceName}`);
+        let App = (await Promise.resolve().then(() => __importStar(require(this.path))));
         if (App.ServiceWorker) {
             App = App.ServiceWorker;
-        } else {
+        }
+        else {
             App = App.default ? App.default : App;
         }
-        this.app = new App({serviceName: this.serviceName, workerID: worker.id});
-
+        this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id });
         let ready = false;
         this.app.readyPromise.then(() => {
             //@ts-ignore
-            if (this.whatToLog.includes('service_ready')) console.log(`Service ${this.serviceName} is ready!`);
+            if (this.whatToLog.includes('service_ready'))
+                console.log(`Service ${this.serviceName} is ready!`);
             //@ts-ignore
-            process.send({op: "connected"});
+            process.send({ op: "connected" });
             ready = true;
-        }).catch((err: any) => {
-            console.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
+        }).catch((err) => {
+            console.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
             process.kill(0);
         });
-
         // Timeout
         if (this.timeout !== 0) {
             setTimeout(() => {
                 if (!ready) {
                     console.error(`Service ${this.serviceName} took too long to start.`);
                     process.kill(0);
-                };
+                }
+                ;
             }, this.timeout);
         }
-
         /* this.app.admiral.on("broadcast", (m) => {
             if (!m.event) console.error(`Service ${this.serviceName} | My emit cannot be completed since the message doesn't have a "message"!`);
             if (!m.msg) m.msg = null;
@@ -134,3 +144,5 @@ export class Service {
         }) */
     }
 }
+exports.Service = Service;
+//# sourceMappingURL=Service.js.map

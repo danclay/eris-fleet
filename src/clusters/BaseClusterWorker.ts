@@ -7,19 +7,17 @@ interface Setup {
 }
 
 export class BaseClusterWorker {
-    bot: any;
-    clusterID: number;
-    workerID: number;
-    ipc: IPC;
+    public bot: any;
+    public clusterID: number;
+    public workerID: number;
+    public ipc: IPC;
+    /** Function called for graceful shutdown of the cluster */
+    public shutdown?: Function;
 
     public constructor(setup: Setup) {
         this.bot = setup.bot;
         this.clusterID = setup.clusterID;
         this.workerID = setup.workerID;
         this.ipc = new IPC();
-    }
-
-    public restartCluster(clusterID: number) {
-        this.ipc.sendTo(clusterID, "restart");
     }
 }

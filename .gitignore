@@ -1,5 +1,5 @@
 # Dist
-dist/
+#dist
 
 # Logs
 logs
@@ -83,7 +83,6 @@ typings/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/

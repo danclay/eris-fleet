@@ -1,3 +1,5 @@
+// This file is used for testing eris-fleet and should not be used as a practical example.
+
 const { isMaster } = require('cluster');
 const { Fleet } = require('../../dist/index');
 const path = require('path');
@@ -7,7 +9,8 @@ require('dotenv').config();
 
 const options = {
     path: path.join(__dirname, "./bot.js"),
-    token: process.env.token
+    token: process.env.token,
+    services: [{name: "myService", path: path.join(__dirname, "./service.js")}]
 }
 
 const Admiral = new Fleet(options);

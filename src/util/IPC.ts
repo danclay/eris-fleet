@@ -1,18 +1,14 @@
 import {EventEmitter} from 'events';
-import { resolve } from 'dns';
-import {UUID as Gen} from './UUID';
 
 export class IPC extends EventEmitter {
-    events: Map<string | number, {fn: Function}>;
-    commandUUID: Map<string, string>;
+    private events: Map<string | number, {fn: Function}>;
 
     public constructor() {
         super();
         this.events = new Map();
-        this.commandUUID = new Map();
 
         process.on('message', msg => {
-            let event = this.events.get(msg.op);
+            const event = this.events.get(msg.op);
             if (event) {
                 event.fn(msg);
             }
@@ -93,26 +89,26 @@ export class IPC extends EventEmitter {
     }
 
     public async fetchMember(guildID: number, memberID: number) {
+        const UUID = {memberID, guildID};
         //@ts-ignore
         process.send({op: "fetchMember", guildID, memberID});
 
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener(memberID,  callback);
+                this.removeListener(String(UUID),  callback);
                 resolve(r);
             };
 
             //@ts-ignore
-            this.on(memberID, callback);
+            this.on(String(UUID), callback);
         })
     }
 
     public async command(service: string, message?: any, receptive?: Boolean) {
         if (!message) message = null;
         if (!receptive) receptive = false;
-        const UUID = String(new Gen());
-        this.commandUUID.set(UUID, service);
+        const UUID = {timestamp: Date.now(), message, service, receptive};
         //@ts-ignore
         process.send({op: "serviceCommand", 
             command: {
@@ -126,9 +122,8 @@ export class IPC extends EventEmitter {
         if (receptive) {
             return new Promise((resolve, reject) => {
                 const callback = (r: any) => {
-                    this.commandUUID.delete(UUID);
                     //@ts-ignore
-                    this.removeListener(UUID, callback);
+                    this.removeListener(String(UUID), callback);
                     if (r.err) {
                         reject(r.err);
                     } else {
@@ -136,8 +131,7 @@ export class IPC extends EventEmitter {
                     }
                 };
     
-                //@ts-ignore
-                this.on(UUID, callback);
+                this.on(String(UUID), callback);
             })
         }
     }
@@ -156,5 +150,41 @@ export class IPC extends EventEmitter {
             //@ts-ignore
             this.on("statsReturn", callback);
         })
+    }
+
+    public restartCluster(clusterID: number, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartCluster", clusterID, hard: hard ? true : false});
+    }
+
+    public restartAllClusters(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartAllClusters", hard: hard ? true : false});
+    }
+
+    public restartService(serviceName: string, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartService", serviceName, hard: hard ? true : false});
+    }
+
+    public restartAllServices(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "restartAllServices", hard: hard ? true : false});
+    }
+
+    public shutdownCluster(clusterID: number, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "shutdownCluster", clusterID, hard: hard ? true : false});
+    }
+
+    public shutdownService(serviceName: string, hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "shutdownService", serviceName, hard: hard ? true : false});
+    }
+
+    /** Total shutdown of fleet */
+    public totalShutdown(hard?: Boolean) {
+        //@ts-ignore
+        process.send({op: "totalShutdown", hard: hard ? true : false});
     }
 }

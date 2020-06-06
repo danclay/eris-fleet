@@ -12,9 +12,11 @@ export class Cluster {
     shardCount!: number;
     shards!: number;
     clientOptions!: any;
+    whatToLog!: string[];
     bot!: Eris.Client;
     private token!: string;
     app!: BaseClusterWorker;
+    shutdown?: Boolean;
 
     constructor() {
         //@ts-ignore
@@ -23,6 +25,8 @@ export class Cluster {
         console.debug = (str: any) => process.send({op: "debug", msg: str});
         //@ts-ignore
         console.error = (str: any) => process.send({op: "error", msg: str});
+        //@ts-ignore
+        console.warn = (str: any) => process.send({op: "warn", msg: str});
 
         //Spawns
         process.on('uncaughtException', (err: Error) => {
@@ -37,7 +41,7 @@ export class Cluster {
 
 
         
-        process.on("message", message => {
+        process.on("message", async message => {
             if (message.op) {
                 switch (message.op) {
                     case "connect": {
@@ -50,6 +54,7 @@ export class Cluster {
                         this.shards = (this.lastShardID - this.firstShardID) + 1;
                         this.clientOptions = message.clientOptions;
                         this.token = message.token;
+                        this.whatToLog = message.whatToLog;
 
                         if (this.shards < 0) return;
                         this.connect();
@@ -130,8 +135,35 @@ export class Cluster {
 
                         break;
                     }
-                    case "restart": {
-                        process.exit(1);
+                    case "shutdown": {
+                        this.shutdown = true;
+                        if (this.app.shutdown) {
+                            let safe = false;
+                            // Ask app to shutdown
+                            this.app.shutdown(() => {
+                                safe = true;
+                                this.bot.disconnect({reconnect: false});
+                                //@ts-ignore
+                                process.send({op: "shutdown"});
+                            });
+                            if (message.killTimeout > 0) {
+                                setTimeout(() => {
+                                    if (!safe) {
+                                        console.error(`Cluster ${this.clusterID} took too long to shutdown. Performing shutdown anyway.`);
+                                        
+                                        this.bot.disconnect({reconnect: false});
+                                        //@ts-ignore
+                                        process.send({op: "shutdown"});
+                                    };
+                                }, message.killTimeout);
+                            }
+                        } else {
+                            this.bot.disconnect({reconnect: false});
+                            //@ts-ignore
+                            process.send({op: "shutdown"});
+                        }
+
+                        break;
                     }
                 }
             }
@@ -140,7 +172,7 @@ export class Cluster {
 
     private async connect() {
         //@ts-ignore
-        process.send({op: "log", msg: `Cluster ${this.clusterID} | Connecting with ${this.shards} shard(s)`});
+        if (this.whatToLog.includes('cluster_start')) console.log(`Cluster ${this.clusterID} | Connecting with ${this.shards} shard(s)`);
 
         const options = Object.assign(this.clientOptions, {autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount});
 
@@ -163,37 +195,37 @@ export class Cluster {
 
         bot.on("connect", (id: number) => {
             //@ts-ignore
-            process.send({op: "log", msg: `Cluster ${this.clusterID} | Shard ${id} connected!`});
+            if (this.whatToLog.includes('shard_connect')) console.log(`Cluster ${this.clusterID} | Shard ${id} connected!`);
         });
 
         bot.on("shardDisconnect", (err: Error, id: number) => {
             //@ts-ignore
-            process.send({op: "log", msg: `Cluster ${this.clusterID} | Shard ${id} disconnected!`});
+            if (!this.shutdown) if (this.whatToLog.includes('shard_disconnect')) console.log(`Cluster ${this.clusterID} | Shard ${id} disconnected with error: ${inspect(err)}`);
         });
 
         bot.on("shardReady", (id: number) => {
             //@ts-ignore
-            process.send({op: "log", msg: `Cluster ${this.clusterID} | Shard ${id} is ready!`});
+            if (this.whatToLog.includes('shard_ready')) console.log(`Cluster ${this.clusterID} | Shard ${id} is ready!`);
         });
 
         bot.on("shardResume", (id: number) => {
             //@ts-ignore
-            process.send({op: "log", msg: `Cluster ${this.clusterID} | Shard ${id} has resumed!`});
+            if (this.whatToLog.includes('shard_resume')) console.log(`Cluster ${this.clusterID} | Shard ${id} has resumed!`);
         });
 
         bot.on("warn", (message: string, id: number) => {
             //@ts-ignore
-            process.send({ op: "error", msg: `Shard ${id} | ${message}` });
+           console.warn(`Shard ${id} | ${message}` );
         });
 
         bot.on("error", (error: Error, id: number) => {
             //@ts-ignore
-            process.send({ op: "error", msg: `Shard ${id} | ${inspect(error)}` });
+            console.error(`Shard ${id} | ${inspect(error)}`);
         });
 
         bot.on("ready", (id: number) => {
             //@ts-ignore
-            process.send({op: "log", msg: `Cluster ${this.clusterID} | Shards ${this.firstShardID} - ${this.lastShardID} are ready!`});
+            if (this.whatToLog.includes('cluster_ready')) console.log(`Cluster ${this.clusterID} | Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
             //@ts-ignore
             process.send({op: "connected"});
         });
