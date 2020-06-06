@@ -129,6 +129,11 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
         // Return a response if you want to respond
         return dataSentInCommand.smileyFace;
     }
+    
+    shutdown(done) {
+        // Optional function to gracefully shutdown things if you need to.
+        done(); // Use this function when you are done gracefully shutting down.
+    }
 }
 ```
 **Make sure your bot file extends BaseServiceWorker!**
