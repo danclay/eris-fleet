@@ -56,7 +56,6 @@ class Cluster {
                         this.clientOptions = message.clientOptions;
                         this.token = message.token;
                         this.whatToLog = message.whatToLog;
-                        this.fetchTimeout = message.fetchTimeout;
                         if (this.shards < 0)
                             return;
                         this.connect();
@@ -238,8 +237,6 @@ class Cluster {
         //let App = (await import(this.path)).default;
         //App = App.default ? App.default : App;
         this.app = new App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id });
-        // Add fetch timeout to ipc
-        this.app.ipc.fetchTimeout = this.fetchTimeout;
     }
 }
 exports.Cluster = Cluster;

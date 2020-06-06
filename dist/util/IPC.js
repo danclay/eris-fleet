@@ -6,7 +6,6 @@ class IPC extends events_1.EventEmitter {
     constructor() {
         super();
         this.events = new Map();
-        this.commandUUID = [];
         process.on('message', msg => {
             const event = this.events.get(msg.op);
             if (event) {
@@ -78,16 +77,17 @@ class IPC extends events_1.EventEmitter {
         });
     }
     async fetchMember(guildID, memberID) {
+        const UUID = { memberID, guildID };
         //@ts-ignore
         process.send({ op: "fetchMember", guildID, memberID });
         return new Promise((resolve, reject) => {
             const callback = (r) => {
                 //@ts-ignore
-                this.removeListener(memberID, callback);
+                this.removeListener(String(UUID), callback);
                 resolve(r);
             };
             //@ts-ignore
-            this.on(memberID, callback);
+            this.on(String(UUID), callback);
         });
     }
     async command(service, message, receptive) {
@@ -95,8 +95,7 @@ class IPC extends events_1.EventEmitter {
             message = null;
         if (!receptive)
             receptive = false;
-        const UUID = this.commandUUID.push({ service, timeout: Date.now() + this.fetchTimeout }) - 1;
-        //this.commandUUID.set(UUID, service);
+        const UUID = { timestamp: Date.now(), message, service, receptive };
         //@ts-ignore
         process.send({ op: "serviceCommand",
             command: {
@@ -109,17 +108,6 @@ class IPC extends events_1.EventEmitter {
         if (receptive) {
             return new Promise((resolve, reject) => {
                 const callback = (r) => {
-                    this.commandUUID[UUID] = null;
-                    // Clean out callbacks which have expired
-                    this.commandUUID.forEach((e, i) => {
-                        if (e)
-                            if (e.timeout < Date.now()) {
-                                this.commandUUID[i] = null;
-                            }
-                    });
-                    // Clean callback array if there are none in progress
-                    if (this.commandUUID.every(e => e == null))
-                        this.commandUUID = [];
                     //@ts-ignore
                     this.removeListener(String(UUID), callback);
                     if (r.err) {

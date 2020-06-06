@@ -42,7 +42,6 @@ class Admiral extends events_1.EventEmitter {
         this.clusterTimeout = options.clusterTimeout || 5e3;
         this.serviceTimeout = options.serviceTimeout || 0;
         this.killTimeout = options.killTimeout || 0;
-        this.fetchTimeout = options.fetchTimeout || 60e3;
         this.nodeArgs = options.nodeArgs;
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
@@ -82,7 +81,6 @@ class Admiral extends events_1.EventEmitter {
         this.clusters = new Collection_1.Collection();
         this.services = new Collection_1.Collection();
         this.queue = new Queue_1.Queue();
-        this.callbacks = [];
         this.softKills = new Map();
         if (this.statsInterval !== 'disable') {
             this.stats = {
@@ -196,23 +194,17 @@ class Admiral extends events_1.EventEmitter {
                         break;
                     }
                     case "fetchUser" || "fetchGuild" || "fetchChannel": {
-                        const UUID = this.callbacks.push({ workerID: worker.id, timeout: Date.now() + this.fetchTimeout }) - 1;
-                        //this.callbacks.set(UUID, worker.id);
-                        this.fetchInfo(message.op, message.id, UUID);
+                        this.fetchInfo(message.op, message.id, worker.id);
                         break;
                     }
                     case "fetchMember": {
-                        const UUID = this.callbacks.push({ workerID: worker.id, timeout: Date.now() + this.fetchTimeout }) - 1;
-                        //this.callbacks.set(UUID, worker.id);
-                        this.fetchInfo("fetchMember", [message.guildID, message.memberID], UUID);
+                        this.fetchInfo("fetchMember", [message.guildID, message.memberID], worker.id);
                         break;
                     }
                     case "serviceCommand": {
                         const service = this.services.get(message.command.service);
                         if (service) {
-                            const UUID = this.callbacks.push({ workerID: worker.id, timeout: Date.now() + this.fetchTimeout }) - 1;
-                            //this.callbacks.set(UUID, worker.id);
-                            master.workers[service.workerID].send({ op: "command", command: message.command, UUID });
+                            master.workers[service.workerID].send({ op: "command", command: message.command, UUID: worker.id });
                         }
                         else {
                             this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
@@ -220,25 +212,9 @@ class Admiral extends events_1.EventEmitter {
                         break;
                     }
                     case "return": {
-                        const UUID = message.UUID;
-                        if (this.callbacks[UUID]) {
-                            const worker = this.callbacks[UUID].workerID;
-                            if (worker) {
-                                this.callbacks[UUID] = null;
-                                // Clean out callbacks which have expired
-                                this.callbacks.forEach((e, i) => {
-                                    if (e)
-                                        if (e.timeout < Date.now()) {
-                                            this.callbacks[i] = null;
-                                        }
-                                });
-                                // Clean callback array if there are none in progress
-                                if (this.callbacks.every(e => e == null))
-                                    this.callbacks = [];
-                                //this.callbacks.delete(message.UUID);
-                                master.workers[worker].send({ op: "return", id: message.value.id, value: message.value });
-                            }
-                        }
+                        const worker = master.workers[message.UUID];
+                        if (worker)
+                            worker.send({ op: "return", id: message.value.id, value: message.value });
                         break;
                     }
                     case "collectStats": {
