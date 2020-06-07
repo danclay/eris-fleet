@@ -731,7 +731,10 @@ class Admiral extends events_1.EventEmitter {
     }
     broadcast(op, msg) {
         this.clusters.forEach((c) => {
-            master.workers[c.workerID].send({ op, msg });
+            process.nextTick(() => master.workers[c.workerID].send({ op, msg }));
+        });
+        this.services.forEach((s) => {
+            process.nextTick(() => master.workers[s.workerID].send({ op, msg }));
         });
     }
     error(message) {

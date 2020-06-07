@@ -827,7 +827,10 @@ export class Admiral extends EventEmitter {
 
     private broadcast(op: string, msg: any) {
         this.clusters.forEach((c: ClusterCollection) => {
-            master.workers[c.workerID]!.send({op, msg});
+            process.nextTick(() => master.workers[c.workerID]!.send({op, msg}))
+        });
+        this.services.forEach((s: ServiceCollection) => {
+            process.nextTick(() => master.workers[s.workerID]!.send({op, msg}))
         });
     }
 
