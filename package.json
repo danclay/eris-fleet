@@ -1,6 +1,6 @@
 {
   "name": "eris-fleet",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "dependencies": {
     "eris": "^0.13.1"
   },
