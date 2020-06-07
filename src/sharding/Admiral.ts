@@ -15,7 +15,7 @@ interface ServiceCreator {
     path: string;
 }
 
-interface Options {
+export interface Options {
     /** Absolute path to the js file */
     path: string;
     /** Bot token */
@@ -66,12 +66,11 @@ interface ClusterStats {
     uptime: number;
     voice: number;
     largeGuilds: number;
-    exclusiveGuilds: number;
     ram: number;
     shardStats: ShardStats[] | [];
 }
 
-interface Stats {
+export interface Stats {
     guilds: number;
     users: number;
     clustersRam: number;
@@ -123,6 +122,7 @@ export class Admiral extends EventEmitter {
     private statsAlreadyStarted?: Boolean;
     private whatToLog: string[];
     private softKills: Map<number, {fn: Function}>;
+    private launchingManager: Map<number, {waiting: Function} | "launched">;
 
     public constructor(options: Options) {
         super();
@@ -171,6 +171,7 @@ export class Admiral extends EventEmitter {
             this.services = new Collection();
             this.queue = new Queue();
             this.softKills = new Map();
+            this.launchingManager = new Map();
             
             if (this.statsInterval !== 'disable') {
                 this.stats = {
@@ -257,6 +258,17 @@ export class Admiral extends EventEmitter {
                     case "warn":
                         this.warn(message.msg);
                         break;
+                    case "launched": {
+                        const lr = this.launchingManager.get(worker.id);
+                        if (lr) {
+                            if (lr !== 'launched') lr.waiting();
+                            this.launchingManager.delete(worker.id);
+                        } else {
+                            this.launchingManager.set(worker.id, 'launched');
+                        }
+
+                        break;
+                    }
                     case "connected": {
                         const workerID = this.queue.queue[0].workerID;
                         if (this.softKills.get(workerID)) {
@@ -315,6 +327,7 @@ export class Admiral extends EventEmitter {
                             this.prelimStats.voice += message.stats.voice;
                             this.prelimStats.clustersRam += message.stats.ram;
                             this.prelimStats.largeGuilds += message.stats.largeGuilds;
+                            this.prelimStats.shardCount += message.stats.shardStats.length;
 
                             this.prelimStats.clusters.push(Object.assign(message.stats, {id: this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID}));
                             this.statsClustersCounted!++;
@@ -457,7 +470,19 @@ export class Admiral extends EventEmitter {
         });
 
         this.queue.on("execute", (item) => {
-            master.workers[item.workerID]!.send(item.message);
+            if (item.message.op == "connect") {
+                const lr = this.launchingManager.get(item.workerID);
+                if (lr) {
+                    master.workers[item.workerID]!.send(item.message);
+                    this.launchingManager.delete(item.workerID);
+                } else {
+                    this.launchingManager.set(item.workerID, {waiting: () => {
+                        master.workers[item.workerID]!.send(item.message);
+                    }});
+                }
+            } else {
+                master.workers[item.workerID]!.send(item.message);
+            }
         });
     }
 
@@ -776,12 +801,6 @@ export class Admiral extends EventEmitter {
         if (this.statsInterval !== "disable") {
 
             const execute = () => {
-                this.clusters.forEach((c: ClusterCollection) => {
-                    master.workers[c.workerID]!.send({op: "collectStats"});
-                });
-            };
-
-            setInterval(() => {
                 this.prelimStats = {
                     guilds: 0,
                     users: 0,
@@ -792,6 +811,12 @@ export class Admiral extends EventEmitter {
                     clusters: []
                 }
                 this.statsClustersCounted = 0;
+                this.clusters.forEach((c: ClusterCollection) => {
+                    master.workers[c.workerID]!.send({op: "collectStats"});
+                });
+            };
+
+            setInterval(() => {
                 execute();
             }, this.statsInterval);
 

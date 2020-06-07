@@ -1,6 +1,6 @@
 import {IPC} from '../util/IPC';
 
-interface Setup {
+export interface Setup {
     bot: any;
     clusterID: number;
     workerID: number;

@@ -10,6 +10,7 @@ export class Service {
     whatToLog!: string[];
 
     constructor() {
+
         //@ts-ignore
         console.log = (str: any) => process.send({op: "log", msg: str});
         //@ts-ignore
@@ -29,6 +30,9 @@ export class Service {
             //@ts-ignore
             process.send({op: "error", msg: 'Unhandled Rejection at: ' + inspect(promise) + ' reason: ' + reason});
         });
+
+        //@ts-ignore
+        process.send({op: "launched"});
 
         process.on("message", async message => {
             if (message.op) {

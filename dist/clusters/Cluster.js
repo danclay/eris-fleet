@@ -42,6 +42,8 @@ class Cluster {
             //@ts-ignore
             process.send({ op: "error", msg: 'Unhandled Rejection at: ' + util_1.inspect(promise) + ' reason: ' + reason });
         });
+        //@ts-ignore
+        process.send({ op: "launched" });
         process.on("message", async (message) => {
             if (message.op) {
                 switch (message.op) {
@@ -131,7 +133,7 @@ class Cluster {
                                 voice: this.bot.voiceConnections.size,
                                 largeGuilds: this.bot.guilds.filter(g => g.large).length,
                                 shardStats: shardStats,
-                                ram: process.memoryUsage().rss
+                                ram: process.memoryUsage().rss / 1000000
                             } });
                         break;
                     }
@@ -183,7 +185,7 @@ class Cluster {
         else {
             bot = new Eris.Client(this.token, options);
             if (App.BotWorker) {
-                App = App.botWorker;
+                App = App.BotWorker;
             }
             else {
                 App = App.default ? App.default : App;

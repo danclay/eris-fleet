@@ -13,6 +13,18 @@
 
 A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [megane](https://github.com/brussell98/megane) with services and configurable logging.
 
+## Highlighted Features:
+
+- Clustering across cores
+- Sharding
+- Customizable logging
+- Services (non-eris workers)
+- IPC to communicate between clusters, other clusters, and services
+- Detailed stats collection
+- Use a modified version of eris
+- Soft cluster and service restarts where the old worker is killed after the new one is ready
+- Graceful shutdowns
+
 # Installation
 Run `npm install eris-fleet`
 or with yarn: `yarn add eris-fleet`
@@ -98,7 +110,7 @@ The bot above will respond with "Pong!" when it recieves the command "!ping". **
 
 ## Services
 
-You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! [Read below](#ipc) for what you can access and do with services. To add a service, add the following to the options you pass to the fleet:
+You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! [Read below](#ipc) for what you can access and do with services. **Note that services always start before the clusters. Clusters will only start after all the services have started.** To add a service, add the following to the options you pass to the fleet:
 ```js
 const options = {
     // Your other options...
@@ -355,6 +367,35 @@ await this.ipc.command("ServiceName", "hello service!", true);
 Gets the latest stats. This is an alternative to [registering](#register) the "stats" event. Be sure to use `await` or `.then()`
 ```js
 await this.ipc.getStats();
+```
+
+## Stats
+
+Stats are given in the following object format:
+```js
+{
+    guilds: Number, // # of guilds the bot is in
+    users: Number, // # of users the bot has cached
+    ClustersRam: Number, // Total RAM used by all clusters in MB
+    voice: Number, // # of voice connection the bot is in
+    largeGuilds: Number, // # of "large" guilds the bot is in
+    shardCount: Number, // # of shards
+    clusters: Array<{ // Array of stats for clusters (you can use the length property of this to get the cluster count)
+        id: Number, // ID of the cluster
+        guilds: Number, // # of guilds the cluster is in
+        users: Number, // # of users the cluster has cached
+        uptime: Number, // Uptime of the cluster
+        voice: Number, // # of voice connections the cluster is in
+        largeGuilds: Number, // # of "large" guilds the cluster is in
+        ram: Number, // RAM the cluster's process is using
+        shardStats: Array<{ // Array of stats for the shards in the cluster (you can use the length property of this to get the shard count of the cluster)
+            latency: Number, // Latency of the shard
+            id: Number, // ID of the shard
+            ready: Boolean, // Whether the shard is ready
+            stats: 'disconnected' | 'connecting' | 'handshaking' | 'ready' // The status of the shard
+        }>
+    }>
+}
 ```
 
 ## Using a specific version of eris or a modified version of eris

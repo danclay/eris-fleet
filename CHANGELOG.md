@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Fixed bug where workers would never connect due to the connect command being sent before they were launched.
+- Fixed stats not starting as soon as all the clusters are ready
+- Fixed Stats.shardCount always being 0
+- Fixed stats RAM not being in MB
+
 ## 0.2.0
 
 - Added shutdowns and restarts. They are as follows:

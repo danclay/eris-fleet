@@ -82,6 +82,7 @@ class Admiral extends events_1.EventEmitter {
         this.services = new Collection_1.Collection();
         this.queue = new Queue_1.Queue();
         this.softKills = new Map();
+        this.launchingManager = new Map();
         if (this.statsInterval !== 'disable') {
             this.stats = {
                 guilds: 0,
@@ -165,6 +166,18 @@ class Admiral extends events_1.EventEmitter {
                     case "warn":
                         this.warn(message.msg);
                         break;
+                    case "launched": {
+                        const lr = this.launchingManager.get(worker.id);
+                        if (lr) {
+                            if (lr !== 'launched')
+                                lr.waiting();
+                            this.launchingManager.delete(worker.id);
+                        }
+                        else {
+                            this.launchingManager.set(worker.id, 'launched');
+                        }
+                        break;
+                    }
                     case "connected": {
                         const workerID = this.queue.queue[0].workerID;
                         if (this.softKills.get(workerID)) {
@@ -224,6 +237,7 @@ class Admiral extends events_1.EventEmitter {
                             this.prelimStats.voice += message.stats.voice;
                             this.prelimStats.clustersRam += message.stats.ram;
                             this.prelimStats.largeGuilds += message.stats.largeGuilds;
+                            this.prelimStats.shardCount += message.stats.shardStats.length;
                             this.prelimStats.clusters.push(Object.assign(message.stats, { id: this.clusters.find((c) => c.workerID == worker.id).clusterID }));
                             this.statsClustersCounted++;
                         }
@@ -360,7 +374,21 @@ class Admiral extends events_1.EventEmitter {
             this.restartWorker(worker);
         });
         this.queue.on("execute", (item) => {
-            master.workers[item.workerID].send(item.message);
+            if (item.message.op == "connect") {
+                const lr = this.launchingManager.get(item.workerID);
+                if (lr) {
+                    master.workers[item.workerID].send(item.message);
+                    this.launchingManager.delete(item.workerID);
+                }
+                else {
+                    this.launchingManager.set(item.workerID, { waiting: () => {
+                            master.workers[item.workerID].send(item.message);
+                        } });
+                }
+            }
+            else {
+                master.workers[item.workerID].send(item.message);
+            }
         });
     }
     async startService() {
@@ -680,11 +708,6 @@ class Admiral extends events_1.EventEmitter {
         this.statsAlreadyStarted = true;
         if (this.statsInterval !== "disable") {
             const execute = () => {
-                this.clusters.forEach((c) => {
-                    master.workers[c.workerID].send({ op: "collectStats" });
-                });
-            };
-            setInterval(() => {
                 this.prelimStats = {
                     guilds: 0,
                     users: 0,
@@ -695,6 +718,11 @@ class Admiral extends events_1.EventEmitter {
                     clusters: []
                 };
                 this.statsClustersCounted = 0;
+                this.clusters.forEach((c) => {
+                    master.workers[c.workerID].send({ op: "collectStats" });
+                });
+            };
+            setInterval(() => {
                 execute();
             }, this.statsInterval);
             // First execution

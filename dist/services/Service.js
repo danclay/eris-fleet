@@ -41,6 +41,8 @@ class Service {
             //@ts-ignore
             process.send({ op: "error", msg: 'Unhandled Rejection at: ' + util_1.inspect(promise) + ' reason: ' + reason });
         });
+        //@ts-ignore
+        process.send({ op: "launched" });
         process.on("message", async (message) => {
             if (message.op) {
                 switch (message.op) {

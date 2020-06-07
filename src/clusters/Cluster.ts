@@ -39,7 +39,8 @@ export class Cluster {
             process.send({op: "error", msg: 'Unhandled Rejection at: ' + inspect(promise) + ' reason: ' + reason});
         });
 
-
+        //@ts-ignore
+        process.send({op: "launched"});
         
         process.on("message", async message => {
             if (message.op) {
@@ -130,7 +131,7 @@ export class Cluster {
                             voice: this.bot.voiceConnections.size,
                             largeGuilds: this.bot.guilds.filter(g => g.large).length,
                             shardStats: shardStats,
-                            ram: process.memoryUsage().rss
+                            ram: process.memoryUsage().rss / 1000000
                         }});
 
                         break;
@@ -185,7 +186,7 @@ export class Cluster {
         } else {
             bot = new Eris.Client(this.token, options);
             if (App.BotWorker) {
-                App = App.botWorker;
+                App = App.BotWorker;
             } else {
                 App = App.default ? App.default : App;
             }
