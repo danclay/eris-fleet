@@ -409,7 +409,11 @@ Stats are given in the following object format:
             guilds: Number, // # of guilds the shard services
             users: Number // # of members the shard services
         }>
-    }>
+    }>,
+    services: Array<{
+        name: String, // Name of the service
+        ram: Number // RAM the service's process is using
+    }> // Array of stats for services
 }
 ```
 
