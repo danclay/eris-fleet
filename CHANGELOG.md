@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.3
+- Fixed issue where logging "prefix" would not show up during a soft restart
+
 ## 0.2.2
 - Added fetch ipc commands to services
 - Added more detailed stats
