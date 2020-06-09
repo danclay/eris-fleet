@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+- Added fetch ipc commands to services
+- Added more detailed stats
+- Added object logging (with the source, timestamp, and the message in an object)
+
 ## 0.2.1
 
 - Fixed bug where workers would never connect due to the connect command being sent before they were launched.

@@ -50,6 +50,8 @@ export interface Options {
     whatToLog?: any;
     /** Amount of time to wait before doing a forced shutdown during shutdowns */
     killTimeout?: number;
+    /** Whether to split the source in to an Object */
+    objectlogging?: Boolean;
 }
 
 interface ShardStats {
@@ -57,6 +59,8 @@ interface ShardStats {
     id: number;
     ready: Boolean;
     status: 'disconnected' | 'connecting' | 'handshaking' | 'ready';
+    guilds: number;
+    users: number;
 }
 
 interface ClusterStats {
@@ -70,14 +74,23 @@ interface ClusterStats {
     shardStats: ShardStats[] | [];
 }
 
+interface ServiceStats {
+    name: number;
+    ram: number;
+}
+
 export interface Stats {
     guilds: number;
     users: number;
     clustersRam: number;
+    servicesRam: number;
+    masterRam: number;
+    totalRam: number;
     voice: number;
     largeGuilds: number;
     shardCount: number;
     clusters: ClusterStats[];
+    services: ServiceStats[];
 }
 
 interface ClusterCollection {
@@ -117,15 +130,17 @@ export class Admiral extends EventEmitter {
     private queue: Queue;
     private eris: Eris.Client;
     private prelimStats?: Stats;
-    private statsClustersCounted?: number;
+    private statsWorkersCounted?: number;
     private chunks?: number[][];
     private statsAlreadyStarted?: Boolean;
     private whatToLog: string[];
     private softKills: Map<number, {fn: Function}>;
     private launchingManager: Map<number, {waiting: Function} | "launched">;
+    private objectlogging: Boolean;
 
     public constructor(options: Options) {
         super();
+        this.objectlogging = options.objectlogging || false;
         this.path = options.path!;
         this.token = options.token!;
         this.guildsPerShard = options.guildsPerShard || 1300;
@@ -178,10 +193,14 @@ export class Admiral extends EventEmitter {
                     guilds: 0,
                     users: 0,
                     clustersRam: 0,
+                    servicesRam: 0,
+                    masterRam: 0,
+                    totalRam: 0,
                     voice: 0,
                     largeGuilds: 0,
                     shardCount: 0,
-                    clusters: []
+                    clusters: [],
+                    services: []
                 }
             }
 
@@ -246,17 +265,69 @@ export class Admiral extends EventEmitter {
         on('message', (worker, message, handle) => {
             if (message.op) {
                 switch (message.op) {
-                    case "log": 
-                        this.log(message.msg);
+                    case "log": {
+                        let source;
+                        if (message.source) {
+                            source = message.source;
+                        } else {
+                            const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+                            const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+                            if (cluster) {
+                                source = `Cluster ${cluster.clusterID}`;
+                            } else if (service) {
+                                source = `Service ${service.serviceName}`;
+                            }
+                        }
+                        this.log(message.msg, source);
                         break;
-                    case "debug":
-                        this.debug(message.msg);
+                    }
+                    case "debug": {
+                        let source;
+                        if (message.source) {
+                            source = message.source;
+                        } else {
+                            const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+                            const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+                            if (cluster) {
+                                source = `Cluster ${cluster.clusterID}`;
+                            } else if (service) {
+                                source = `Service ${service.serviceName}`;
+                            }
+                        }
+                        this.debug(message.msg, source);
                         break;
-                    case "error":
-                        this.error(message.msg);
+                    }
+                    case "error": {
+                        let source;
+                        if (message.source) {
+                            source = message.source;
+                        } else {
+                            const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+                            const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+                            if (cluster) {
+                                source = `Cluster ${cluster.clusterID}`;
+                            } else if (service) {
+                                source = `Service ${service.serviceName}`;
+                            }
+                        }
+                        this.error(message.msg, source);
                         break;
-                    case "warn":
-                        this.warn(message.msg);
+                    }
+                    case "warn": {
+                        let source;
+                        if (message.source) {
+                            source = message.source;
+                        } else {
+                            const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+                            const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+                            if (cluster) {
+                                source = `Cluster ${cluster.clusterID}`;
+                            } else if (service) {
+                                source = `Service ${service.serviceName}`;
+                            }
+                        }
+                        this.warn(message.msg, source);
+                    }
                         break;
                     case "launched": {
                         const lr = this.launchingManager.get(worker.id);
@@ -322,18 +393,28 @@ export class Admiral extends EventEmitter {
                     }
                     case "collectStats": {
                         if (this.prelimStats) {
-                            this.prelimStats.guilds += message.stats.guilds;
-                            this.prelimStats.users += message.stats.guilds;
-                            this.prelimStats.voice += message.stats.voice;
-                            this.prelimStats.clustersRam += message.stats.ram;
-                            this.prelimStats.largeGuilds += message.stats.largeGuilds;
-                            this.prelimStats.shardCount += message.stats.shardStats.length;
+                            const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+                            const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+                            if (cluster) {
+                                this.prelimStats.guilds += message.stats.guilds;
+                                this.prelimStats.users += message.stats.guilds;
+                                this.prelimStats.voice += message.stats.voice;
+                                this.prelimStats.clustersRam += message.stats.ram;
+                                this.prelimStats.largeGuilds += message.stats.largeGuilds;
+                                this.prelimStats.shardCount += message.stats.shardStats.length;
 
-                            this.prelimStats.clusters.push(Object.assign(message.stats, {id: this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID}));
-                            this.statsClustersCounted!++;
+                                this.prelimStats.clusters.push(Object.assign(message.stats, {id: cluster.clusterID}));
+                            } else if (service) {
+                                this.prelimStats.servicesRam += message.stats.ram;
+                                this.prelimStats.services.push(Object.assign(message.stats, {name: service.serviceName}));
+                            }
+                            this.prelimStats.totalRam += message.stats.ram;
+                            this.statsWorkersCounted!++;
                         }
 
-                        if (this.statsClustersCounted === this.clusters.size) {
+                        if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
+                            this.prelimStats!.masterRam = process.memoryUsage().rss / 1e6;
+                            this.prelimStats!.totalRam += this.prelimStats!.masterRam
                             const compare = (a: ClusterStats, b: ClusterStats) => {
                                 if (a.id < b.id) return -1;
                                 if (a.id > b.id) return 1;
@@ -805,14 +886,21 @@ export class Admiral extends EventEmitter {
                     guilds: 0,
                     users: 0,
                     clustersRam: 0,
+                    servicesRam: 0,
+                    masterRam: 0,
+                    totalRam: 0,
                     voice: 0,
                     largeGuilds: 0,
                     shardCount: 0,
-                    clusters: []
+                    clusters: [],
+                    services: []
                 }
-                this.statsClustersCounted = 0;
+                this.statsWorkersCounted = 0;
                 this.clusters.forEach((c: ClusterCollection) => {
-                    master.workers[c.workerID]!.send({op: "collectStats"});
+                    process.nextTick(() => master.workers[c.workerID]!.send({op: "collectStats"}));
+                });
+                this.services.forEach((s: ServiceCollection) => {
+                    process.nextTick(() => master.workers[s.workerID]!.send({op: "collectStats"}));
                 });
             };
 
@@ -834,19 +922,95 @@ export class Admiral extends EventEmitter {
         });
     }
 
-    public error(message: any) {
-        this.emit("error", message);
+    public error(message: any, source?: string) {
+        let log = message;
+        if (this.objectlogging) {
+            log = {
+                source: "",
+                message: message,
+                timestamp: new Date().getTime()
+            };
+            if (source) {
+                log.source = source;
+            } else {
+                const split = message.split("|");
+                log.source = split[0].trim();
+                log.message = split[1].trim();
+            }
+        } else {
+            if (source) {
+                log = `${source} | ${message}`
+            }
+        }
+        this.emit("error", log);
     }
 
-    public debug(message: any) {
-        this.emit("debug", message);
+    public debug(message: any, source?: string) {
+        let log = message;
+        if (this.objectlogging) {
+            log = {
+                source: "",
+                message: message,
+                timestamp: new Date().getTime()
+            };
+            if (source) {
+                log.source = source;
+            } else {
+                const split = message.split("|");
+                log.source = split[0].trim();
+                log.message = split[1].trim();
+            }
+        } else {
+            if (source) {
+                log = `${source} | ${message}`
+            }
+        }
+        this.emit("debug", log);
     }
 
-    public log(message: any) {
-        this.emit("log", message);
+    public log(message: any, source?: string) {
+        let log = message;
+        if (this.objectlogging) {
+            log = {
+                source: "",
+                message: message,
+                timestamp: new Date().getTime()
+            };
+            if (source) {
+                log.source = source;
+            } else {
+                const split = message.split("|");
+                log.source = split[0].trim();
+                log.message = split[1].trim();
+            }
+        } else {
+            if (source) {
+                log = `${source} | ${message}`
+            }
+        }
+        this.emit("log", log);
     }
 
-    public warn(message: any) {
-        this.emit("warn", message);
+    public warn(message: any, source?: string) {
+        let log = message;
+        if (this.objectlogging) {
+            log = {
+                source: "",
+                message: message,
+                timestamp: new Date().getTime()
+            };
+            if (source) {
+                log.source = source;
+            } else {
+                const split = message.split("|");
+                log.source = split[0].trim();
+                log.message = split[1].trim();
+            }
+        } else {
+            if (source) {
+                log = `${source} | ${message}`
+            }
+        }
+        this.emit("warn", log);
     }
 }

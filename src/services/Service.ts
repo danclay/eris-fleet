@@ -60,7 +60,7 @@ export class Service {
                                 }, UUID: message.UUID});
                             }
                         } else {
-                            console.error(`Service ${this.serviceName} | I can't handle commands!`);
+                            console.error(`I can't handle commands!`);
                         }
 
                         break;
@@ -88,6 +88,14 @@ export class Service {
                             //@ts-ignore
                             process.send({op: "shutdown"});
                         }
+
+                        break;
+                    }
+                    case "collectStats": {
+                        //@ts-ignore
+                        process.send({op: "collectStats", stats: {
+                            ram: process.memoryUsage().rss / 1e6
+                        }});
 
                         break;
                     }

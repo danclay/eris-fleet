@@ -207,6 +207,7 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
 | whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
 | killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
+| objectLogging  | Sends logs in an object format that follows: `{source: "the source", message: "the message", timestamp: "the UTC timestamp"}                 | Yes       | false                     |
 
 ### Choose what to log
 
@@ -234,6 +235,15 @@ Clusters and services can use IPC to interact with other clusters, the Admiral, 
 | debug | `process.send({op: "debug", msg: "hello!"})` | Logs a debug event your `index.js` file can process.  |
 | error | `process.send({op: "error", msg: "uh oh!"})` | Logs an error event your `index.js` file can process. |
 | warn  | `process.send({op: "warn", msg: "stuff"})`   | Logs a warn event your `index.js` file can process.   |
+
+You can also add a custom source to the log if objectLogging is set to true in the options. Here is an example: `process.send({op: "log", msg: "hello!", source: "a cool place"})`
+
+If you notice your logs ending up as `{ }`, try doing the following to your error:
+```js
+const { inspect } = require('util'); // No need to install a package, this is included in node
+let yourError = Error; // Whatever error you need to log
+console.error(inspect(yourError)); // Logs the error
+```
 
 ### Restart clusters
 
@@ -376,7 +386,10 @@ Stats are given in the following object format:
 {
     guilds: Number, // # of guilds the bot is in
     users: Number, // # of users the bot has cached
-    ClustersRam: Number, // Total RAM used by all clusters in MB
+    clustersRam: Number, // Total RAM used by all clusters in MB
+    servicesRam: Number, // Total RAM used by all services in MB
+    masterRam: Number, // Total RAM used by the master process in MB
+    totalRam: Number, // The real total rss.
     voice: Number, // # of voice connection the bot is in
     largeGuilds: Number, // # of "large" guilds the bot is in
     shardCount: Number, // # of shards
@@ -392,7 +405,9 @@ Stats are given in the following object format:
             latency: Number, // Latency of the shard
             id: Number, // ID of the shard
             ready: Boolean, // Whether the shard is ready
-            stats: 'disconnected' | 'connecting' | 'handshaking' | 'ready' // The status of the shard
+            stats: 'disconnected' | 'connecting' | 'handshaking' | 'ready' // The status of the shard,
+            guilds: Number, // # of guilds the shard services
+            users: Number // # of members the shard services
         }>
     }>
 }

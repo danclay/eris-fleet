@@ -114,13 +114,22 @@ export class Cluster {
                     }
                     case "collectStats": {
                         if (!this.bot) return;
-                        let shardStats: { id: number; ready: boolean; latency: number; status: string; }[] = [];
+                        let shardStats: { id: number; ready: boolean; latency: number; status: string; guilds: number; users: number;}[] = [];
+                        const getShardUsers = (id: number) => {
+                            let users = 0;
+                            for(let [key, value] of Object.entries(this.bot.guildShardMap)) {
+                                if (Number(value) == id) users += this.bot.guilds.find(g => g.id == key)!.memberCount;
+                            }
+                            return users;
+                        };
                         this.bot.shards.forEach(shard => {
                             shardStats.push({
                                 id: shard.id,
                                 ready: shard.ready,
                                 latency: shard.latency,
-                                status: shard.status
+                                status: shard.status,
+                                guilds: Object.values(this.bot.guildShardMap).filter(e => e == shard.id).length,
+                                users: getShardUsers(shard.id)
                             });
                         });
                         //@ts-ignore
@@ -131,7 +140,7 @@ export class Cluster {
                             voice: this.bot.voiceConnections.size,
                             largeGuilds: this.bot.guilds.filter(g => g.large).length,
                             shardStats: shardStats,
-                            ram: process.memoryUsage().rss / 1000000
+                            ram: process.memoryUsage().rss / 1e6
                         }});
 
                         break;
@@ -173,7 +182,7 @@ export class Cluster {
 
     private async connect() {
         //@ts-ignore
-        if (this.whatToLog.includes('cluster_start')) console.log(`Cluster ${this.clusterID} | Connecting with ${this.shards} shard(s)`);
+        if (this.whatToLog.includes('cluster_start')) console.log(`Connecting with ${this.shards} shard(s)`);
 
         const options = Object.assign(this.clientOptions, {autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount});
 
@@ -196,22 +205,22 @@ export class Cluster {
 
         bot.on("connect", (id: number) => {
             //@ts-ignore
-            if (this.whatToLog.includes('shard_connect')) console.log(`Cluster ${this.clusterID} | Shard ${id} connected!`);
+            if (this.whatToLog.includes('shard_connect')) console.log(`Shard ${id} connected!`);
         });
 
         bot.on("shardDisconnect", (err: Error, id: number) => {
             //@ts-ignore
-            if (!this.shutdown) if (this.whatToLog.includes('shard_disconnect')) console.log(`Cluster ${this.clusterID} | Shard ${id} disconnected with error: ${inspect(err)}`);
+            if (!this.shutdown) if (this.whatToLog.includes('shard_disconnect')) console.log(`Shard ${id} disconnected with error: ${inspect(err)}`);
         });
 
         bot.on("shardReady", (id: number) => {
             //@ts-ignore
-            if (this.whatToLog.includes('shard_ready')) console.log(`Cluster ${this.clusterID} | Shard ${id} is ready!`);
+            if (this.whatToLog.includes('shard_ready')) console.log(`Shard ${id} is ready!`);
         });
 
         bot.on("shardResume", (id: number) => {
             //@ts-ignore
-            if (this.whatToLog.includes('shard_resume')) console.log(`Cluster ${this.clusterID} | Shard ${id} has resumed!`);
+            if (this.whatToLog.includes('shard_resume')) console.log(`Shard ${id} has resumed!`);
         });
 
         bot.on("warn", (message: string, id: number) => {
@@ -226,7 +235,7 @@ export class Cluster {
 
         bot.on("ready", (id: number) => {
             //@ts-ignore
-            if (this.whatToLog.includes('cluster_ready')) console.log(`Cluster ${this.clusterID} | Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
+            if (this.whatToLog.includes('cluster_ready')) console.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
             //@ts-ignore
             process.send({op: "connected"});
         });

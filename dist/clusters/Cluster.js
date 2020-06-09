@@ -117,12 +117,22 @@ class Cluster {
                         if (!this.bot)
                             return;
                         let shardStats = [];
+                        const getShardUsers = (id) => {
+                            let users = 0;
+                            for (let [key, value] of Object.entries(this.bot.guildShardMap)) {
+                                if (Number(value) == id)
+                                    users += this.bot.guilds.find(g => g.id == key).memberCount;
+                            }
+                            return users;
+                        };
                         this.bot.shards.forEach(shard => {
                             shardStats.push({
                                 id: shard.id,
                                 ready: shard.ready,
                                 latency: shard.latency,
-                                status: shard.status
+                                status: shard.status,
+                                guilds: Object.values(this.bot.guildShardMap).filter(e => e == shard.id).length,
+                                users: getShardUsers(shard.id)
                             });
                         });
                         //@ts-ignore
@@ -133,7 +143,7 @@ class Cluster {
                                 voice: this.bot.voiceConnections.size,
                                 largeGuilds: this.bot.guilds.filter(g => g.large).length,
                                 shardStats: shardStats,
-                                ram: process.memoryUsage().rss / 1000000
+                                ram: process.memoryUsage().rss / 1e6
                             } });
                         break;
                     }
@@ -174,7 +184,7 @@ class Cluster {
     async connect() {
         //@ts-ignore
         if (this.whatToLog.includes('cluster_start'))
-            console.log(`Cluster ${this.clusterID} | Connecting with ${this.shards} shard(s)`);
+            console.log(`Connecting with ${this.shards} shard(s)`);
         const options = Object.assign(this.clientOptions, { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount });
         let App = (await Promise.resolve().then(() => __importStar(require(this.path))));
         let bot;
@@ -196,23 +206,23 @@ class Cluster {
         bot.on("connect", (id) => {
             //@ts-ignore
             if (this.whatToLog.includes('shard_connect'))
-                console.log(`Cluster ${this.clusterID} | Shard ${id} connected!`);
+                console.log(`Shard ${id} connected!`);
         });
         bot.on("shardDisconnect", (err, id) => {
             //@ts-ignore
             if (!this.shutdown)
                 if (this.whatToLog.includes('shard_disconnect'))
-                    console.log(`Cluster ${this.clusterID} | Shard ${id} disconnected with error: ${util_1.inspect(err)}`);
+                    console.log(`Shard ${id} disconnected with error: ${util_1.inspect(err)}`);
         });
         bot.on("shardReady", (id) => {
             //@ts-ignore
             if (this.whatToLog.includes('shard_ready'))
-                console.log(`Cluster ${this.clusterID} | Shard ${id} is ready!`);
+                console.log(`Shard ${id} is ready!`);
         });
         bot.on("shardResume", (id) => {
             //@ts-ignore
             if (this.whatToLog.includes('shard_resume'))
-                console.log(`Cluster ${this.clusterID} | Shard ${id} has resumed!`);
+                console.log(`Shard ${id} has resumed!`);
         });
         bot.on("warn", (message, id) => {
             //@ts-ignore
@@ -225,7 +235,7 @@ class Cluster {
         bot.on("ready", (id) => {
             //@ts-ignore
             if (this.whatToLog.includes('cluster_ready'))
-                console.log(`Cluster ${this.clusterID} | Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
+                console.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
             //@ts-ignore
             process.send({ op: "connected" });
         });

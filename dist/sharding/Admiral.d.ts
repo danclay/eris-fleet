@@ -41,12 +41,16 @@ export interface Options {
     whatToLog?: any;
     /** Amount of time to wait before doing a forced shutdown during shutdowns */
     killTimeout?: number;
+    /** Whether to split the source in to an Object */
+    objectlogging?: Boolean;
 }
 interface ShardStats {
     latency: number;
     id: number;
     ready: Boolean;
     status: 'disconnected' | 'connecting' | 'handshaking' | 'ready';
+    guilds: number;
+    users: number;
 }
 interface ClusterStats {
     id: number;
@@ -58,14 +62,22 @@ interface ClusterStats {
     ram: number;
     shardStats: ShardStats[] | [];
 }
+interface ServiceStats {
+    name: number;
+    ram: number;
+}
 export interface Stats {
     guilds: number;
     users: number;
     clustersRam: number;
+    servicesRam: number;
+    masterRam: number;
+    totalRam: number;
     voice: number;
     largeGuilds: number;
     shardCount: number;
     clusters: ClusterStats[];
+    services: ServiceStats[];
 }
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by  to worker by ID */
@@ -91,12 +103,13 @@ export declare class Admiral extends EventEmitter {
     private queue;
     private eris;
     private prelimStats?;
-    private statsClustersCounted?;
+    private statsWorkersCounted?;
     private chunks?;
     private statsAlreadyStarted?;
     private whatToLog;
     private softKills;
     private launchingManager;
+    private objectlogging;
     constructor(options: Options);
     private launch;
     private startService;
@@ -108,9 +121,9 @@ export declare class Admiral extends EventEmitter {
     private fetchInfo;
     private startStats;
     private broadcast;
-    error(message: any): void;
-    debug(message: any): void;
-    log(message: any): void;
-    warn(message: any): void;
+    error(message: any, source?: string): void;
+    debug(message: any, source?: string): void;
+    log(message: any, source?: string): void;
+    warn(message: any, source?: string): void;
 }
 export {};
