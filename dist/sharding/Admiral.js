@@ -165,8 +165,18 @@ class Admiral extends events_1.EventEmitter {
                             source = message.source;
                         }
                         else {
-                            const cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            const service = this.services.find((s) => s.workerID == worker.id);
+                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                            let service = this.services.find((s) => s.workerID == worker.id);
+                            if (!service && !cluster) {
+                                const soft = this.softKills.get(worker.id);
+                                if (soft)
+                                    if (soft.type == "cluster") {
+                                        cluster = { clusterID: soft.id };
+                                    }
+                                    else if (soft.type == "service") {
+                                        service = { serviceName: soft.id };
+                                    }
+                            }
                             if (cluster) {
                                 source = `Cluster ${cluster.clusterID}`;
                             }
@@ -183,8 +193,18 @@ class Admiral extends events_1.EventEmitter {
                             source = message.source;
                         }
                         else {
-                            const cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            const service = this.services.find((s) => s.workerID == worker.id);
+                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                            let service = this.services.find((s) => s.workerID == worker.id);
+                            if (!service && !cluster) {
+                                const soft = this.softKills.get(worker.id);
+                                if (soft)
+                                    if (soft.type == "cluster") {
+                                        cluster = { clusterID: soft.id };
+                                    }
+                                    else if (soft.type == "service") {
+                                        service = { serviceName: soft.id };
+                                    }
+                            }
                             if (cluster) {
                                 source = `Cluster ${cluster.clusterID}`;
                             }
@@ -201,8 +221,18 @@ class Admiral extends events_1.EventEmitter {
                             source = message.source;
                         }
                         else {
-                            const cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            const service = this.services.find((s) => s.workerID == worker.id);
+                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                            let service = this.services.find((s) => s.workerID == worker.id);
+                            if (!service && !cluster) {
+                                const soft = this.softKills.get(worker.id);
+                                if (soft)
+                                    if (soft.type == "cluster") {
+                                        cluster = { clusterID: soft.id };
+                                    }
+                                    else if (soft.type == "service") {
+                                        service = { serviceName: soft.id };
+                                    }
+                            }
                             if (cluster) {
                                 source = `Cluster ${cluster.clusterID}`;
                             }
@@ -220,8 +250,18 @@ class Admiral extends events_1.EventEmitter {
                                 source = message.source;
                             }
                             else {
-                                const cluster = this.clusters.find((c) => c.workerID == worker.id);
-                                const service = this.services.find((s) => s.workerID == worker.id);
+                                let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                let service = this.services.find((s) => s.workerID == worker.id);
+                                if (!service && !cluster) {
+                                    const soft = this.softKills.get(worker.id);
+                                    if (soft)
+                                        if (soft.type == "cluster") {
+                                            cluster = { clusterID: soft.id };
+                                        }
+                                        else if (soft.type == "service") {
+                                            service = { serviceName: soft.id };
+                                        }
+                                }
                                 if (cluster) {
                                     source = `Cluster ${cluster.clusterID}`;
                                 }
@@ -679,7 +719,7 @@ class Admiral extends events_1.EventEmitter {
                         this.clusters.delete(cluster.clusterID);
                         this.clusters.set(cluster.clusterID, Object.assign(cluster, { workerID: newWorker.id }));
                         this.softKills.delete(newWorker.id);
-                    } });
+                    }, type: "cluster", id: cluster.clusterID });
                 if (this.whatToLog.includes('cluster_restart'))
                     this.log(`Admiral | Performing soft restart of cluster ${cluster.clusterID}`);
             }
@@ -726,7 +766,7 @@ class Admiral extends events_1.EventEmitter {
                         this.services.delete(service.serviceName);
                         this.services.set(service.serviceName, Object.assign(service, { workerID: newWorker.id }));
                         this.softKills.delete(newWorker.id);
-                    } });
+                    }, type: "service", id: service.serviceName });
                 if (this.whatToLog.includes('service_restart'))
                     this.log(`Admiral | Performing soft restart of service ${service.serviceName}`);
             }
