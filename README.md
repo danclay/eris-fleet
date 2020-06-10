@@ -405,7 +405,7 @@ Stats are given in the following object format:
             latency: Number, // Latency of the shard
             id: Number, // ID of the shard
             ready: Boolean, // Whether the shard is ready
-            stats: 'disconnected' | 'connecting' | 'handshaking' | 'ready', // The status of the shard,
+            status: 'disconnected' | 'connecting' | 'handshaking' | 'ready', // The status of the shard,
             guilds: Number, // # of guilds the shard services
             users: Number // # of members the shard services
         }>
