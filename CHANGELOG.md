@@ -1,5 +1,7 @@
 # Changelog
 
+This may skip some little bug fixes.
+
 ## 0.2.3
 - Fixed issue where logging "prefix" would not show up during a soft restart
 
