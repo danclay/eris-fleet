@@ -1,13 +1,14 @@
 import {IPC} from '../util/IPC';
+import {Client} from 'eris'
 
 export interface Setup {
-    bot: any;
+    bot: Client;
     clusterID: number;
     workerID: number;
 }
 
 export class BaseClusterWorker {
-    public bot: any;
+    public bot: Client;
     public clusterID: number;
     public workerID: number;
     public ipc: IPC;
