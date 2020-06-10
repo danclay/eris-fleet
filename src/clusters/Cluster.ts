@@ -236,12 +236,12 @@ export class Cluster {
         bot.on("ready", (id: number) => {
             //@ts-ignore
             if (this.whatToLog.includes('cluster_ready')) console.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
-            //@ts-ignore
-            process.send({op: "connected"});
         });
 
         bot.once("ready", () => {
             this.loadCode(App);
+            //@ts-ignore
+            process.send({op: "connected"});
         });
 
         // Connects the bot
