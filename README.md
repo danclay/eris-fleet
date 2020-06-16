@@ -13,6 +13,8 @@
 
 A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [megane](https://github.com/brussell98/megane) with services and configurable logging.
 
+For some more documentation check the [wiki on Github](https://github.com/danclay/eris-fleet/wiki) and the [README on GitHub](https://github.com/danclay/eris-fleet/blob/master/README.md).
+
 ## Highlighted Features:
 
 - Clustering across cores
