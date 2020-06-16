@@ -13,6 +13,7 @@ export declare class Cluster {
     bot: Eris.Client;
     private token;
     app: BaseClusterWorker;
+    App: any;
     shutdown?: Boolean;
     private startingStatus?;
     constructor();

@@ -199,7 +199,7 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | clusterTimeout | How long to wait between connecting clusters to Discord (in ms)                                                                              | Yes       | 5000                      |
 | nodeArgs       | Node arguments to pass to clusters                                                                                                           | Yes       |                           |
 | statsInterval  | How often to update the stats (in ms) after all clusters are connected. To disable stats, set to 'disable'                                   | Yes       | 60000                     |
-| services       | Services to register. An array of the following object:  `{name: "name of your service", path: "absolute path to your service"}`             | Yes       |                           |
+| services       | Services to register. An array of the following object:  `{name: "name of your service", path: "absolute path to your service"}` Your services will start in the order of this array.             | Yes       |                           |
 | firstShardID   | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | 0                         |
 | lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
 | lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
@@ -212,7 +212,7 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 
 ### Choose what to log
 
-You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are `['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart', 'service_shutdown', 'cluster_shutdown', 'total_shutdown']`. Here is an example of choosing what to log:
+You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are `['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart', 'service_shutdown', 'cluster_shutdown', 'total_shutdown', 'resharding_transition_complete', 'resharding_transition', 'resharding_worker_killed']`. Here is an example of choosing what to log:
 ```js
 const options = {
     // Your other options
@@ -258,7 +258,7 @@ You can also restart all the clusters. You can do this by using
 ```js
 this.ipc.restartAllClusters();
 ```
-If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
+**This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.** If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
 
 ### Shutdown clusters
 
@@ -300,6 +300,14 @@ this.ipc.totalShutdown();
 ```
 The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use `this.ipc.totalShutdown(true)`.
 **A total shutdown exits all processes, including the master process.**
+
+### Resharding
+
+You can order a resharding with the following:
+```js
+this.ipc.reshard();
+```
+Resharding attempts to recalculate the number of shards while keeping your bot running. This is done by keeping the old workers running until the new ones are ready. Your code will only load on the new workers once they are all ready for the transition. **This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.**
 
 ### Register
 
@@ -378,6 +386,28 @@ await this.ipc.command("ServiceName", "hello service!", true);
 Gets the latest stats. This is an alternative to [registering](#register) the "stats" event. Be sure to use `await` or `.then()`
 ```js
 await this.ipc.getStats();
+```
+
+## Do stuff from your master process
+
+You can do a few things from your master process. Here are some examples:
+```js
+const { isMaster } = require('cluster');
+const { Fleet } = require('eris-fleet');
+
+const options = {
+    // your options
+};
+
+const Admiral = new Fleet(options);
+
+if (isMaster) {
+    // Broadcasts a message
+    Admiral.broadcast("the operation", "an optional message");
+    // Reshards
+    Admiral.reshard();
+}
+
 ```
 
 ## Stats

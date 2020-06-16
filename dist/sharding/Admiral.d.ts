@@ -117,19 +117,21 @@ export declare class Admiral extends EventEmitter {
     private prelimStats?;
     private statsWorkersCounted?;
     private chunks?;
-    private statsAlreadyStarted?;
+    private pauseStats;
     private whatToLog;
     private softKills;
     private launchingManager;
     private objectLogging;
     private startingStatus?;
     private fasterStart;
+    private resharding;
+    private statsStarted;
     constructor(options: Options);
     private launch;
+    /** Reshard */
+    reshard(): void;
     private startService;
     private startCluster;
-    /** Reshard (works best if shards is automatic) */
-    reshard(): void;
     private calculateShards;
     private chunk;
     private shutdownWorker;

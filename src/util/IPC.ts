@@ -187,4 +187,9 @@ export class IPC extends EventEmitter {
         //@ts-ignore
         process.send({op: "totalShutdown", hard: hard ? true : false});
     }
-}
+
+    public reshard() {
+        //@ts-ignore
+        process.send({op: "reshard"});
+    }
+ }

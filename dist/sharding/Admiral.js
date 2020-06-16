@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -48,6 +48,8 @@ class Admiral extends events_1.EventEmitter {
         this.firstShardID = options.firstShardID || 0;
         this.lastShardID = options.lastShardID || 0;
         this.fasterStart = options.fasterStart || false;
+        this.resharding = false;
+        this.statsStarted = false;
         if (options.startingStatus)
             this.startingStatus = options.startingStatus;
         // Deals with needed components
@@ -65,10 +67,10 @@ class Admiral extends events_1.EventEmitter {
         }
         if (options.timeout)
             this.clientOptions.connectionTimeout = options.timeout;
-        const allLogOptions = ['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart', 'service_shutdown', 'cluster_shutdown', 'total_shutdown'];
+        const allLogOptions = ['gateway_shards', 'admiral_start', 'shards_spread', 'stats_update', 'all_clusters_launched', 'all_services_launched', 'cluster_launch', 'service_launch', 'cluster_start', 'service_start', 'service_ready', 'cluster_ready', 'shard_connect', 'shard_ready', 'shard_disconnect', 'shard_resume', 'service_restart', 'cluster_restart', 'service_shutdown', 'cluster_shutdown', 'total_shutdown', 'resharding_transition_complete', 'resharding_transition', 'resharding_worker_killed'];
         this.whatToLog = allLogOptions;
         if (options.lessLogging) {
-            this.whatToLog = ['admiral_start', 'shard_disconnect', 'shard_resume', 'cluster_ready', 'service_ready', 'cluster_start', 'all_services_launched', 'all_clusters_launched', 'total_shutdown', 'cluster_shutdown', 'service_shutdown'];
+            this.whatToLog = ['admiral_start', 'shard_disconnect', 'shard_resume', 'cluster_ready', 'service_ready', 'cluster_start', 'all_services_launched', 'all_clusters_launched', 'total_shutdown', 'cluster_shutdown', 'service_shutdown', 'resharding_transition_complete'];
         }
         if (options.whatToLog) {
             if (options.whatToLog.blacklist) {
@@ -82,8 +84,6 @@ class Admiral extends events_1.EventEmitter {
         }
         if (options.services)
             this.servicesToCreate = options.services;
-        this.clusters = new Collection_1.Collection();
-        this.services = new Collection_1.Collection();
         this.queue = new Queue_1.Queue();
         this.softKills = new Map();
         this.launchingManager = new Map();
@@ -106,13 +106,394 @@ class Admiral extends events_1.EventEmitter {
             this.clusterCount = os_1.cpus().length;
         this.eris = new Eris.Client(this.token);
         this.launch();
+        if (master.isMaster) {
+            cluster_1.on('message', (worker, message, handle) => {
+                var _a;
+                if (message.op) {
+                    switch (message.op) {
+                        case "log": {
+                            let source;
+                            if (message.source) {
+                                source = message.source;
+                            }
+                            else {
+                                let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                let service = this.services.find((s) => s.workerID == worker.id);
+                                if (!service && !cluster) {
+                                    const soft = this.softKills.get(worker.id);
+                                    if (soft)
+                                        if (soft.type == "cluster") {
+                                            cluster = { clusterID: soft.id };
+                                        }
+                                        else if (soft.type == "service") {
+                                            service = { serviceName: soft.id };
+                                        }
+                                }
+                                if (cluster) {
+                                    source = `Cluster ${cluster.clusterID}`;
+                                }
+                                else if (service) {
+                                    source = `Service ${service.serviceName}`;
+                                }
+                            }
+                            this.log(message.msg, source);
+                            break;
+                        }
+                        case "debug": {
+                            let source;
+                            if (message.source) {
+                                source = message.source;
+                            }
+                            else {
+                                let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                let service = this.services.find((s) => s.workerID == worker.id);
+                                if (!service && !cluster) {
+                                    const soft = this.softKills.get(worker.id);
+                                    if (soft)
+                                        if (soft.type == "cluster") {
+                                            cluster = { clusterID: soft.id };
+                                        }
+                                        else if (soft.type == "service") {
+                                            service = { serviceName: soft.id };
+                                        }
+                                }
+                                if (cluster) {
+                                    source = `Cluster ${cluster.clusterID}`;
+                                }
+                                else if (service) {
+                                    source = `Service ${service.serviceName}`;
+                                }
+                            }
+                            this.debug(message.msg, source);
+                            break;
+                        }
+                        case "error": {
+                            let source;
+                            if (message.source) {
+                                source = message.source;
+                            }
+                            else {
+                                let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                let service = this.services.find((s) => s.workerID == worker.id);
+                                if (!service && !cluster) {
+                                    const soft = this.softKills.get(worker.id);
+                                    if (soft)
+                                        if (soft.type == "cluster") {
+                                            cluster = { clusterID: soft.id };
+                                        }
+                                        else if (soft.type == "service") {
+                                            service = { serviceName: soft.id };
+                                        }
+                                }
+                                if (cluster) {
+                                    source = `Cluster ${cluster.clusterID}`;
+                                }
+                                else if (service) {
+                                    source = `Service ${service.serviceName}`;
+                                }
+                            }
+                            this.error(message.msg, source);
+                            break;
+                        }
+                        case "warn":
+                            {
+                                let source;
+                                if (message.source) {
+                                    source = message.source;
+                                }
+                                else {
+                                    let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                    let service = this.services.find((s) => s.workerID == worker.id);
+                                    if (!service && !cluster) {
+                                        const soft = this.softKills.get(worker.id);
+                                        if (soft)
+                                            if (soft.type == "cluster") {
+                                                cluster = { clusterID: soft.id };
+                                            }
+                                            else if (soft.type == "service") {
+                                                service = { serviceName: soft.id };
+                                            }
+                                    }
+                                    if (cluster) {
+                                        source = `Cluster ${cluster.clusterID}`;
+                                    }
+                                    else if (service) {
+                                        source = `Service ${service.serviceName}`;
+                                    }
+                                }
+                                this.warn(message.msg, source);
+                            }
+                            break;
+                        case "launched": {
+                            const lr = this.launchingManager.get(worker.id);
+                            if (lr) {
+                                if (lr !== 'launched')
+                                    lr.waiting();
+                                this.launchingManager.delete(worker.id);
+                            }
+                            else {
+                                this.launchingManager.set(worker.id, 'launched');
+                            }
+                            break;
+                        }
+                        case "connected": {
+                            const workerID = this.queue.queue[0].workerID;
+                            if (!this.resharding && !this.softKills.get(workerID))
+                                worker.send({ op: "loadCode" });
+                            if (this.softKills.get(workerID)) {
+                                this.softKills.get(workerID).fn();
+                            }
+                            if (this.queue.queue[1]) {
+                                if (this.queue.queue[1].type == "cluster" && this.queue.queue[0].type == "cluster") {
+                                    setTimeout(() => this.queue.execute(), this.clusterTimeout);
+                                }
+                                else {
+                                    this.queue.execute();
+                                }
+                            }
+                            else {
+                                this.queue.execute();
+                                // After all clusters and services are ready
+                                if (this.stats && this.pauseStats) {
+                                    if (!this.resharding) {
+                                        if (!this.statsStarted)
+                                            this.startStats();
+                                    }
+                                    else {
+                                        this.pauseStats = false;
+                                    }
+                                    this.emit("ready");
+                                }
+                                ;
+                            }
+                            break;
+                        }
+                        case "shutdown": {
+                            const workerID = this.queue.queue[0].workerID;
+                            if (this.softKills.get(workerID)) {
+                                this.softKills.get(workerID).fn();
+                            }
+                            break;
+                        }
+                        case "fetchUser" || "fetchGuild" || "fetchChannel": {
+                            this.fetchInfo(message.op, message.id, worker.id);
+                            break;
+                        }
+                        case "fetchMember": {
+                            this.fetchInfo("fetchMember", [message.guildID, message.memberID], worker.id);
+                            break;
+                        }
+                        case "serviceCommand": {
+                            const service = this.services.get(message.command.service);
+                            if (service) {
+                                const serviceWorker = master.workers[service.workerID];
+                                if (serviceWorker) {
+                                    serviceWorker.send({ op: "command", command: message.command, UUID: worker.id });
+                                }
+                                else {
+                                    worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} is unavailable.` } } });
+                                    this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
+                                }
+                            }
+                            else {
+                                worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} does not exist.` } } });
+                                this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) does not exist.`);
+                            }
+                            break;
+                        }
+                        case "return": {
+                            const worker = master.workers[message.UUID];
+                            if (worker)
+                                worker.send({ op: "return", id: message.value.id, value: message.value });
+                            break;
+                        }
+                        case "collectStats": {
+                            if (this.prelimStats && !this.pauseStats) {
+                                const cluster = this.clusters.find((c) => c.workerID == worker.id);
+                                const service = this.services.find((s) => s.workerID == worker.id);
+                                if (cluster) {
+                                    this.prelimStats.guilds += message.stats.guilds;
+                                    this.prelimStats.users += message.stats.guilds;
+                                    this.prelimStats.voice += message.stats.voice;
+                                    this.prelimStats.clustersRam += message.stats.ram;
+                                    this.prelimStats.largeGuilds += message.stats.largeGuilds;
+                                    this.prelimStats.shardCount += message.stats.shardStats.length;
+                                    this.prelimStats.clusters.push(Object.assign(message.stats, { id: cluster.clusterID }));
+                                }
+                                else if (service) {
+                                    this.prelimStats.servicesRam += message.stats.ram;
+                                    this.prelimStats.services.push(Object.assign(message.stats, { name: service.serviceName }));
+                                }
+                                this.prelimStats.totalRam += message.stats.ram;
+                                this.statsWorkersCounted++;
+                            }
+                            if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
+                                this.prelimStats.masterRam = process.memoryUsage().rss / 1e6;
+                                this.prelimStats.totalRam += this.prelimStats.masterRam;
+                                const compare = (a, b) => {
+                                    if (a.id < b.id)
+                                        return -1;
+                                    if (a.id > b.id)
+                                        return 1;
+                                    return 0;
+                                };
+                                this.stats = Object.assign(this.prelimStats, { clusters: this.prelimStats.clusters.sort(compare) });
+                                this.emit("stats", this.stats);
+                                if (this.whatToLog.includes('stats_update'))
+                                    this.log("Admiral | Stats updated.");
+                                // Sends the clusters the latest stats
+                                this.broadcast("stats", this.stats);
+                            }
+                            break;
+                        }
+                        case "getStats": {
+                            // Sends the latest stats upon request from the IPC
+                            (_a = master.workers[worker.id]) === null || _a === void 0 ? void 0 : _a.send({ op: "return", id: "statsReturn", value: this.stats });
+                            break;
+                        }
+                        case "broadcast": {
+                            this.broadcast(message.event.op, message.event.msg);
+                            break;
+                        }
+                        case "sendTo": {
+                            const worker = master.workers[this.clusters.get(message.cluster).workerID];
+                            if (worker)
+                                worker.send({ op: message.event.op, msg: message.event.msg });
+                            break;
+                        }
+                        case "restartCluster": {
+                            const workerID = this.clusters.find((c) => c.clusterID == message.clusterID).workerID;
+                            if (workerID) {
+                                this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                            }
+                            break;
+                        }
+                        case "restartAllClusters": {
+                            this.clusters.forEach(cluster => {
+                                process.nextTick(() => {
+                                    const workerID = this.clusters.find((c) => c.clusterID == cluster.clusterID).workerID;
+                                    this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                                });
+                            });
+                            break;
+                        }
+                        case "restartService": {
+                            const workerID = this.services.find((s) => s.serviceName == message.serviceName).workerID;
+                            if (workerID) {
+                                this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                            }
+                            break;
+                        }
+                        case "restartAllServices": {
+                            this.services.forEach(service => {
+                                process.nextTick(() => {
+                                    const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
+                                    this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                                });
+                            });
+                            break;
+                        }
+                        case "shutdownCluster": {
+                            const workerID = this.clusters.find((c) => c.clusterID == message.clusterID).workerID;
+                            if (workerID) {
+                                this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
+                            }
+                            break;
+                        }
+                        case "shutdownService": {
+                            const workerID = this.services.find((s) => s.serviceName == message.serviceName).workerID;
+                            if (workerID) {
+                                this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
+                            }
+                            break;
+                        }
+                        case "totalShutdown": {
+                            if (this.whatToLog.includes('total_shutdown'))
+                                this.log("Admiral | Starting total fleet shutdown.");
+                            if (message.hard) {
+                                if (this.whatToLog.includes('total_shutdown'))
+                                    this.log("Admiral | Total fleet hard shutdown complete. Ending process.");
+                                process.exit(1);
+                            }
+                            else {
+                                let total = 0;
+                                this.clusters.forEach(cluster => {
+                                    total++;
+                                    process.nextTick(() => {
+                                        const workerID = this.clusters.find((c) => c.clusterID == cluster.clusterID).workerID;
+                                        this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
+                                    });
+                                });
+                                this.services.forEach(service => {
+                                    total++;
+                                    process.nextTick(() => {
+                                        const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
+                                        this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                                    });
+                                });
+                                let done = 0;
+                                cluster_1.on('message', (worker, message) => {
+                                    if (message.op == 'shutdown') {
+                                        done++;
+                                        if (done == total) {
+                                            if (this.whatToLog.includes('total_shutdown'))
+                                                this.log("Admiral | Total fleet shutdown complete. Ending process.");
+                                            process.exit(1);
+                                        }
+                                    }
+                                    ;
+                                });
+                            }
+                            break;
+                        }
+                        case "reshard": {
+                            this.reshard();
+                            break;
+                        }
+                    }
+                }
+            });
+            cluster_1.on('disconnect', worker => {
+                const cluster = this.clusters.find((c) => c.workerID == worker.id);
+                const service = this.services.find((s) => s.workerID == worker.id);
+                if (cluster) {
+                    this.warn(`Admiral | Cluster ${cluster.clusterID} disconnected :(`);
+                }
+                else if (service) {
+                    this.warn(`Admiral | Service ${service.serviceName} disconnected :(`);
+                }
+            });
+            cluster_1.on('exit', (worker, code, signal) => {
+                this.restartWorker(worker);
+            });
+            this.queue.on("execute", (item) => {
+                if (item.message.op == "connect") {
+                    const lr = this.launchingManager.get(item.workerID);
+                    if (lr) {
+                        master.workers[item.workerID].send(item.message);
+                        this.launchingManager.delete(item.workerID);
+                    }
+                    else {
+                        this.launchingManager.set(item.workerID, { waiting: () => {
+                                master.workers[item.workerID].send(item.message);
+                            } });
+                    }
+                }
+                else {
+                    master.workers[item.workerID].send(item.message);
+                }
+            });
+        }
     }
-    launch(reshard) {
+    launch() {
+        this.clusters = new Collection_1.Collection();
+        this.services = new Collection_1.Collection();
+        this.pauseStats = true;
         if (master.isMaster) {
             process.on("uncaughtException", e => this.error(e));
             process.nextTick(() => {
                 if (this.whatToLog.includes('admiral_start'))
-                    if (reshard) {
+                    if (this.resharding) {
                         this.log("Fleet | Resharding");
                     }
                     else {
@@ -146,7 +527,7 @@ class Admiral extends events_1.EventEmitter {
                     }
                     master.setupMaster(opts);
                     // Start stuff
-                    if (this.servicesToCreate) {
+                    if (this.servicesToCreate && !this.resharding) {
                         this.startService();
                     }
                     else {
@@ -163,367 +544,39 @@ class Admiral extends events_1.EventEmitter {
                 new Service_1.Service();
             }
         }
-        cluster_1.on('message', (worker, message, handle) => {
-            var _a;
-            if (message.op) {
-                switch (message.op) {
-                    case "log": {
-                        let source;
-                        if (message.source) {
-                            source = message.source;
+    }
+    /** Reshard */
+    reshard() {
+        if (!this.resharding) {
+            const oldClusters = this.clusters;
+            this.resharding = true;
+            this.launch();
+            this.on("ready", () => {
+                this.resharding = false;
+                if (this.whatToLog.includes('resharding_worker_killed'))
+                    this.log("Admiral | Killing old clusters");
+                let i = 0;
+                oldClusters.forEach(c => {
+                    const oldWorker = master.workers[c.workerID];
+                    this.shutdownWorker(oldWorker, true, () => {
+                        if (this.whatToLog.includes('resharding_worker_killed'))
+                            this.log(`Admiral | Killed old worker for cluster ${c.clusterID}`);
+                        const newWorker = master.workers[this.clusters.find((newC) => newC.clusterID == c.clusterID).workerID];
+                        if (this.whatToLog.includes('resharding_transition'))
+                            this.log(`Admiral | Transitioning to new worker for cluster ${c.clusterID}`);
+                        newWorker.send({ op: "loadCode" });
+                        i++;
+                        if (i == oldClusters.size) {
+                            if (this.whatToLog.includes('resharding_transition_complete'))
+                                this.log(`Admiral | Transitioned all clusters to the new workers!`);
                         }
-                        else {
-                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            let service = this.services.find((s) => s.workerID == worker.id);
-                            if (!service && !cluster) {
-                                const soft = this.softKills.get(worker.id);
-                                if (soft)
-                                    if (soft.type == "cluster") {
-                                        cluster = { clusterID: soft.id };
-                                    }
-                                    else if (soft.type == "service") {
-                                        service = { serviceName: soft.id };
-                                    }
-                            }
-                            if (cluster) {
-                                source = `Cluster ${cluster.clusterID}`;
-                            }
-                            else if (service) {
-                                source = `Service ${service.serviceName}`;
-                            }
-                        }
-                        this.log(message.msg, source);
-                        break;
-                    }
-                    case "debug": {
-                        let source;
-                        if (message.source) {
-                            source = message.source;
-                        }
-                        else {
-                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            let service = this.services.find((s) => s.workerID == worker.id);
-                            if (!service && !cluster) {
-                                const soft = this.softKills.get(worker.id);
-                                if (soft)
-                                    if (soft.type == "cluster") {
-                                        cluster = { clusterID: soft.id };
-                                    }
-                                    else if (soft.type == "service") {
-                                        service = { serviceName: soft.id };
-                                    }
-                            }
-                            if (cluster) {
-                                source = `Cluster ${cluster.clusterID}`;
-                            }
-                            else if (service) {
-                                source = `Service ${service.serviceName}`;
-                            }
-                        }
-                        this.debug(message.msg, source);
-                        break;
-                    }
-                    case "error": {
-                        let source;
-                        if (message.source) {
-                            source = message.source;
-                        }
-                        else {
-                            let cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            let service = this.services.find((s) => s.workerID == worker.id);
-                            if (!service && !cluster) {
-                                const soft = this.softKills.get(worker.id);
-                                if (soft)
-                                    if (soft.type == "cluster") {
-                                        cluster = { clusterID: soft.id };
-                                    }
-                                    else if (soft.type == "service") {
-                                        service = { serviceName: soft.id };
-                                    }
-                            }
-                            if (cluster) {
-                                source = `Cluster ${cluster.clusterID}`;
-                            }
-                            else if (service) {
-                                source = `Service ${service.serviceName}`;
-                            }
-                        }
-                        this.error(message.msg, source);
-                        break;
-                    }
-                    case "warn":
-                        {
-                            let source;
-                            if (message.source) {
-                                source = message.source;
-                            }
-                            else {
-                                let cluster = this.clusters.find((c) => c.workerID == worker.id);
-                                let service = this.services.find((s) => s.workerID == worker.id);
-                                if (!service && !cluster) {
-                                    const soft = this.softKills.get(worker.id);
-                                    if (soft)
-                                        if (soft.type == "cluster") {
-                                            cluster = { clusterID: soft.id };
-                                        }
-                                        else if (soft.type == "service") {
-                                            service = { serviceName: soft.id };
-                                        }
-                                }
-                                if (cluster) {
-                                    source = `Cluster ${cluster.clusterID}`;
-                                }
-                                else if (service) {
-                                    source = `Service ${service.serviceName}`;
-                                }
-                            }
-                            this.warn(message.msg, source);
-                        }
-                        break;
-                    case "launched": {
-                        const lr = this.launchingManager.get(worker.id);
-                        if (lr) {
-                            if (lr !== 'launched')
-                                lr.waiting();
-                            this.launchingManager.delete(worker.id);
-                        }
-                        else {
-                            this.launchingManager.set(worker.id, 'launched');
-                        }
-                        break;
-                    }
-                    case "connected": {
-                        const workerID = this.queue.queue[0].workerID;
-                        if (this.softKills.get(workerID)) {
-                            this.softKills.get(workerID).fn();
-                        }
-                        if (this.queue.queue[1]) {
-                            if (this.queue.queue[1].type == "cluster" && this.queue.queue[0].type == "cluster") {
-                                setTimeout(() => this.queue.execute(), this.clusterTimeout);
-                            }
-                            else {
-                                this.queue.execute();
-                            }
-                        }
-                        else {
-                            this.queue.execute();
-                            // Starts the stats
-                            if (this.stats && !this.statsAlreadyStarted)
-                                this.startStats();
-                        }
-                        break;
-                    }
-                    case "shutdown": {
-                        const workerID = this.queue.queue[0].workerID;
-                        if (this.softKills.get(workerID)) {
-                            this.softKills.get(workerID).fn();
-                        }
-                        break;
-                    }
-                    case "fetchUser" || "fetchGuild" || "fetchChannel": {
-                        this.fetchInfo(message.op, message.id, worker.id);
-                        break;
-                    }
-                    case "fetchMember": {
-                        this.fetchInfo("fetchMember", [message.guildID, message.memberID], worker.id);
-                        break;
-                    }
-                    case "serviceCommand": {
-                        const service = this.services.get(message.command.service);
-                        if (service) {
-                            const serviceWorker = master.workers[service.workerID];
-                            if (serviceWorker) {
-                                serviceWorker.send({ op: "command", command: message.command, UUID: worker.id });
-                            }
-                            else {
-                                worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} is unavailable.` } } });
-                                this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
-                            }
-                        }
-                        else {
-                            worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} does not exist.` } } });
-                            this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) does not exist.`);
-                        }
-                        break;
-                    }
-                    case "return": {
-                        const worker = master.workers[message.UUID];
-                        if (worker)
-                            worker.send({ op: "return", id: message.value.id, value: message.value });
-                        break;
-                    }
-                    case "collectStats": {
-                        if (this.prelimStats) {
-                            const cluster = this.clusters.find((c) => c.workerID == worker.id);
-                            const service = this.services.find((s) => s.workerID == worker.id);
-                            if (cluster) {
-                                this.prelimStats.guilds += message.stats.guilds;
-                                this.prelimStats.users += message.stats.guilds;
-                                this.prelimStats.voice += message.stats.voice;
-                                this.prelimStats.clustersRam += message.stats.ram;
-                                this.prelimStats.largeGuilds += message.stats.largeGuilds;
-                                this.prelimStats.shardCount += message.stats.shardStats.length;
-                                this.prelimStats.clusters.push(Object.assign(message.stats, { id: cluster.clusterID }));
-                            }
-                            else if (service) {
-                                this.prelimStats.servicesRam += message.stats.ram;
-                                this.prelimStats.services.push(Object.assign(message.stats, { name: service.serviceName }));
-                            }
-                            this.prelimStats.totalRam += message.stats.ram;
-                            this.statsWorkersCounted++;
-                        }
-                        if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
-                            this.prelimStats.masterRam = process.memoryUsage().rss / 1e6;
-                            this.prelimStats.totalRam += this.prelimStats.masterRam;
-                            const compare = (a, b) => {
-                                if (a.id < b.id)
-                                    return -1;
-                                if (a.id > b.id)
-                                    return 1;
-                                return 0;
-                            };
-                            this.stats = Object.assign(this.prelimStats, { clusters: this.prelimStats.clusters.sort(compare) });
-                            this.emit("stats", this.stats);
-                            if (this.whatToLog.includes('stats_update'))
-                                this.log("Admiral | Stats updated.");
-                            // Sends the clusters the latest stats
-                            this.broadcast("stats", this.stats);
-                        }
-                        break;
-                    }
-                    case "getStats": {
-                        // Sends the latest stats upon request from the IPC
-                        (_a = master.workers[worker.id]) === null || _a === void 0 ? void 0 : _a.send({ op: "return", id: "statsReturn", value: this.stats });
-                        break;
-                    }
-                    case "broadcast": {
-                        this.broadcast(message.event.op, message.event.msg);
-                        break;
-                    }
-                    case "sendTo": {
-                        const worker = master.workers[this.clusters.get(message.cluster).workerID];
-                        if (worker)
-                            worker.send({ op: message.event.op, msg: message.event.msg });
-                        break;
-                    }
-                    case "restartCluster": {
-                        const workerID = this.clusters.find((c) => c.clusterID == message.clusterID).workerID;
-                        if (workerID) {
-                            this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
-                        }
-                        break;
-                    }
-                    case "restartAllClusters": {
-                        this.clusters.forEach(cluster => {
-                            process.nextTick(() => {
-                                const workerID = this.clusters.find((c) => c.clusterID == cluster.clusterID).workerID;
-                                this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
-                            });
-                        });
-                        break;
-                    }
-                    case "restartService": {
-                        const workerID = this.services.find((s) => s.serviceName == message.serviceName).workerID;
-                        if (workerID) {
-                            this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
-                        }
-                        break;
-                    }
-                    case "restartAllServices": {
-                        this.services.forEach(service => {
-                            process.nextTick(() => {
-                                const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
-                                this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
-                            });
-                        });
-                        break;
-                    }
-                    case "shutdownCluster": {
-                        const workerID = this.clusters.find((c) => c.clusterID == message.clusterID).workerID;
-                        if (workerID) {
-                            this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
-                        }
-                        break;
-                    }
-                    case "shutdownService": {
-                        const workerID = this.services.find((s) => s.serviceName == message.serviceName).workerID;
-                        if (workerID) {
-                            this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
-                        }
-                        break;
-                    }
-                    case "totalShutdown": {
-                        if (this.whatToLog.includes('total_shutdown'))
-                            this.log("Admiral | Starting total fleet shutdown.");
-                        if (message.hard) {
-                            if (this.whatToLog.includes('total_shutdown'))
-                                this.log("Admiral | Total fleet hard shutdown complete. Ending process.");
-                            process.exit(1);
-                        }
-                        else {
-                            let total = 0;
-                            this.clusters.forEach(cluster => {
-                                total++;
-                                process.nextTick(() => {
-                                    const workerID = this.clusters.find((c) => c.clusterID == cluster.clusterID).workerID;
-                                    this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
-                                });
-                            });
-                            this.services.forEach(service => {
-                                total++;
-                                process.nextTick(() => {
-                                    const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
-                                    this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
-                                });
-                            });
-                            let done = 0;
-                            cluster_1.on('message', (worker, message) => {
-                                if (message.op == 'shutdown') {
-                                    done++;
-                                    if (done == total) {
-                                        if (this.whatToLog.includes('total_shutdown'))
-                                            this.log("Admiral | Total fleet shutdown complete. Ending process.");
-                                        process.exit(1);
-                                    }
-                                }
-                                ;
-                            });
-                        }
-                        break;
-                    }
-                }
-            }
-        });
-        cluster_1.on('disconnect', worker => {
-            const cluster = this.clusters.find((c) => c.workerID == worker.id);
-            const service = this.services.find((s) => s.workerID == worker.id);
-            if (cluster) {
-                this.warn(`Admiral | Cluster ${cluster.clusterID} disconnected :(`);
-            }
-            else if (service) {
-                this.warn(`Admiral | Service ${service.serviceName} disconnected :(`);
-            }
-        });
-        cluster_1.on('exit', (worker, code, signal) => {
-            this.restartWorker(worker);
-        });
-        this.queue.on("execute", (item) => {
-            if (item.message.op == "connect") {
-                const lr = this.launchingManager.get(item.workerID);
-                if (lr) {
-                    master.workers[item.workerID].send(item.message);
-                    this.launchingManager.delete(item.workerID);
-                }
-                else {
-                    this.launchingManager.set(item.workerID, { waiting: () => {
-                            master.workers[item.workerID].send(item.message);
-                        } });
-                }
-            }
-            else {
-                master.workers[item.workerID].send(item.message);
-            }
-        });
+                    }, { clusters: oldClusters });
+                });
+            });
+        }
+        else {
+            this.error("Already resharding!", "Admiral");
+        }
     }
     async startService() {
         for (let i = 0; i < this.servicesToCreate.length; i++) {
@@ -612,16 +665,13 @@ class Admiral extends events_1.EventEmitter {
                 this.log("Admiral | All shards spread!");
         });
     }
-    /** Reshard (works best if shards is automatic) */
-    reshard() {
-    }
     async calculateShards() {
         let shards = this.shardCount;
         if (shards === 'auto') {
             const gateway = await this.eris.getBotGateway();
             if (this.whatToLog.includes('gateway_shards'))
                 this.log(`Admiral | Gateway recommends ${gateway.shards} shards.`);
-            shards = gateway.shards;
+            shards = Number(gateway.shards);
             if (shards === 1) {
                 return Promise.resolve(shards);
             }
@@ -654,9 +704,28 @@ class Admiral extends events_1.EventEmitter {
         }
         return r;
     }
-    shutdownWorker(worker, soft) {
-        const cluster = this.clusters.find((c) => c.workerID == worker.id);
-        const service = this.services.find((s) => s.workerID == worker.id);
+    shutdownWorker(worker, soft, callback, customMaps) {
+        let cluster;
+        let service;
+        if (customMaps) {
+            if (customMaps.clusters) {
+                cluster = customMaps.clusters.find((c) => c.workerID == worker.id);
+            }
+            else {
+                cluster = this.clusters.find((c) => c.workerID == worker.id);
+            }
+            ;
+            if (customMaps.services) {
+                service = customMaps.services.find((s) => s.workerID == worker.id);
+            }
+            else {
+                service = this.services.find((s) => s.workerID == worker.id);
+            }
+        }
+        else {
+            cluster = this.clusters.find((c) => c.workerID == worker.id);
+            service = this.services.find((s) => s.workerID == worker.id);
+        }
         let item = {
             workerID: worker.id,
             type: 'unknown',
@@ -671,9 +740,12 @@ class Admiral extends events_1.EventEmitter {
                 this.softKills.set(worker.id, { fn: () => {
                         this.log(`Admiral | Safely shutdown cluster ${cluster.clusterID}`);
                         worker.kill();
-                        this.clusters.delete(cluster.clusterID);
+                        if (!customMaps)
+                            this.clusters.delete(cluster.clusterID);
                         this.softKills.delete(worker.id);
                         this.queue.execute();
+                        if (callback)
+                            callback();
                     } });
                 if (this.whatToLog.includes('cluster_shutdown'))
                     this.log(`Admiral | Performing soft shutdown of cluster ${cluster.clusterID}`);
@@ -682,7 +754,8 @@ class Admiral extends events_1.EventEmitter {
                 worker.kill();
                 if (this.whatToLog.includes('cluster_shutdown'))
                     this.log(`Admiral | Hard shutdown of cluster ${cluster.clusterID} complete`);
-                this.clusters.delete(cluster.clusterID);
+                if (!customMaps)
+                    this.clusters.delete(cluster.clusterID);
             }
             item.type = "cluster";
         }
@@ -692,7 +765,8 @@ class Admiral extends events_1.EventEmitter {
                 this.softKills.set(worker.id, { fn: () => {
                         this.log(`Admiral | Safely shutdown service ${service.serviceName}`);
                         worker.kill();
-                        this.services.delete(service.serviceName);
+                        if (!customMaps)
+                            this.services.delete(service.serviceName);
                         this.softKills.delete(worker.id);
                     } });
                 if (this.whatToLog.includes('service_shutdown'))
@@ -702,7 +776,8 @@ class Admiral extends events_1.EventEmitter {
                 worker.kill();
                 if (this.whatToLog.includes('service_shutdown'))
                     this.log(`Admiral | Hard shutdown of service ${service.serviceName} complete`);
-                this.services.delete(service.serviceName);
+                if (!customMaps)
+                    this.services.delete(service.serviceName);
             }
             item.type = "cluster";
         }
@@ -735,12 +810,19 @@ class Admiral extends events_1.EventEmitter {
             });
             if (soft) {
                 // Preform soft restart
+                this.pauseStats = true;
                 this.softKills.set(newWorker.id, { fn: () => {
-                        this.log(`Admiral | Killed old worker for cluster ${cluster.clusterID}`);
-                        worker.kill();
-                        this.clusters.delete(cluster.clusterID);
-                        this.clusters.set(cluster.clusterID, Object.assign(cluster, { workerID: newWorker.id }));
                         this.softKills.delete(newWorker.id);
+                        if (this.whatToLog.includes('cluster_restart'))
+                            this.log(`Admiral | Killing old worker for cluster ${cluster.clusterID}`);
+                        this.shutdownWorker(worker, true, () => {
+                            if (this.whatToLog.includes('cluster_restart'))
+                                this.log(`Admiral | Killed old worker for cluster ${cluster.clusterID}`);
+                            newWorker.send({ op: "loadCode" });
+                            this.clusters.delete(cluster.clusterID);
+                            this.clusters.set(cluster.clusterID, Object.assign(cluster, { workerID: newWorker.id }));
+                            this.pauseStats = false;
+                        });
                     }, type: "cluster", id: cluster.clusterID });
                 if (this.whatToLog.includes('cluster_restart'))
                     this.log(`Admiral | Performing soft restart of cluster ${cluster.clusterID}`);
@@ -784,11 +866,15 @@ class Admiral extends events_1.EventEmitter {
             if (soft) {
                 // Preform soft restart
                 this.softKills.set(newWorker.id, { fn: () => {
-                        this.log(`Admiral | Killed old worker for service ${service.serviceName}`);
-                        worker.kill();
-                        this.services.delete(service.serviceName);
-                        this.services.set(service.serviceName, Object.assign(service, { workerID: newWorker.id }));
                         this.softKills.delete(newWorker.id);
+                        if (this.whatToLog.includes('service_restart'))
+                            this.log(`Admiral | Killing old worker for service ${service.serviceName}`);
+                        this.shutdownWorker(worker, true, () => {
+                            if (this.whatToLog.includes('service_restart'))
+                                this.log(`Admiral | Killed old worker for service ${service.serviceName}`);
+                            this.services.delete(service.serviceName);
+                            this.services.set(service.serviceName, Object.assign(service, { workerID: newWorker.id }));
+                        });
                     }, type: "service", id: service.serviceName });
                 if (this.whatToLog.includes('service_restart'))
                     this.log(`Admiral | Performing soft restart of service ${service.serviceName}`);
@@ -845,7 +931,8 @@ class Admiral extends events_1.EventEmitter {
         }
     }
     startStats() {
-        this.statsAlreadyStarted = true;
+        this.pauseStats = false;
+        this.statsStarted = true;
         if (this.statsInterval !== "disable") {
             const execute = () => {
                 this.prelimStats = {
@@ -870,7 +957,8 @@ class Admiral extends events_1.EventEmitter {
                 });
             };
             setInterval(() => {
-                execute();
+                if (!this.pauseStats)
+                    execute();
             }, this.statsInterval);
             // First execution
             execute();

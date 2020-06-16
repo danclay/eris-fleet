@@ -163,6 +163,10 @@ class IPC extends events_1.EventEmitter {
         //@ts-ignore
         process.send({ op: "totalShutdown", hard: hard ? true : false });
     }
+    reshard() {
+        //@ts-ignore
+        process.send({ op: "reshard" });
+    }
 }
 exports.IPC = IPC;
 //# sourceMappingURL=IPC.js.map

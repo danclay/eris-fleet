@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -168,7 +168,6 @@ class Cluster {
                                         //@ts-ignore
                                         process.send({ op: "shutdown" });
                                     }
-                                    ;
                                 }, message.killTimeout);
                             }
                         }
@@ -177,6 +176,10 @@ class Cluster {
                             //@ts-ignore
                             process.send({ op: "shutdown" });
                         }
+                        break;
+                    }
+                    case "loadCode": {
+                        this.loadCode();
                         break;
                     }
                 }
@@ -264,17 +267,17 @@ class Cluster {
                 console.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
         });
         bot.once("ready", () => {
-            this.loadCode(App);
+            this.App = App;
             //@ts-ignore
             process.send({ op: "connected" });
         });
         // Connects the bot
         bot.connect();
     }
-    async loadCode(App) {
+    async loadCode() {
         //let App = (await import(this.path)).default;
         //App = App.default ? App.default : App;
-        this.app = new App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id });
+        this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id });
     }
 }
 exports.Cluster = Cluster;

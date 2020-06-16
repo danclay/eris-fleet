@@ -21,4 +21,5 @@ export declare class IPC extends EventEmitter {
     shutdownService(serviceName: string, hard?: Boolean): void;
     /** Total shutdown of fleet */
     totalShutdown(hard?: Boolean): void;
+    reshard(): void;
 }

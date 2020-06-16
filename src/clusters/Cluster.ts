@@ -17,6 +17,7 @@ export class Cluster {
     bot!: Eris.Client;
     private token!: string;
     app!: BaseClusterWorker;
+    App!: any;
     shutdown?: Boolean;
     private startingStatus?: Admiral.startingStatus;
 
@@ -167,7 +168,7 @@ export class Cluster {
                                         this.bot.disconnect({reconnect: false});
                                         //@ts-ignore
                                         process.send({op: "shutdown"});
-                                    };
+                                    }
                                 }, message.killTimeout);
                             }
                         } else {
@@ -175,6 +176,11 @@ export class Cluster {
                             //@ts-ignore
                             process.send({op: "shutdown"});
                         }
+
+                        break;
+                    }
+                    case "loadCode": {
+                        this.loadCode();
 
                         break;
                     }
@@ -266,7 +272,7 @@ export class Cluster {
         });
 
         bot.once("ready", () => {
-            this.loadCode(App);
+            this.App = App;
             //@ts-ignore
             process.send({op: "connected"});
         });
@@ -276,9 +282,9 @@ export class Cluster {
     }
 
     
-    private async loadCode(App: any) {
+    private async loadCode() {
         //let App = (await import(this.path)).default;
         //App = App.default ? App.default : App;
-        this.app = new App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id});
+        this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id});
     }
 }
