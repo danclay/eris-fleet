@@ -11,12 +11,9 @@ const options = {
     startingStatus: {
         status: "dnd",
         game: {
-            name: "I'm starting..."
+            name: "Starting..."
         }
-    },
-    shards: 3,
-    clusters: 3,
-    clusterTimeout: 0
+    }
 }
 
 const Admiral = new Fleet(options);

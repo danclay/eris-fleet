@@ -60,6 +60,12 @@ export class Service {
                                 }, UUID: message.UUID});
                             }
                         } else {
+                            const res = {err: `Service ${this.serviceName} cannot handle commands!`};
+                            //@ts-ignore
+                            process.send({op: "return", value: {
+                                id: message.command.UUID,
+                                value: res
+                            }, UUID: message.UUID});
                             console.error(`I can't handle commands!`);
                         }
 

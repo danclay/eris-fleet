@@ -53,10 +53,8 @@ export interface Options {
     objectLogging?: Boolean;
     /** Custom starting status */
     startingStatus?: startingStatus;
-    /** Whether to allow services to all start at once */
-    startServicesTogether?: Boolean;
-    /** Whether to allow clusters to all start at once */
-    startClustersTogether?: Boolean;
+    /** Whether to use faster start */
+    fasterStart?: Boolean;
 }
 interface ShardStats {
     latency: number;
@@ -125,8 +123,7 @@ export declare class Admiral extends EventEmitter {
     private launchingManager;
     private objectLogging;
     private startingStatus?;
-    private startServicesTogether;
-    private startClustersTogether;
+    private fasterStart;
     constructor(options: Options);
     private launch;
     private startService;
@@ -139,7 +136,7 @@ export declare class Admiral extends EventEmitter {
     private restartWorker;
     private fetchInfo;
     private startStats;
-    private broadcast;
+    broadcast(op: string, msg: any): void;
     error(message: any, source?: string): void;
     debug(message: any, source?: string): void;
     log(message: any, source?: string): void;

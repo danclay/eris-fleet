@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -47,8 +47,7 @@ class Admiral extends events_1.EventEmitter {
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
         this.lastShardID = options.lastShardID || 0;
-        this.startServicesTogether = options.startServicesTogether || false;
-        this.startClustersTogether = options.startClustersTogether || false;
+        this.fasterStart = options.fasterStart || false;
         if (options.startingStatus)
             this.startingStatus = options.startingStatus;
         // Deals with needed components
@@ -332,10 +331,18 @@ class Admiral extends events_1.EventEmitter {
                     case "serviceCommand": {
                         const service = this.services.get(message.command.service);
                         if (service) {
-                            master.workers[service.workerID].send({ op: "command", command: message.command, UUID: worker.id });
+                            const serviceWorker = master.workers[service.workerID];
+                            if (serviceWorker) {
+                                serviceWorker.send({ op: "command", command: message.command, UUID: worker.id });
+                            }
+                            else {
+                                worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} is unavailable.` } } });
+                                this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
+                            }
                         }
                         else {
-                            this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
+                            worker.send({ op: "return", id: message.command.UUID, value: { value: { err: `Service ${message.command.service} does not exist.` } } });
+                            this.error(`Cluster ${this.clusters.find((c) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) does not exist.`);
                         }
                         break;
                     }

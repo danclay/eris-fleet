@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -70,6 +70,12 @@ class Service {
                             }
                         }
                         else {
+                            const res = { err: `Service ${this.serviceName} cannot handle commands!` };
+                            //@ts-ignore
+                            process.send({ op: "return", value: {
+                                    id: message.command.UUID,
+                                    value: res
+                                }, UUID: message.UUID });
                             console.error(`I can't handle commands!`);
                         }
                         break;

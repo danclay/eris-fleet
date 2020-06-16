@@ -62,10 +62,8 @@ export interface Options {
     objectLogging?: Boolean;
     /** Custom starting status */
     startingStatus?: startingStatus;
-    /** Whether to allow services to all start at once */
-    startServicesTogether?: Boolean;
-    /** Whether to allow clusters to all start at once */
-    startClustersTogether?: Boolean;
+    /** Whether to use faster start */
+    fasterStart?: Boolean;
 }
 
 interface ShardStats {
@@ -152,8 +150,7 @@ export class Admiral extends EventEmitter {
     private launchingManager: Map<number, {waiting: Function} | "launched">;
     private objectLogging: Boolean;
     private startingStatus?: startingStatus;
-    private startServicesTogether: Boolean;
-    private startClustersTogether: Boolean;
+    private fasterStart: Boolean;
 
     public constructor(options: Options) {
         super();
@@ -171,8 +168,7 @@ export class Admiral extends EventEmitter {
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
         this.lastShardID = options.lastShardID || 0;
-        this.startServicesTogether = options.startServicesTogether || false;
-        this.startClustersTogether = options.startClustersTogether || false;
+        this.fasterStart = options.fasterStart || false;
         if (options.startingStatus) this.startingStatus = options.startingStatus;
 
         // Deals with needed components
@@ -434,9 +430,16 @@ export class Admiral extends EventEmitter {
                     case "serviceCommand": {
                         const service = this.services.get(message.command.service);
                         if (service) {
-                            master.workers[service.workerID]!.send({op: "command", command: message.command, UUID: worker.id});
+                            const serviceWorker = master.workers[service.workerID];
+                            if (serviceWorker) {
+                                serviceWorker.send({op: "command", command: message.command, UUID: worker.id});
+                            } else {
+                                worker.send({op: "return", id: message.command.UUID, value: {value: {err: `Service ${message.command.service} is unavailable.`}}});
+                                this.error(`Cluster ${this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
+                            }
                         } else {
-                            this.error(`Cluster ${this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) is unavailable.`);
+                            worker.send({op: "return", id: message.command.UUID, value: {value: {err: `Service ${message.command.service} does not exist.`}}});
+                            this.error(`Cluster ${this.clusters.find((c: ClusterCollection) => c.workerID == worker.id).clusterID} | A service I requested (${message.command.service}) does not exist.`);
                         }
 
                         break;
@@ -979,7 +982,7 @@ export class Admiral extends EventEmitter {
         }
     }
 
-    private broadcast(op: string, msg: any) {
+    public broadcast(op: string, msg: any) {
         this.clusters.forEach((c: ClusterCollection) => {
             process.nextTick(() => master.workers[c.workerID]!.send({op, msg}))
         });

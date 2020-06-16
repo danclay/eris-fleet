@@ -95,7 +95,7 @@ class IPC extends events_1.EventEmitter {
             message = null;
         if (!receptive)
             receptive = false;
-        const UUID = { timestamp: Date.now(), message, service, receptive };
+        const UUID = JSON.stringify({ timestamp: Date.now(), message, service, receptive });
         //@ts-ignore
         process.send({ op: "serviceCommand",
             command: {
@@ -109,15 +109,15 @@ class IPC extends events_1.EventEmitter {
             return new Promise((resolve, reject) => {
                 const callback = (r) => {
                     //@ts-ignore
-                    this.removeListener(String(UUID), callback);
-                    if (r.err) {
-                        reject(r.err);
+                    this.removeListener(UUID, callback);
+                    if (r.value.err) {
+                        reject(r.value.err);
                     }
                     else {
                         resolve(r.value);
                     }
                 };
-                this.on(String(UUID), callback);
+                this.on(UUID, callback);
             });
         }
     }
