@@ -18,7 +18,7 @@ class Queue extends events_1.EventEmitter {
             return;
         this.emit("execute", item);
     }
-    item(item, overrideLocation) {
+    item(item) {
         this.queue.push(item);
         if (this.queue.length == 1)
             this.execute(true);

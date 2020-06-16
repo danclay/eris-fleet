@@ -6,6 +6,14 @@ interface ServiceCreator {
     name: string;
     path: string;
 }
+export interface startingStatus {
+    status: "online" | "idle" | "dnd" | "invisible";
+    game?: {
+        name: string;
+        type?: 0 | 1 | 2 | 3;
+        url?: string;
+    };
+}
 export interface Options {
     /** Absolute path to the js file */
     path: string;
@@ -42,7 +50,13 @@ export interface Options {
     /** Amount of time to wait before doing a forced shutdown during shutdowns */
     killTimeout?: number;
     /** Whether to split the source in to an Object */
-    objectlogging?: Boolean;
+    objectLogging?: Boolean;
+    /** Custom starting status */
+    startingStatus?: startingStatus;
+    /** Whether to allow services to all start at once */
+    startServicesTogether?: Boolean;
+    /** Whether to allow clusters to all start at once */
+    startClustersTogether?: Boolean;
 }
 interface ShardStats {
     latency: number;
@@ -109,11 +123,16 @@ export declare class Admiral extends EventEmitter {
     private whatToLog;
     private softKills;
     private launchingManager;
-    private objectlogging;
+    private objectLogging;
+    private startingStatus?;
+    private startServicesTogether;
+    private startClustersTogether;
     constructor(options: Options);
     private launch;
     private startService;
     private startCluster;
+    /** Reshard (works best if shards is automatic) */
+    reshard(): void;
     private calculateShards;
     private chunk;
     private shutdownWorker;

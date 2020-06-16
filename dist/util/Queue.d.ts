@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from 'events';
 import { ClientOptions } from 'eris';
+import * as Admiral from '../sharding/Admiral';
 interface ClusterConnectMessage {
     clusterID: number;
     clusterCount: number;
@@ -12,6 +13,7 @@ interface ClusterConnectMessage {
     clientOptions: ClientOptions;
     path: string;
     whatToLog: string[];
+    startingStatus?: Admiral.startingStatus;
 }
 interface ShutdownMessage {
     op: "shutdown";
@@ -34,6 +36,6 @@ export declare class Queue extends EventEmitter {
     queue: QueueItem[];
     constructor();
     execute(first?: Boolean): void;
-    item(item: QueueItem, overrideLocation?: number): void;
+    item(item: QueueItem): void;
 }
 export {};

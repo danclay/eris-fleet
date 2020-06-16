@@ -7,7 +7,16 @@ require('dotenv').config();
 
 const options = {
     path: path.join(__dirname, "./bot.js"),
-    token: process.env.token
+    token: process.env.token,
+    startingStatus: {
+        status: "dnd",
+        game: {
+            name: "I'm starting..."
+        }
+    },
+    shards: 3,
+    clusters: 3,
+    clusterTimeout: 0
 }
 
 const Admiral = new Fleet(options);

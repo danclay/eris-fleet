@@ -14,6 +14,7 @@ export declare class Cluster {
     private token;
     app: BaseClusterWorker;
     shutdown?: Boolean;
+    private startingStatus?;
     constructor();
     private connect;
     private loadCode;

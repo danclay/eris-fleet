@@ -1,5 +1,6 @@
 import {EventEmitter} from 'events';
 import {ClientOptions} from 'eris';
+import * as Admiral from '../sharding/Admiral';
 
 interface ClusterConnectMessage {
     clusterID: number;
@@ -12,6 +13,7 @@ interface ClusterConnectMessage {
     clientOptions: ClientOptions;
     path: string;
     whatToLog: string[];
+    startingStatus?: Admiral.startingStatus;
 };
 
 interface ShutdownMessage {
@@ -49,7 +51,7 @@ export class Queue extends EventEmitter {
         this.emit("execute", item);
     }
 
-    public item(item: QueueItem, overrideLocation?: number) {
+    public item(item: QueueItem) {
         this.queue.push(item);
         if (this.queue.length == 1) this.execute(true);
     }

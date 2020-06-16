@@ -33,7 +33,7 @@ const path = __importStar(require("path"));
 class Admiral extends events_1.EventEmitter {
     constructor(options) {
         super();
-        this.objectlogging = options.objectlogging || false;
+        this.objectLogging = options.objectLogging || false;
         this.path = options.path;
         this.token = options.token;
         this.guildsPerShard = options.guildsPerShard || 1300;
@@ -47,6 +47,10 @@ class Admiral extends events_1.EventEmitter {
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
         this.lastShardID = options.lastShardID || 0;
+        this.startServicesTogether = options.startServicesTogether || false;
+        this.startClustersTogether = options.startClustersTogether || false;
+        if (options.startingStatus)
+            this.startingStatus = options.startingStatus;
         // Deals with needed components
         if (!options.token)
             throw "No token!";
@@ -104,12 +108,17 @@ class Admiral extends events_1.EventEmitter {
         this.eris = new Eris.Client(this.token);
         this.launch();
     }
-    launch() {
+    launch(reshard) {
         if (master.isMaster) {
             process.on("uncaughtException", e => this.error(e));
             process.nextTick(() => {
                 if (this.whatToLog.includes('admiral_start'))
-                    this.log("Fleet | Started Admiral");
+                    if (reshard) {
+                        this.log("Fleet | Resharding");
+                    }
+                    else {
+                        this.log("Fleet | Started Admiral");
+                    }
                 this.calculateShards().then(shards => {
                     if (this.lastShardID === 0) {
                         this.lastShardID = shards - 1;
@@ -464,10 +473,11 @@ class Admiral extends events_1.EventEmitter {
                             cluster_1.on('message', (worker, message) => {
                                 if (message.op == 'shutdown') {
                                     done++;
-                                    if (this.whatToLog.includes('total_shutdown'))
-                                        this.log("Admiral | Total fleet shutdown complete. Ending process.");
-                                    if (done == total)
+                                    if (done == total) {
+                                        if (this.whatToLog.includes('total_shutdown'))
+                                            this.log("Admiral | Total fleet shutdown complete. Ending process.");
                                         process.exit(1);
+                                    }
                                 }
                                 ;
                             });
@@ -586,13 +596,17 @@ class Admiral extends events_1.EventEmitter {
                         token: this.token,
                         path: this.path,
                         clientOptions: this.clientOptions,
-                        whatToLog: this.whatToLog
+                        whatToLog: this.whatToLog,
+                        startingStatus: this.startingStatus
                     }
                 });
             }
             if (this.whatToLog.includes('shards_spread'))
                 this.log("Admiral | All shards spread!");
         });
+    }
+    /** Reshard (works best if shards is automatic) */
+    reshard() {
     }
     async calculateShards() {
         let shards = this.shardCount;
@@ -652,6 +666,7 @@ class Admiral extends events_1.EventEmitter {
                         worker.kill();
                         this.clusters.delete(cluster.clusterID);
                         this.softKills.delete(worker.id);
+                        this.queue.execute();
                     } });
                 if (this.whatToLog.includes('cluster_shutdown'))
                     this.log(`Admiral | Performing soft shutdown of cluster ${cluster.clusterID}`);
@@ -750,6 +765,7 @@ class Admiral extends events_1.EventEmitter {
                     path: this.path,
                     clientOptions: this.clientOptions,
                     whatToLog: this.whatToLog,
+                    startingStatus: this.startingStatus
                 }
             };
         }
@@ -863,7 +879,7 @@ class Admiral extends events_1.EventEmitter {
     }
     error(message, source) {
         let log = message;
-        if (this.objectlogging) {
+        if (this.objectLogging) {
             log = {
                 source: "",
                 message: message,
@@ -887,7 +903,7 @@ class Admiral extends events_1.EventEmitter {
     }
     debug(message, source) {
         let log = message;
-        if (this.objectlogging) {
+        if (this.objectLogging) {
             log = {
                 source: "",
                 message: message,
@@ -911,7 +927,7 @@ class Admiral extends events_1.EventEmitter {
     }
     log(message, source) {
         let log = message;
-        if (this.objectlogging) {
+        if (this.objectLogging) {
             log = {
                 source: "",
                 message: message,
@@ -935,7 +951,7 @@ class Admiral extends events_1.EventEmitter {
     }
     warn(message, source) {
         let log = message;
-        if (this.objectlogging) {
+        if (this.objectLogging) {
             log = {
                 source: "",
                 message: message,

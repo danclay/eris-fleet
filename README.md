@@ -207,7 +207,8 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
 | whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
 | killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
-| objectLogging  | Sends logs in an object format that follows: `{source: "the source", message: "the message", timestamp: "the UTC timestamp"}                 | Yes       | false                     |
+| objectLogging  | Sends logs in an object format that follows: `{source: "the source", message: "the message", timestamp: "the UTC timestamp"}`                 | Yes       | false                     |
+| startingStatus  | Status to set while the cluster is getting ready. Follows this format (shown in typescript): `{status: "online" | "idle" | "dnd" | "invisible", game?: {name: string, type?: 0 | 1 | 2 | 3, url?: string}}` Note that if you want to clear it you will have to do it yourself in your bot.js file.                 | Yes       |                      |
 
 ### Choose what to log
 

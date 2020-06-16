@@ -58,6 +58,8 @@ class Cluster {
                         this.clientOptions = message.clientOptions;
                         this.token = message.token;
                         this.whatToLog = message.whatToLog;
+                        if (message.startingStatus)
+                            this.startingStatus = message.startingStatus;
                         if (this.shards < 0)
                             return;
                         this.connect();
@@ -203,6 +205,27 @@ class Cluster {
         }
         ;
         this.bot = bot;
+        const setStatus = () => {
+            if (this.startingStatus) {
+                if (this.startingStatus.game) {
+                    let statusGame = {
+                        name: this.startingStatus.game.name
+                    };
+                    //@ts-ignore
+                    if (this.startingStatus.game.type)
+                        statusGame.type = this.startingStatus.game.type;
+                    //@ts-ignore
+                    if (this.startingStatus.game.url)
+                        statusGame.url = this.startingStatus.game.url;
+                    //@ts-ignore
+                    this.bot.editStatus(this.startingStatus.status, statusGame);
+                }
+                else {
+                    //@ts-ignore
+                    this.bot.editStatus(this.startingStatus.status);
+                }
+            }
+        };
         bot.on("connect", (id) => {
             //@ts-ignore
             if (this.whatToLog.includes('shard_connect'))
@@ -213,6 +236,9 @@ class Cluster {
             if (!this.shutdown)
                 if (this.whatToLog.includes('shard_disconnect'))
                     console.log(`Shard ${id} disconnected with error: ${util_1.inspect(err)}`);
+        });
+        bot.once("shardReady", () => {
+            setStatus();
         });
         bot.on("shardReady", (id) => {
             //@ts-ignore
