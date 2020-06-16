@@ -125,6 +125,7 @@ export declare class Admiral extends EventEmitter {
     private startingStatus?;
     private fasterStart;
     private resharding;
+    private starting;
     private statsStarted;
     constructor(options: Options);
     private launch;

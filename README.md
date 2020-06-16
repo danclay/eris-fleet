@@ -17,6 +17,7 @@ A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [m
 
 - Clustering across cores
 - Sharding
+- Recalculate shards with minimal downtime
 - Customizable logging
 - Services (non-eris workers)
 - IPC to communicate between clusters, other clusters, and services

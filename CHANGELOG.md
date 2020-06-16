@@ -2,6 +2,12 @@
 
 This may skip some little bug fixes.
 
+## 0.3.0
+- Added resharding
+- Fixed some issues with the IPC
+- Added an optional starting status
+- Added some documentation in README.md
+
 ## 0.2.3
 - Fixed issue where logging "prefix" would not show up during a soft restart
 
