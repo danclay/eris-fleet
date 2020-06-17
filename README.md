@@ -32,8 +32,7 @@ For some more documentation check the [wiki on Github](https://github.com/dancla
 - Graceful shutdowns
 
 # Installation
-Run `npm install eris-fleet`
-or with yarn: `yarn add eris-fleet`
+Run `npm install eris-fleet` or with yarn: `yarn add eris-fleet`. If you don't want to install the dev dependencies use `npm install --production` or `yarn add eris-fleet --production=true`.
 
 # Basics
 

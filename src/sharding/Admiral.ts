@@ -277,6 +277,7 @@ export class Admiral extends EventEmitter {
 		if (options.services) this.servicesToCreate = options.services;
 
 		this.services = new Collection();
+		this.clusters = new Collection();
 		this.launchingWorkers = new Collection();
 		this.queue = new Queue();
 		this.softKills = new Map();
@@ -864,7 +865,6 @@ export class Admiral extends EventEmitter {
 	}
 
 	private launch() {
-		this.clusters = new Collection();
 		this.pauseStats = true;
 
 		if (master.isMaster) {

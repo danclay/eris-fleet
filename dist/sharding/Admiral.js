@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -128,6 +128,7 @@ class Admiral extends events_1.EventEmitter {
         if (options.services)
             this.servicesToCreate = options.services;
         this.services = new Collection_1.Collection();
+        this.clusters = new Collection_1.Collection();
         this.launchingWorkers = new Collection_1.Collection();
         this.queue = new Queue_1.Queue();
         this.softKills = new Map();
@@ -687,7 +688,6 @@ class Admiral extends events_1.EventEmitter {
         }
     }
     launch() {
-        this.clusters = new Collection_1.Collection();
         this.pauseStats = true;
         if (master.isMaster) {
             process.on("uncaughtException", (e) => this.error(e));
