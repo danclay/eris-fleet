@@ -1,4 +1,4 @@
-import { BaseServiceWorker } from './BaseServiceWorker';
+import { BaseServiceWorker } from "./BaseServiceWorker";
 export declare class Service {
     path: string;
     serviceName: string;

@@ -24,25 +24,25 @@ const cluster_1 = require("cluster");
 const util_1 = require("util");
 class Service {
     constructor() {
-        //@ts-ignore
-        console.log = (str) => process.send({ op: "log", msg: str });
-        //@ts-ignore
-        console.debug = (str) => process.send({ op: "debug", msg: str });
-        //@ts-ignore
-        console.error = (str) => process.send({ op: "error", msg: str });
-        //@ts-ignore
-        console.warn = (str) => process.send({ op: "warn", msg: str });
-        //Spawns
-        process.on('uncaughtException', (err) => {
-            //@ts-ignore
-            process.send({ op: "error", msg: util_1.inspect(err) });
+        console.log = (str) => { if (process.send)
+            process.send({ op: "log", msg: str }); };
+        console.debug = (str) => { if (process.send)
+            process.send({ op: "debug", msg: str }); };
+        console.error = (str) => { if (process.send)
+            process.send({ op: "error", msg: str }); };
+        console.warn = (str) => { if (process.send)
+            process.send({ op: "warn", msg: str }); };
+        // Spawns
+        process.on("uncaughtException", (err) => {
+            if (process.send)
+                process.send({ op: "error", msg: util_1.inspect(err) });
         });
-        process.on('unhandledRejection', (reason, promise) => {
-            //@ts-ignore
-            process.send({ op: "error", msg: 'Unhandled Rejection at: ' + util_1.inspect(promise) + ' reason: ' + reason });
+        process.on("unhandledRejection", (reason, promise) => {
+            if (process.send)
+                process.send({ op: "error", msg: "Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason });
         });
-        //@ts-ignore
-        process.send({ op: "launched" });
+        if (process.send)
+            process.send({ op: "launched" });
         process.on("message", async (message) => {
             if (message.op) {
                 switch (message.op) {
@@ -62,21 +62,21 @@ class Service {
                         if (this.app.handleCommand) {
                             const res = await this.app.handleCommand(message.command.msg);
                             if (message.command.receptive) {
-                                //@ts-ignore
-                                process.send({ op: "return", value: {
-                                        id: message.command.UUID,
-                                        value: res
-                                    }, UUID: message.UUID });
+                                if (process.send)
+                                    process.send({ op: "return", value: {
+                                            id: message.command.UUID,
+                                            value: res
+                                        }, UUID: message.UUID });
                             }
                         }
                         else {
                             const res = { err: `Service ${this.serviceName} cannot handle commands!` };
-                            //@ts-ignore
-                            process.send({ op: "return", value: {
-                                    id: message.command.UUID,
-                                    value: res
-                                }, UUID: message.UUID });
-                            console.error(`I can't handle commands!`);
+                            if (process.send)
+                                process.send({ op: "return", value: {
+                                        id: message.command.UUID,
+                                        value: res
+                                    }, UUID: message.UUID });
+                            console.error("I can't handle commands!");
                         }
                         break;
                     }
@@ -86,31 +86,30 @@ class Service {
                             // Ask app to shutdown
                             this.app.shutdown(() => {
                                 safe = true;
-                                //@ts-ignore
-                                process.send({ op: "shutdown" });
+                                if (process.send)
+                                    process.send({ op: "shutdown" });
                             });
                             if (message.killTimeout > 0) {
                                 setTimeout(() => {
                                     if (!safe) {
                                         console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
-                                        //@ts-ignore
-                                        process.send({ op: "shutdown" });
+                                        if (process.send)
+                                            process.send({ op: "shutdown" });
                                     }
-                                    ;
                                 }, message.killTimeout);
                             }
                         }
                         else {
-                            //@ts-ignore
-                            process.send({ op: "shutdown" });
+                            if (process.send)
+                                process.send({ op: "shutdown" });
                         }
                         break;
                     }
                     case "collectStats": {
-                        //@ts-ignore
-                        process.send({ op: "collectStats", stats: {
-                                ram: process.memoryUsage().rss / 1e6
-                            } });
+                        if (process.send)
+                            process.send({ op: "collectStats", stats: {
+                                    ram: process.memoryUsage().rss / 1e6
+                                } });
                         break;
                     }
                 }
@@ -118,8 +117,7 @@ class Service {
         });
     }
     async loadCode() {
-        //@ts-ignore
-        if (this.whatToLog.includes('service_start'))
+        if (this.whatToLog.includes("service_start"))
             console.log(`Starting service ${this.serviceName}`);
         let App = (await Promise.resolve().then(() => __importStar(require(this.path))));
         if (App.ServiceWorker) {
@@ -131,11 +129,10 @@ class Service {
         this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id });
         let ready = false;
         this.app.readyPromise.then(() => {
-            //@ts-ignore
-            if (this.whatToLog.includes('service_ready'))
+            if (this.whatToLog.includes("service_ready"))
                 console.log(`Service ${this.serviceName} is ready!`);
-            //@ts-ignore
-            process.send({ op: "connected" });
+            if (process.send)
+                process.send({ op: "connected" });
             ready = true;
         }).catch((err) => {
             console.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
@@ -148,7 +145,6 @@ class Service {
                     console.error(`Service ${this.serviceName} took too long to start.`);
                     process.kill(0);
                 }
-                ;
             }, this.timeout);
         }
         /* this.app.admiral.on("broadcast", (m) => {

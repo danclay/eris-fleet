@@ -38,9 +38,37 @@ module.exports = class BotWorker extends BaseClusterWorker {
                                             console.log("User fetch success. Moving to test 5");
                                             this.ipc.fetchMember(msg.guildID, msg.author.id).then(r => {
                                                 if (r.id == msg.author.id) {
-                                                    console.log("Member fetch success. Moving to next phase.");
-                                                    this.ipc.command("service1", "test1Complete");
-                                                    this.bot.createMessage(msg.channel.id, "-----");
+                                                    console.log("Member fetch success. Moving to testing fetch failures.");
+                                                    this.ipc.fetchChannel(1).then(r => {
+                                                        if (r == null) {
+                                                            console.log("Channel fetch failure is successful. Moving to test 6");
+                                                            this.ipc.fetchGuild(1).then(r => {
+                                                                if (r == null) {
+                                                                    console.log("Guild fetch failure is successful. Moving to test 7");
+                                                                    this.ipc.fetchUser(1).then(r => {
+                                                                        if (r == null) {
+                                                                            console.log("User fetch failure is successful. Moving to test 8");
+                                                                            this.ipc.fetchMember(1, 1).then(r => {
+                                                                                if (r == null) {
+                                                                                    console.log("Member fetch failure is successful. Moving to phase 2.");
+                                                                                    this.ipc.command("service1", "test1Complete");
+                                                                                    this.bot.createMessage(msg.channel.id, "--- Phase 2 Started ---");
+                                                                                } else {
+                                                                                    console.error(inspect(r));
+                                                                                }
+                                                                            }).catch(e => console.error(inspect(e)));
+                                                                        } else {
+                                                                            console.error(inspect(r));
+                                                                        }
+                                                                    }).catch(e => console.error(inspect(e)));
+                                                                } else {
+                                                                    console.error(inspect(r));
+                                                                }
+                                                            }).catch(e => console.error(inspect(e)));
+                                                        } else {
+                                                            console.error(inspect(r));
+                                                        }
+                                                    }).catch(e => console.error(inspect(e)));
                                                 } else {
                                                     console.error(inspect(r));
                                                 }

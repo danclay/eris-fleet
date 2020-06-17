@@ -35,7 +35,6 @@ if (isMaster) {
     let i = 0;
     Admiral.on('ready', () => {
         i++;
-        console.log(i);
         if (i == 1) {
             console.log("Starting test 1");
             Admiral.broadcast("test1");

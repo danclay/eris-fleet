@@ -1,5 +1,5 @@
-import { IPC } from '../util/IPC';
-import { Client } from 'eris';
+import { IPC } from "../util/IPC";
+import { Client } from "eris";
 export interface Setup {
     bot: Client;
     clusterID: number;
@@ -11,6 +11,6 @@ export declare class BaseClusterWorker {
     workerID: number;
     ipc: IPC;
     /** Function called for graceful shutdown of the cluster */
-    shutdown?: Function;
+    shutdown?: (done: () => void) => void;
     constructor(setup: Setup);
 }

@@ -1,8 +1,10 @@
 <div align="center">
   <p>
+  <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Library" /></a>
     <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
     <a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
+    <a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://api.travis-ci.com/danclay/eris-fleet.svg?branch=master" alt="Build" /></a>
   </p>
   <p>
     <a href="https://nodei.co/npm/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
@@ -21,6 +23,7 @@ For some more documentation check the [wiki on Github](https://github.com/dancla
 - Sharding
 - Recalculate shards with minimal downtime
 - Customizable logging
+- Fetch data from across clusters easily
 - Services (non-eris workers)
 - IPC to communicate between clusters, other clusters, and services
 - Detailed stats collection
@@ -209,7 +212,8 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | whatToLog      | Choose what to log (see details below)                                                                                                       | Yes       |                           |
 | whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
 | whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
-| killTimeout    | Timeout before killing the proccess during shutdown                                                                                          | Yes       | infinite                  |
+| killTimeout    | Timeout before killing the proccess during shutdown (in ms)                                                                                | Yes       | 10000                  |
+| fetchTimeout    | Timeout before giving up on a value fetch (in ms)                                                                                           | Yes       | infinite                  |
 | objectLogging  | Sends logs in an object format that follows: `{source: "the source", message: "the message", timestamp: "the UTC timestamp"}`                 | Yes       | false                     |
 | startingStatus  | Status to set while the cluster is getting ready. Follows this format (shown in typescript): `{status: "online" | "idle" | "dnd" | "invisible", game?: {name: string, type?: 0 | 1 | 2 | 3, url?: string}}` Note that if you want to clear it you will have to do it yourself in your bot.js file.                 | Yes       |                      |
 
@@ -329,7 +333,7 @@ You can unregister events you registered above.
 this.ipc.unregister("stats");
 ```
 
-### Broadcast to all clusters
+### Broadcast to all workers
 
 You can broadcast events that other clusters can recieve by [registering](#register) with the event. The first argument is the name of the event you are broadcasting (this should match the name of the event other clusters are registered to). The second argument is optional and is the the message you want to send. Note that the cluster sending this will also recieve the broadcast since this broadcasts to **all** clusters.
 ```js
@@ -341,6 +345,19 @@ this.ipc.broadcast("hello clusters!", "Want to chat?");
 You can send a message from one cluster to another specific cluster based on the cluster ID. The first argument is the ID of the cluster to send the message to. The second argument is the name of the event the other cluster should be registered to. The third argument is optional and is the message to send.
 ```js
 this.ipc.sendTo(1, "Hello cluster 1!", "Squad up?");
+```
+
+### Send an event to the master process
+
+You can send a message through Admiral to your index.js file. The arguments are the same as broadcasting to workers. Here are examples:
+```js
+// Sending the event
+this.ipc.admiralBroadcast("Hello", "I'm working!");
+
+// Receiving the event in your index.js file
+Admiral.on("Hello", (r) => {
+    console.log(r);
+});
 ```
 
 ### Fetch a user
@@ -366,7 +383,7 @@ await this.ipc.fetchChannel(123456789);
 
 ### Fetch a member
 
-Fetches a member from another cluster. The first argument should be the ID of the member. The second argument should the be ID of the guild the member is in. Be sure to `await` this or use `.then()`
+Fetches a member from another cluster. The first argument should be the ID of the guild. The second argument should the be ID of the member. Be sure to `await` this or use `.then()`
 ```js
 await this.ipc.fetchMember(123456789, 987654321); 
 ```
