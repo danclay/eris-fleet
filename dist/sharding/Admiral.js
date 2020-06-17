@@ -414,7 +414,7 @@ class Admiral extends events_1.EventEmitter {
                             if (message.hard) {
                                 if (this.whatToLog.includes('total_shutdown'))
                                     this.log("Admiral | Total fleet hard shutdown complete. Ending process.");
-                                process.exit(1);
+                                process.exit(0);
                             }
                             else {
                                 let total = 0;
@@ -439,7 +439,7 @@ class Admiral extends events_1.EventEmitter {
                                         if (done == total) {
                                             if (this.whatToLog.includes('total_shutdown'))
                                                 this.log("Admiral | Total fleet shutdown complete. Ending process.");
-                                            process.exit(1);
+                                            process.exit(0);
                                         }
                                     }
                                     ;

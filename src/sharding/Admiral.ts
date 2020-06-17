@@ -518,7 +518,7 @@ export class Admiral extends EventEmitter {
                                 if (this.whatToLog.includes('total_shutdown')) this.log("Admiral | Starting total fleet shutdown.");
                                 if (message.hard) {
                                     if (this.whatToLog.includes('total_shutdown')) this.log("Admiral | Total fleet hard shutdown complete. Ending process.");
-                                    process.exit(1);
+                                    process.exit(0);
                                 } else {
                                     let total = 0;
                                     this.clusters.forEach(cluster => {
@@ -542,7 +542,7 @@ export class Admiral extends EventEmitter {
                                             done++;
                                             if (done == total) {
                                                 if (this.whatToLog.includes('total_shutdown')) this.log("Admiral | Total fleet shutdown complete. Ending process.");
-                                                process.exit(1);
+                                                process.exit(0);
                                             }
                                         };
                                     });

@@ -12,10 +12,11 @@
   "devDependencies": {
     "@types/node": "^14.0.1",
     "dotenv": "^8.2.0",
+    "jshint": "^2.11.1",
     "typescript": "^3.9.3"
   },
   "scripts": {
-    "start": "node dist/index.js",
+    "test": "node test/CI/index.js",
     "prepublishOnly": "yarn build",
     "build": "tsc"
   },
