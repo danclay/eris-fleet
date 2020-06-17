@@ -18,15 +18,13 @@ module.exports = class BotWorker extends BaseClusterWorker {
 
     async handleMessage(msg) {
         if (msg.content === "test1") {
-            this.bot.createMessage(msg.channel.id, "Message recieved. Now testing service 1");
             console.log("Message recieved. Now testing service 1.");
             this.ipc.command("service1", {test: "service 1"}, true).then(r => {
-                this.bot.createMessage(msg.channel.id, r);
-                this.bot.createMessage(msg.channel.id, "Message recieved. Now testing service 2");
-                console.log("Message recieved. Now testing service 2.");
+                if (r == "service 1") console.log("Message recieved. Now testing service 2.");
+                else throw r;
                 this.ipc.command("service2", {test: "service 2"}, true).then(r => {
-                    this.bot.createMessage(msg.channel.id, r);
-                    console.log("Message recieved. Moving to test 2");
+                    if (r == "service 2") console.log("Message recieved. Moving to test 2");
+                    else throw r;
                     this.ipc.fetchChannel(msg.channel.id).then(r => {
                         if (r.id == msg.channel.id) {
                             console.log("Channel fetch success. Moving to test 3");
@@ -52,7 +50,6 @@ module.exports = class BotWorker extends BaseClusterWorker {
                                                                                 if (r == null) {
                                                                                     console.log("Member fetch failure is successful. Moving to phase 2.");
                                                                                     this.ipc.command("service1", "test1Complete");
-                                                                                    this.bot.createMessage(msg.channel.id, "--- Phase 2 Started ---");
                                                                                 } else {
                                                                                     console.error(inspect(r));
                                                                                 }
