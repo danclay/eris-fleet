@@ -203,7 +203,6 @@ export class Admiral extends EventEmitter {
 		this.resharding = false;
 		this.statsStarted = false;
 		if (options.startingStatus) this.startingStatus = options.startingStatus;
-
 		// Deals with needed components
 		if (!options.token) throw "No token!";
 		if (!path.isAbsolute(options.path)) throw "The path needs to be absolute!";

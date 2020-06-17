@@ -1,1 +1,4 @@
 test
+dist
+node_modules
+.github
