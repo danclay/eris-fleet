@@ -105,8 +105,9 @@ export class Cluster {
                             if (member) {
                                 //@ts-ignore
                                 member = member.toJSON();
+                                member!.id = JSON.stringify({guildID, memberID});
                                 //@ts-ignore
-                                process.send({op: "fetchReturn", value: member, UUID: message.UUID});
+                                process.send({op: "return", value: member, UUID: message.UUID});
                             }
                         }
 
@@ -258,12 +259,12 @@ export class Cluster {
 
         bot.on("warn", (message: string, id: number) => {
             //@ts-ignore
-           console.warn(`Shard ${id} | ${message}` );
+            process.send({op: "warn", msg: message, source: `Cluster ${this.clusterID}, Shard ${id}`});
         });
 
         bot.on("error", (error: Error, id: number) => {
             //@ts-ignore
-            console.error(`Shard ${id} | ${inspect(error)}`);
+            process.send({op: "error", msg: inspect(error), source: `Cluster ${this.clusterID}, Shard ${id}`});
         });
 
         bot.on("ready", (id: number) => {

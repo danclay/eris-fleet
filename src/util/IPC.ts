@@ -34,6 +34,12 @@ export class IPC extends EventEmitter {
         process.send({op: "broadcast", event: {op, msg: message}});
     }
 
+    public admiralBroadcast(op: string, message?: any) {
+        if (!message) message = null;
+        //@ts-ignore
+        process.send({op: "admiralBroadcast", event: {op, msg: message}});
+    }
+
     public sendTo(cluster: number, op: string, message?: any) {
         if (!message) message = null;
         //@ts-ignore
@@ -47,7 +53,7 @@ export class IPC extends EventEmitter {
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener(id,  callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
 
@@ -63,7 +69,7 @@ export class IPC extends EventEmitter {
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener(id,  callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
 
@@ -79,7 +85,7 @@ export class IPC extends EventEmitter {
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener(id,  callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
 
@@ -89,19 +95,20 @@ export class IPC extends EventEmitter {
     }
 
     public async fetchMember(guildID: number, memberID: number) {
-        const UUID = {memberID, guildID};
+        const UUID = JSON.stringify({guildID, memberID});
         //@ts-ignore
         process.send({op: "fetchMember", guildID, memberID});
 
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener(String(UUID),  callback);
+                r.id = JSON.parse(r.id).memberID;
+                this.removeListener(UUID, callback);
                 resolve(r);
             };
 
             //@ts-ignore
-            this.on(String(UUID), callback);
+            this.on(UUID, callback);
         })
     }
 
@@ -143,7 +150,7 @@ export class IPC extends EventEmitter {
         return new Promise((resolve, reject) => {
             const callback = (r: any) => {
                 //@ts-ignore
-                this.removeListener("statsReturn",  callback);
+                this.removeListener("statsReturn", callback);
                 resolve(r);
             };
 

@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -85,6 +85,7 @@ class Admiral extends events_1.EventEmitter {
         }
         if (options.services)
             this.servicesToCreate = options.services;
+        this.services = new Collection_1.Collection();
         this.queue = new Queue_1.Queue();
         this.softKills = new Map();
         this.launchingManager = new Map();
@@ -274,9 +275,12 @@ class Admiral extends events_1.EventEmitter {
                             if (this.softKills.get(workerID)) {
                                 this.softKills.get(workerID).fn();
                             }
+                            //if (!this.queue.queue[1]) this.emit("ready");
                             break;
                         }
-                        case "fetchUser" || "fetchGuild" || "fetchChannel": {
+                        case "fetchGuild":
+                        case "fetchChannel":
+                        case "fetchUser": {
                             this.fetchInfo(message.op, message.id, worker.id);
                             break;
                         }
@@ -429,7 +433,7 @@ class Admiral extends events_1.EventEmitter {
                                     total++;
                                     process.nextTick(() => {
                                         const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
-                                        this.restartWorker(master.workers[workerID], true, message.hard ? false : true);
+                                        this.shutdownWorker(master.workers[workerID], message.hard ? false : true);
                                     });
                                 });
                                 let done = 0;
@@ -449,6 +453,10 @@ class Admiral extends events_1.EventEmitter {
                         }
                         case "reshard": {
                             this.reshard();
+                            break;
+                        }
+                        case "admiralBroadcast": {
+                            this.emit(message.event.op, message.event.msg);
                             break;
                         }
                     }
@@ -488,7 +496,6 @@ class Admiral extends events_1.EventEmitter {
     }
     launch() {
         this.clusters = new Collection_1.Collection();
-        this.services = new Collection_1.Collection();
         this.pauseStats = true;
         if (master.isMaster) {
             process.on("uncaughtException", e => this.error(e));
@@ -769,6 +776,9 @@ class Admiral extends events_1.EventEmitter {
                         if (!customMaps)
                             this.services.delete(service.serviceName);
                         this.softKills.delete(worker.id);
+                        this.queue.execute();
+                        if (callback)
+                            callback();
                     } });
                 if (this.whatToLog.includes('service_shutdown'))
                     this.log(`Admiral | Performing soft shutdown of service ${service.serviceName}`);
@@ -780,7 +790,7 @@ class Admiral extends events_1.EventEmitter {
                 if (!customMaps)
                     this.services.delete(service.serviceName);
             }
-            item.type = "cluster";
+            item.type = "service";
         }
         if (service || cluster) {
             if (this.queue.queue[0]) {

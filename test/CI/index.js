@@ -30,11 +30,12 @@ if (isMaster) {
     Admiral.on('error', m => console.error(inspect(m)));
 
     // Logs stats when they arrive
-    Admiral.on('stats', m => console.log(inspect(m)));
+    //Admiral.on('stats', m => console.log(inspect(m)));
 
     let i = 0;
     Admiral.on('ready', () => {
         i++;
+        console.log(i);
         if (i == 1) {
             console.log("Starting test 1");
             Admiral.broadcast("test1");
@@ -44,7 +45,7 @@ if (isMaster) {
         } else if (i == 3) {
             console.log("Starting reshard test");
             Admiral.broadcast("test3");
-        } else if (i == 4) {
+        } else if (i == 5) {
             console.log("Starting total shutdown test");
             Admiral.broadcast("test4");
         }

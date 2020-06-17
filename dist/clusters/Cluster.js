@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -105,8 +105,9 @@ class Cluster {
                             if (member) {
                                 //@ts-ignore
                                 member = member.toJSON();
+                                member.id = JSON.stringify({ guildID, memberID });
                                 //@ts-ignore
-                                process.send({ op: "fetchReturn", value: member, UUID: message.UUID });
+                                process.send({ op: "return", value: member, UUID: message.UUID });
                             }
                         }
                         break;
@@ -255,11 +256,11 @@ class Cluster {
         });
         bot.on("warn", (message, id) => {
             //@ts-ignore
-            console.warn(`Shard ${id} | ${message}`);
+            process.send({ op: "warn", msg: message, source: `Cluster ${this.clusterID}, Shard ${id}` });
         });
         bot.on("error", (error, id) => {
             //@ts-ignore
-            console.error(`Shard ${id} | ${util_1.inspect(error)}`);
+            process.send({ op: "error", msg: util_1.inspect(error), source: `Cluster ${this.clusterID}, Shard ${id}` });
         });
         bot.on("ready", (id) => {
             //@ts-ignore

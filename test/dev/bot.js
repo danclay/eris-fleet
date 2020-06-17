@@ -1,3 +1,4 @@
+// This is a test folder that was used during development. Do not consider this an example.
 const { BaseClusterWorker } = require('../../dist/index');
 
 module.exports = class BotWorker extends BaseClusterWorker {
@@ -10,15 +11,17 @@ module.exports = class BotWorker extends BaseClusterWorker {
 
     async handleMessage(msg) {
         if (msg.content === "," && !msg.author.bot) {
-            this.bot.createMessage(msg.channel.id, "restarting!");
-            this.ipc.totalShutdown();
-            //this.ipc.reshard();
+            console.log(1)
+            const test = await this.ipc.fetchMember(msg.guildID, msg.author.id);
+            console.log(2)
+            this.bot.createMessage(msg.channel.id, test.id);
         } else if (msg.content === ".") {
-            this.bot.createMessage(msg.channel.id, "hi!");
+            this.ipc.restartAllClusters(false);
         }
     }
 
     shutdown(done) {
+        console.log("hi")
         setTimeout(() => {done()}, 5000);
     }
 }

@@ -31,6 +31,12 @@ class IPC extends events_1.EventEmitter {
         //@ts-ignore
         process.send({ op: "broadcast", event: { op, msg: message } });
     }
+    admiralBroadcast(op, message) {
+        if (!message)
+            message = null;
+        //@ts-ignore
+        process.send({ op: "admiralBroadcast", event: { op, msg: message } });
+    }
     sendTo(cluster, op, message) {
         if (!message)
             message = null;
@@ -77,17 +83,18 @@ class IPC extends events_1.EventEmitter {
         });
     }
     async fetchMember(guildID, memberID) {
-        const UUID = { memberID, guildID };
+        const UUID = JSON.stringify({ guildID, memberID });
         //@ts-ignore
         process.send({ op: "fetchMember", guildID, memberID });
         return new Promise((resolve, reject) => {
             const callback = (r) => {
                 //@ts-ignore
-                this.removeListener(String(UUID), callback);
+                r.id = JSON.parse(r.id).memberID;
+                this.removeListener(UUID, callback);
                 resolve(r);
             };
             //@ts-ignore
-            this.on(String(UUID), callback);
+            this.on(UUID, callback);
         });
     }
     async command(service, message, receptive) {

@@ -1,3 +1,4 @@
+// This is a test folder that was used during development. Do not consider this an example.
 const { isMaster } = require('cluster');
 const { Fleet } = require('../../dist/index');
 const path = require('path');

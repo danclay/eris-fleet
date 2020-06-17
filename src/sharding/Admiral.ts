@@ -204,6 +204,7 @@ export class Admiral extends EventEmitter {
         }
         if (options.services) this.servicesToCreate = options.services;
 
+        this.services = new Collection();
             this.queue = new Queue();
             this.softKills = new Map();
             this.launchingManager = new Map();
@@ -372,9 +373,12 @@ export class Admiral extends EventEmitter {
                                 if (this.softKills.get(workerID)) {
                                     this.softKills.get(workerID)!.fn();
                                 }
+                                //if (!this.queue.queue[1]) this.emit("ready");
                                 break;
                             }
-                            case "fetchUser" || "fetchGuild" || "fetchChannel": {
+                            case "fetchGuild":
+                            case "fetchChannel":
+                            case "fetchUser": {
                                 this.fetchInfo(message.op, message.id, worker.id);
         
                                 break;
@@ -532,7 +536,7 @@ export class Admiral extends EventEmitter {
                                         total++;
                                         process.nextTick(() => {
                                             const workerID = this.services.find((s: ServiceCollection) => s.serviceName == service.serviceName).workerID;
-                                            this.restartWorker(master.workers[workerID]!, true, message.hard ? false : true);
+                                            this.shutdownWorker(master.workers[workerID]!, message.hard ? false : true);
                                         });
                                     });
             
@@ -553,6 +557,11 @@ export class Admiral extends EventEmitter {
                             case "reshard": {
                                 this.reshard();
         
+                                break;
+                            }
+                            case "admiralBroadcast": {
+                                this.emit(message.event.op, message.event.msg);
+
                                 break;
                             }
                         }
@@ -593,7 +602,6 @@ export class Admiral extends EventEmitter {
 
     private launch() {
         this.clusters = new Collection();
-        this.services = new Collection();
         this.pauseStats = true;
 
         if (master.isMaster) {
@@ -866,6 +874,8 @@ export class Admiral extends EventEmitter {
                     worker.kill();
                     if(!customMaps) this.services.delete(service.serviceName);
                     this.softKills.delete(worker.id);
+                    this.queue.execute();
+                    if (callback) callback();
                 }});
                 if (this.whatToLog.includes('service_shutdown')) this.log(`Admiral | Performing soft shutdown of service ${service.serviceName}`);
             } else {
@@ -874,7 +884,7 @@ export class Admiral extends EventEmitter {
                 if(!customMaps) this.services.delete(service.serviceName);
             }
 
-            item.type = "cluster";
+            item.type = "service";
         }
 
         if (service || cluster) {

@@ -6,7 +6,7 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
         super(setup);
 
         console.log("Service 2 constructor.");
-        this.serviceReady();
+        setTimeout(() => {this.serviceReady()}, 3000);
     }
     async handleCommand(dataSentInCommand) {
         return dataSentInCommand.test;

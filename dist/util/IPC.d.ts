@@ -6,6 +6,7 @@ export declare class IPC extends EventEmitter {
     register(event: string, callback: Function): void;
     unregister(event: string): void;
     broadcast(op: string, message?: any): void;
+    admiralBroadcast(op: string, message?: any): void;
     sendTo(cluster: number, op: string, message?: any): void;
     fetchUser(id: number): Promise<unknown>;
     fetchGuild(id: number): Promise<unknown>;
