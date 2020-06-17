@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -254,6 +254,7 @@ class Admiral extends events_1.EventEmitter {
                             }
                             else {
                                 this.queue.execute();
+                                this.emit("ready");
                                 // After all clusters and services are ready
                                 if (this.stats && this.pauseStats) {
                                     if (!this.resharding) {
@@ -263,7 +264,6 @@ class Admiral extends events_1.EventEmitter {
                                     else {
                                         this.pauseStats = false;
                                     }
-                                    this.emit("ready");
                                 }
                                 ;
                             }
@@ -552,7 +552,7 @@ class Admiral extends events_1.EventEmitter {
             const oldClusters = this.clusters;
             this.resharding = true;
             this.launch();
-            this.on("ready", () => {
+            this.once("ready", () => {
                 this.resharding = false;
                 if (this.whatToLog.includes('resharding_worker_killed'))
                     this.log("Admiral | Killing old clusters");

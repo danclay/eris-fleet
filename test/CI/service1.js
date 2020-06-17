@@ -7,6 +7,19 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
 
         console.log("Service 1 constructor.");
         this.serviceReady();
+
+        this.ipc.register("test2", () => {
+            console.log("Restarting clusters");
+            this.ipc.restartAllClusters();
+        });
+        this.ipc.register("test3", () => {
+            console.log("Resharding");
+            this.ipc.reshard();
+        });
+        this.ipc.register("test4", () => {
+            console.log("Shutdown");
+            this.ipc.totalShutdown();
+        });
     }
     async handleCommand(dataSentInCommand) {
         return dataSentInCommand.test;

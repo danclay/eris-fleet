@@ -12,11 +12,11 @@ const options = {
     startingStatus: {
         status: "dnd",
         game: {
-            name: "CL Test"
+            name: "CI Test"
         }
     },
-    clusters: 6,
-    shards: 12,
+    clusters: 2,
+    shards: 4,
     services: [{name: "service1", path: path.join(__dirname, "./service1.js")}, {name: "service2", path: path.join(__dirname, "./service2.js")}]
 }
 
@@ -29,7 +29,24 @@ if (isMaster) {
     Admiral.on('warn', m => console.warn(m));
     Admiral.on('error', m => console.error(inspect(m)));
 
-    
     // Logs stats when they arrive
     Admiral.on('stats', m => console.log(inspect(m)));
+
+    let i = 0;
+    Admiral.on('ready', () => {
+        i++;
+        if (i == 1) {
+            console.log("Starting test 1");
+            Admiral.broadcast("test1");
+        } else if (i == 2) {
+            console.log("Starting restart test");
+            Admiral.broadcast("test2");
+        } else if (i == 3) {
+            console.log("Starting reshard test");
+            Admiral.broadcast("test3");
+        } else if (i == 4) {
+            console.log("Starting total shutdown test");
+            Admiral.broadcast("test4");
+        }
+    })
 }

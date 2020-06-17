@@ -355,6 +355,7 @@ export class Admiral extends EventEmitter {
                                     }
                                 } else {
                                     this.queue.execute();
+                                    this.emit("ready");
                                     // After all clusters and services are ready
                                     if (this.stats && this.pauseStats) {
                                         if (!this.resharding) {
@@ -362,7 +363,6 @@ export class Admiral extends EventEmitter {
                                         } else {
                                             this.pauseStats = false;
                                         }
-                                        this.emit("ready");
                                     };
                                 }
                                 break;
@@ -657,7 +657,7 @@ export class Admiral extends EventEmitter {
             const oldClusters = this.clusters;
             this.resharding = true;
             this.launch();
-                this.on("ready", () => {
+                this.once("ready", () => {
                     this.resharding = false;
                     if (this.whatToLog.includes('resharding_worker_killed')) this.log("Admiral | Killing old clusters");
                     let i = 0;

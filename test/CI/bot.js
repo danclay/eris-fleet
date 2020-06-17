@@ -6,9 +6,11 @@ module.exports = class BotWorker extends BaseClusterWorker {
         // Do not delete this super.
         super(setup);
 
-        console.log("Sending message");
-        this.bot.createMessage(process.env.channelID, "test");
-        this.bot.on('messageCreate', this.handleMessage.bind(this));
+        this.ipc.register("test1", () => {
+            console.log("Sending message");
+            this.bot.createMessage(process.env.channelID, "test");
+            this.bot.on('messageCreate', this.handleMessage.bind(this));
+        });
     }
 
     async handleMessage(msg) {
@@ -20,15 +22,8 @@ module.exports = class BotWorker extends BaseClusterWorker {
                 console.log("Message recieved. Now testing service 2.");
                 this.ipc.command("service2", {test: "service 2"}, true).then(r => {
                     this.bot.createMessage(msg.channel.id, r);
-                    console.log("Message recieved. Now testing service restarting.");
+                    console.log("Message recieved. Moving to restart services");
                     this.ipc.restartAllServices();
-                    console.log("Message recieved. Now testing resharding");
-                    this.ipc.reshard();
-                    const f = () => {
-                        this.bot.createMessage(msg.channel.id, "online");
-                        setTimeout(f, 5000);
-                    };
-                    f();
                 }).catch(e => console.error(e));
             }).catch(e => console.error(e));
         }
