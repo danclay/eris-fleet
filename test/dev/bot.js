@@ -20,12 +20,11 @@ module.exports = class BotWorker extends BaseClusterWorker {
 				this.bot.createMessage(msg.channel.id, "Uh oh");
 			}
 		} else if (msg.content === ".") {
-			this.ipc.restartAllClusters(false);
+			this.ipc.reshard();
 		}
 	}
 
 	shutdown (done) {
-		console.log("hi");
 		setTimeout(() => { done(); }, 5000);
 	}
 };

@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -688,6 +688,7 @@ class Admiral extends events_1.EventEmitter {
         }
     }
     launch() {
+        this.launchingWorkers.clear();
         this.pauseStats = true;
         if (master.isMaster) {
             process.on("uncaughtException", (e) => this.error(e));
@@ -750,7 +751,10 @@ class Admiral extends events_1.EventEmitter {
     /** Reshard */
     reshard() {
         if (!this.resharding) {
-            const oldClusters = this.clusters;
+            const oldClusters = new Collection_1.Collection;
+            this.clusters.forEach((o) => {
+                oldClusters.set(o.clusterID, o);
+            });
             this.resharding = true;
             this.launch();
             this.once("ready", () => {

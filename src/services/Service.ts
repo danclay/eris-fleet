@@ -5,7 +5,7 @@ import {inspect} from "util";
 export class Service {
 	path!: string;
 	serviceName!: string;
-	app!: BaseServiceWorker;
+	app?: BaseServiceWorker;
 	timeout!: number;
 	whatToLog!: string[];
 
@@ -39,45 +39,56 @@ export class Service {
 					break;
 				}
 				case "return": {
-					this.app.ipc.emit(message.id, message.value);
+					if (this.app) this.app.ipc.emit(message.id, message.value);
 					break;
 				}
 				case "command": {
-					if (this.app.handleCommand) {
-						const res = await this.app.handleCommand(message.command.msg);
-						if (message.command.receptive) {
-							if (process.send) process.send({op: "return", value: {
-								id: message.command.UUID,
-								value: res
-							}, UUID: message.UUID});
-						}
-					} else {
+					const noHandle = () => {
 						const res = {err: `Service ${this.serviceName} cannot handle commands!`};
 						if (process.send) process.send({op: "return", value: {
 							id: message.command.UUID,
 							value: res
 						}, UUID: message.UUID});
 						console.error("I can't handle commands!");
+					};
+					if (this.app) {
+						if (this.app.handleCommand) {
+							const res = await this.app.handleCommand(message.command.msg);
+							if (message.command.receptive) {
+								if (process.send) process.send({op: "return", value: {
+									id: message.command.UUID,
+									value: res
+								}, UUID: message.UUID});
+							}
+						} else {
+							noHandle();
+						}
+					} else {
+						noHandle();
 					}
 
 					break;
 				}
 				case "shutdown": {
-					if (this.app.shutdown) {
-						let safe = false;
-						// Ask app to shutdown
-						this.app.shutdown(() => {
-							safe = true;
+					if (this.app) {
+						if (this.app.shutdown) {
+							let safe = false;
+							// Ask app to shutdown
+							this.app.shutdown(() => {
+								safe = true;
+								if (process.send) process.send({op: "shutdown"});
+							});
+							if (message.killTimeout > 0) {
+								setTimeout(() => {
+									if (!safe) {
+										console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
+											
+										if (process.send) process.send({op: "shutdown"});
+									}
+								}, message.killTimeout);
+							}
+						} else {
 							if (process.send) process.send({op: "shutdown"});
-						});
-						if (message.killTimeout > 0) {
-							setTimeout(() => {
-								if (!safe) {
-									console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
-										
-									if (process.send) process.send({op: "shutdown"});
-								}
-							}, message.killTimeout);
 						}
 					} else {
 						if (process.send) process.send({op: "shutdown"});
@@ -109,7 +120,7 @@ export class Service {
 		this.app = new App({serviceName: this.serviceName, workerID: worker.id});
 
 		let ready = false;
-		this.app.readyPromise.then(() => {
+		if (this.app) this.app.readyPromise.then(() => {
 			if (this.whatToLog.includes("service_ready")) console.log(`Service ${this.serviceName} is ready!`);
 			if (process.send) process.send({op: "connected"});
 			ready = true;

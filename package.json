@@ -20,7 +20,8 @@
   "scripts": {
     "test": "node test/CI/index.js",
     "prepublishOnly": "yarn build",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "yarn build && node test/dev/index.js"
   },
   "keywords": [
     "discord",

@@ -12,7 +12,7 @@ export declare class Cluster {
     whatToLog: string[];
     bot: Eris.Client;
     private token;
-    app: BaseClusterWorker;
+    app?: BaseClusterWorker;
     App: any;
     shutdown?: boolean;
     private startingStatus?;

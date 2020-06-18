@@ -16,16 +16,16 @@ export class Cluster {
 	whatToLog!: string[];
 	bot!: Eris.Client;
 	private token!: string;
-	app!: BaseClusterWorker;
+	app?: BaseClusterWorker;
 	App!: any;
 	shutdown?: boolean;
 	private startingStatus?: Admiral.StartingStatus;
 
 	constructor() {
-		console.log = (str: unknown) => {if (process.send) process.send({op: "log", msg: str});};
-		console.debug = (str: unknown) => {if (process.send) process.send({op: "debug", msg: str});};
-		console.error = (str: unknown) => {if (process.send) process.send({op: "error", msg: str});};
-		console.warn = (str: unknown) => {if (process.send) process.send({op: "warn", msg: str});};
+		console.log = (str: unknown) => {if (process.send) process.send({op: "log", msg: str, source: "Cluster " + this.clusterID});};
+		console.debug = (str: unknown) => {if (process.send) process.send({op: "debug", msg: str, source: "Cluster " + this.clusterID});};
+		console.error = (str: unknown) => {if (process.send) process.send({op: "error", msg: str, source: "Cluster " + this.clusterID});};
+		console.warn = (str: unknown) => {if (process.send) process.send({op: "warn", msg: str, source: "Cluster " + this.clusterID});};
 
 		//Spawns
 		process.on("uncaughtException", (err: Error) => {
@@ -113,7 +113,7 @@ export class Cluster {
 					break;
 				}
 				case "return": {
-					this.app.ipc.emit(message.id, message.value);
+					if (this.app) this.app.ipc.emit(message.id, message.value);
 					break;
 				}
 				case "collectStats": {
@@ -151,23 +151,28 @@ export class Cluster {
 				}
 				case "shutdown": {
 					this.shutdown = true;
-					if (this.app.shutdown) {
-						let safe = false;
-						// Ask app to shutdown
-						this.app.shutdown(() => {
-							safe = true;
+					if (this.app) {
+						if (this.app.shutdown) {
+							let safe = false;
+							// Ask app to shutdown
+							this.app.shutdown(() => {
+								safe = true;
+								this.bot.disconnect({reconnect: false});
+								if (process.send) process.send({op: "shutdown"});
+							});
+							if (message.killTimeout > 0) {
+								setTimeout(() => {
+									if (!safe) {
+										console.error(`Cluster ${this.clusterID} took too long to shutdown. Performing shutdown anyway.`);
+										
+										this.bot.disconnect({reconnect: false});
+										if (process.send) process.send({op: "shutdown"});
+									}
+								}, message.killTimeout);
+							}
+						} else {
 							this.bot.disconnect({reconnect: false});
 							if (process.send) process.send({op: "shutdown"});
-						});
-						if (message.killTimeout > 0) {
-							setTimeout(() => {
-								if (!safe) {
-									console.error(`Cluster ${this.clusterID} took too long to shutdown. Performing shutdown anyway.`);
-										
-									this.bot.disconnect({reconnect: false});
-									if (process.send) process.send({op: "shutdown"});
-								}
-							}, message.killTimeout);
 						}
 					} else {
 						this.bot.disconnect({reconnect: false});

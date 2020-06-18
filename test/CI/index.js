@@ -27,7 +27,9 @@ if (isMaster) {
     Admiral.on('log', m => console.log(m));
     Admiral.on('debug', m => console.debug(m));
     Admiral.on('warn', m => console.warn(m));
-    Admiral.on('error', m => console.error(inspect(m)));
+    Admiral.on('error', m => {
+        throw inspect(m);
+    });
 
     // Logs stats when they arrive
     //Admiral.on('stats', m => console.log(inspect(m)));

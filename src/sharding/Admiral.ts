@@ -865,6 +865,7 @@ export class Admiral extends EventEmitter {
 	}
 
 	private launch() {
+		this.launchingWorkers.clear();
 		this.pauseStats = true;
 
 		if (master.isMaster) {
@@ -931,7 +932,10 @@ export class Admiral extends EventEmitter {
 	/** Reshard */
 	public reshard(): void {
 		if (!this.resharding) {
-			const oldClusters = this.clusters;
+			const oldClusters = new Collection;
+			this.clusters.forEach((o: ClusterCollection) => {
+				oldClusters.set(o.clusterID, o);
+			});
 			this.resharding = true;
 			this.launch();
 			this.once("ready", () => {
@@ -945,15 +949,11 @@ export class Admiral extends EventEmitter {
 					if (oldWorker) {
 						this.shutdownWorker(oldWorker, true, () => {
 							if (this.whatToLog.includes("resharding_worker_killed")) {
-								this.log(
-									`Admiral | Killed old worker for cluster ${c.clusterID}`,
-								);
+								this.log(`Admiral | Killed old worker for cluster ${c.clusterID}`);
 							}
 							const newWorker = master.workers[this.clusters.find((newC: ClusterCollection) => newC.clusterID == c.clusterID).workerID];
 							if (this.whatToLog.includes("resharding_transition")) {
-								this.log(
-									`Admiral | Transitioning to new worker for cluster ${c.clusterID}`,
-								);
+								this.log(`Admiral | Transitioning to new worker for cluster ${c.clusterID}`);
 							}
 							if (newWorker) newWorker.send({op: "loadCode"});
 							i++;
@@ -1132,12 +1132,7 @@ export class Admiral extends EventEmitter {
 		return r;
 	}
 
-	private shutdownWorker(
-		worker: master.Worker,
-		soft?: boolean,
-		callback?: () => void,
-		customMaps?: { clusters?: Collection; services?: Collection },
-	) {
+	private shutdownWorker(worker: master.Worker, soft?: boolean, callback?: () => void, customMaps?: { clusters?: Collection; services?: Collection }) {
 		let cluster: ClusterCollection;
 		let service: ServiceCollection;
 		if (customMaps) {

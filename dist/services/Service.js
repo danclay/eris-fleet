@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -55,21 +55,12 @@ class Service {
                         break;
                     }
                     case "return": {
-                        this.app.ipc.emit(message.id, message.value);
+                        if (this.app)
+                            this.app.ipc.emit(message.id, message.value);
                         break;
                     }
                     case "command": {
-                        if (this.app.handleCommand) {
-                            const res = await this.app.handleCommand(message.command.msg);
-                            if (message.command.receptive) {
-                                if (process.send)
-                                    process.send({ op: "return", value: {
-                                            id: message.command.UUID,
-                                            value: res
-                                        }, UUID: message.UUID });
-                            }
-                        }
-                        else {
+                        const noHandle = () => {
                             const res = { err: `Service ${this.serviceName} cannot handle commands!` };
                             if (process.send)
                                 process.send({ op: "return", value: {
@@ -77,26 +68,50 @@ class Service {
                                         value: res
                                     }, UUID: message.UUID });
                             console.error("I can't handle commands!");
+                        };
+                        if (this.app) {
+                            if (this.app.handleCommand) {
+                                const res = await this.app.handleCommand(message.command.msg);
+                                if (message.command.receptive) {
+                                    if (process.send)
+                                        process.send({ op: "return", value: {
+                                                id: message.command.UUID,
+                                                value: res
+                                            }, UUID: message.UUID });
+                                }
+                            }
+                            else {
+                                noHandle();
+                            }
+                        }
+                        else {
+                            noHandle();
                         }
                         break;
                     }
                     case "shutdown": {
-                        if (this.app.shutdown) {
-                            let safe = false;
-                            // Ask app to shutdown
-                            this.app.shutdown(() => {
-                                safe = true;
+                        if (this.app) {
+                            if (this.app.shutdown) {
+                                let safe = false;
+                                // Ask app to shutdown
+                                this.app.shutdown(() => {
+                                    safe = true;
+                                    if (process.send)
+                                        process.send({ op: "shutdown" });
+                                });
+                                if (message.killTimeout > 0) {
+                                    setTimeout(() => {
+                                        if (!safe) {
+                                            console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
+                                            if (process.send)
+                                                process.send({ op: "shutdown" });
+                                        }
+                                    }, message.killTimeout);
+                                }
+                            }
+                            else {
                                 if (process.send)
                                     process.send({ op: "shutdown" });
-                            });
-                            if (message.killTimeout > 0) {
-                                setTimeout(() => {
-                                    if (!safe) {
-                                        console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
-                                        if (process.send)
-                                            process.send({ op: "shutdown" });
-                                    }
-                                }, message.killTimeout);
                             }
                         }
                         else {
@@ -128,16 +143,17 @@ class Service {
         }
         this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id });
         let ready = false;
-        this.app.readyPromise.then(() => {
-            if (this.whatToLog.includes("service_ready"))
-                console.log(`Service ${this.serviceName} is ready!`);
-            if (process.send)
-                process.send({ op: "connected" });
-            ready = true;
-        }).catch((err) => {
-            console.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
-            process.kill(0);
-        });
+        if (this.app)
+            this.app.readyPromise.then(() => {
+                if (this.whatToLog.includes("service_ready"))
+                    console.log(`Service ${this.serviceName} is ready!`);
+                if (process.send)
+                    process.send({ op: "connected" });
+                ready = true;
+            }).catch((err) => {
+                console.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
+                process.kill(0);
+            });
         // Timeout
         if (this.timeout !== 0) {
             setTimeout(() => {
