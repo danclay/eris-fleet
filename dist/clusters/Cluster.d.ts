@@ -1,5 +1,5 @@
-import * as Eris from 'eris';
-import { BaseClusterWorker } from './BaseClusterWorker';
+import * as Eris from "eris";
+import { BaseClusterWorker } from "./BaseClusterWorker";
 export declare class Cluster {
     firstShardID: number;
     lastShardID: number;
@@ -8,12 +8,14 @@ export declare class Cluster {
     clusterCount: number;
     shardCount: number;
     shards: number;
-    clientOptions: any;
+    clientOptions: Eris.ClientOptions;
     whatToLog: string[];
     bot: Eris.Client;
     private token;
-    app: BaseClusterWorker;
-    shutdown?: Boolean;
+    app?: BaseClusterWorker;
+    App: any;
+    shutdown?: boolean;
+    private startingStatus?;
     constructor();
     private connect;
     private loadCode;

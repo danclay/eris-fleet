@@ -1,24 +1,27 @@
 /// <reference types="node" />
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
+import * as Admiral from "../sharding/Admiral";
 export declare class IPC extends EventEmitter {
     private events;
     constructor();
-    register(event: string, callback: Function): void;
+    register(event: string, callback: (msg: unknown) => void): void;
     unregister(event: string): void;
-    broadcast(op: string, message?: any): void;
-    sendTo(cluster: number, op: string, message?: any): void;
-    fetchUser(id: number): Promise<unknown>;
-    fetchGuild(id: number): Promise<unknown>;
-    fetchChannel(id: number): Promise<unknown>;
-    fetchMember(guildID: number, memberID: number): Promise<unknown>;
-    command(service: string, message?: any, receptive?: Boolean): Promise<unknown>;
-    getStats(): Promise<unknown>;
-    restartCluster(clusterID: number, hard?: Boolean): void;
-    restartAllClusters(hard?: Boolean): void;
-    restartService(serviceName: string, hard?: Boolean): void;
-    restartAllServices(hard?: Boolean): void;
-    shutdownCluster(clusterID: number, hard?: Boolean): void;
-    shutdownService(serviceName: string, hard?: Boolean): void;
+    broadcast(op: string, message?: unknown): void;
+    admiralBroadcast(op: string, message?: unknown): void;
+    sendTo(cluster: number, op: string, message?: unknown): void;
+    fetchUser(id: number): Promise<any>;
+    fetchGuild(id: number): Promise<any>;
+    fetchChannel(id: number): Promise<any>;
+    fetchMember(guildID: number, memberID: number): Promise<any>;
+    command(service: string, message?: unknown, receptive?: boolean): Promise<unknown>;
+    getStats(): Promise<Admiral.Stats>;
+    restartCluster(clusterID: number, hard?: boolean): void;
+    restartAllClusters(hard?: boolean): void;
+    restartService(serviceName: string, hard?: boolean): void;
+    restartAllServices(hard?: boolean): void;
+    shutdownCluster(clusterID: number, hard?: boolean): void;
+    shutdownService(serviceName: string, hard?: boolean): void;
     /** Total shutdown of fleet */
-    totalShutdown(hard?: Boolean): void;
+    totalShutdown(hard?: boolean): void;
+    reshard(): void;
 }

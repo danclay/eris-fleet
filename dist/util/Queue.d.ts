@@ -1,10 +1,11 @@
 /// <reference types="node" />
-import { EventEmitter } from 'events';
-import { ClientOptions } from 'eris';
+import { EventEmitter } from "events";
+import { ClientOptions } from "eris";
+import * as Admiral from "../sharding/Admiral";
 interface ClusterConnectMessage {
     clusterID: number;
     clusterCount: number;
-    op: "connect";
+    op: "connect" | string;
     firstShardID: number;
     lastShardID: number;
     shardCount: number;
@@ -12,20 +13,21 @@ interface ClusterConnectMessage {
     clientOptions: ClientOptions;
     path: string;
     whatToLog: string[];
+    startingStatus?: Admiral.StartingStatus;
 }
 interface ShutdownMessage {
-    op: "shutdown";
+    op: "shutdown" | string;
     killTimeout: number;
 }
 interface ServiceConnectMessage {
     serviceName: string;
     path: string;
-    op: "connect";
+    op: "connect" | string;
     timeout: number;
     whatToLog: string[];
 }
 export interface QueueItem {
-    type: "service" | "cluster";
+    type: "service" | "cluster" | string;
     workerID: number;
     message: ClusterConnectMessage | ServiceConnectMessage | ShutdownMessage;
 }
@@ -33,7 +35,7 @@ export declare class Queue extends EventEmitter {
     /** The queue */
     queue: QueueItem[];
     constructor();
-    execute(first?: Boolean): void;
-    item(item: QueueItem, overrideLocation?: number): void;
+    execute(first?: boolean): void;
+    item(item: QueueItem): void;
 }
 export {};

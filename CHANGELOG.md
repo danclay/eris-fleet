@@ -2,6 +2,16 @@
 
 This may skip some little bug fixes.
 
+## 0.3.0
+- Added resharding
+- Fixed some issues with the IPC
+- Added an optional starting status
+- Added some documentation in README.md
+- Fetch now returns null if there is no value found
+- Fetch now only checks clusters which are connected and will get the data from clusters when they launch unless the timeout has passed
+- Now uses eslint to make code look sharp
+
+
 ## 0.2.3
 - Fixed issue where logging "prefix" would not show up during a soft restart
 

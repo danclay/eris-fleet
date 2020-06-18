@@ -7,7 +7,13 @@ require('dotenv').config();
 
 const options = {
     path: path.join(__dirname, "./bot.js"),
-    token: process.env.token
+    token: process.env.token,
+    startingStatus: {
+        status: "dnd",
+        game: {
+            name: "Starting..."
+        }
+    }
 }
 
 const Admiral = new Fleet(options);

@@ -1,25 +1,30 @@
-// This file is used for testing eris-fleet and should not be used as a practical example.
-
-const { BaseClusterWorker } = require('../../dist/index');
+// This is a test folder that was used during development. Do not consider this an example.
+const { BaseClusterWorker } = require("../../dist/index");
 
 module.exports = class BotWorker extends BaseClusterWorker {
-    constructor(setup) {
-        // Do not delete this super.
-        super(setup);
+	constructor (setup) {
+		// Do not delete this super.
+		super(setup);
 
-        this.bot.on('messageCreate', this.handleMessage.bind(this));
-    }
+		this.bot.on("messageCreate", this.handleMessage.bind(this));
+	}
 
-    async handleMessage(msg) {
-        if (msg.content === "!sendCommand" && !msg.author.bot) {
-            // Sends a command to the example service: "myService"
-            const r = await this.ipc.command("myService", msg.author.id, true)
-            console.log("test " + r)
-        }
-    }
+	async handleMessage (msg) {
+		if (msg.content === "," && !msg.author.bot) {
+			console.log(1);
+			const test = await this.ipc.fetchMember(msg.guildID, msg.author.id);
+			console.log(2);
+			if (test) {
+				this.bot.createMessage(msg.channel.id, test.id);
+			} else {
+				this.bot.createMessage(msg.channel.id, "Uh oh");
+			}
+		} else if (msg.content === ".") {
+			this.ipc.reshard();
+		}
+	}
 
-    shutdown(done) {
-        // Optional function to gracefully shutdown things if you need to.
-        done(); // Use this function when you are done gracefully shutting down.
-    }
-}
+	shutdown (done) {
+		setTimeout(() => { done(); }, 5000);
+	}
+};

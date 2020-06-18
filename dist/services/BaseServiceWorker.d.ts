@@ -1,4 +1,4 @@
-import { IPC } from '../util/IPC';
+import { IPC } from "../util/IPC";
 export interface Setup {
     serviceName: string;
     workerID: number;
@@ -8,12 +8,12 @@ export declare class BaseServiceWorker {
     ipc: IPC;
     serviceName: string;
     /** Function to report a service being ready */
-    serviceReady: Function;
+    serviceReady: () => void;
     /** Function to report error during service launch */
-    serviceStartingError: Function;
-    readyPromise: any;
-    handleCommand: Function;
+    serviceStartingError: (error: unknown) => void;
+    readyPromise: Promise<undefined>;
+    handleCommand: (data: unknown) => unknown;
     /** Function called for graceful shutdown of the service */
-    shutdown?: Function;
+    shutdown?: (done: () => void) => void;
     constructor(setup: Setup);
 }
