@@ -284,9 +284,9 @@ emoji-regex@^8.0.0:
   integrity sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==
 
 eris@^0.13.2:
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/eris/-/eris-0.13.2.tgz#3a3008fede4360f8c6c6d96a65adcbe8bd7f4910"
-  integrity sha512-/MAio73lCpgzREqMlrk3UhKt7bBc1VRPnotCnqzTaicHxIYhg3Ghh6jzT1hB36wDcdPCLx6UMzzcDFpxLZtuzA==
+  version "0.13.3"
+  resolved "https://registry.yarnpkg.com/eris/-/eris-0.13.3.tgz#22abb71f9ce0d453200b537cad457dc39c7b302b"
+  integrity sha512-WBtLyknOWZpYZL9yPhez0oKUWvYpunSg43hGxawwjwSf3gFXmbEPYrT8KlmZXtpJnX16eQ7mzIq+MgSh3LarEg==
   dependencies:
     ws "^7.2.1"
   optionalDependencies:
