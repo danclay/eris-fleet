@@ -628,8 +628,7 @@ export class Admiral extends EventEmitter {
 								this.prelimStats.voice += message.stats.voice;
 								this.prelimStats.clustersRam += message.stats.ram;
 								this.prelimStats.largeGuilds += message.stats.largeGuilds;
-								this.prelimStats.shardCount +=
-										message.stats.shardStats.length;
+								this.prelimStats.shardCount += message.stats.shardStats.length;
 
 								this.prelimStats.clusters.push(
 									Object.assign(message.stats, {id: cluster.clusterID}),
@@ -640,9 +639,9 @@ export class Admiral extends EventEmitter {
 								this.prelimStats.services.push(
 									Object.assign(message.stats, {name: service.serviceName}),
 								);
+								if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
 							}
 							this.prelimStats.totalRam += message.stats.ram;
-							if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
 						}
 						if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
 								this.prelimStats!.masterRam = process.memoryUsage().rss / 1e6;

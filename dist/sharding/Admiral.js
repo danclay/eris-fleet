@@ -486,10 +486,10 @@ class Admiral extends events_1.EventEmitter {
                                 else if (service) {
                                     this.prelimStats.servicesRam += message.stats.ram;
                                     this.prelimStats.services.push(Object.assign(message.stats, { name: service.serviceName }));
+                                    if (typeof this.statsWorkersCounted == "number")
+                                        this.statsWorkersCounted++;
                                 }
                                 this.prelimStats.totalRam += message.stats.ram;
-                                if (typeof this.statsWorkersCounted == "number")
-                                    this.statsWorkersCounted++;
                             }
                             if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
                                 this.prelimStats.masterRam = process.memoryUsage().rss / 1e6;
