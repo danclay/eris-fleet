@@ -634,6 +634,7 @@ export class Admiral extends EventEmitter {
 								this.prelimStats.clusters.push(
 									Object.assign(message.stats, {id: cluster.clusterID}),
 								);
+								if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
 							} else if (service) {
 								this.prelimStats.servicesRam += message.stats.ram;
 								this.prelimStats.services.push(
@@ -641,9 +642,8 @@ export class Admiral extends EventEmitter {
 								);
 							}
 							this.prelimStats.totalRam += message.stats.ram;
-							if (this.statsWorkersCounted) this.statsWorkersCounted++;
+							if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
 						}
-
 						if (this.statsWorkersCounted === this.clusters.size + this.services.size) {
 								this.prelimStats!.masterRam = process.memoryUsage().rss / 1e6;
 								this.prelimStats!.totalRam += this.prelimStats!.masterRam;

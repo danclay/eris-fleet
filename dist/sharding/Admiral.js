@@ -480,13 +480,15 @@ class Admiral extends events_1.EventEmitter {
                                     this.prelimStats.shardCount +=
                                         message.stats.shardStats.length;
                                     this.prelimStats.clusters.push(Object.assign(message.stats, { id: cluster.clusterID }));
+                                    if (typeof this.statsWorkersCounted == "number")
+                                        this.statsWorkersCounted++;
                                 }
                                 else if (service) {
                                     this.prelimStats.servicesRam += message.stats.ram;
                                     this.prelimStats.services.push(Object.assign(message.stats, { name: service.serviceName }));
                                 }
                                 this.prelimStats.totalRam += message.stats.ram;
-                                if (this.statsWorkersCounted)
+                                if (typeof this.statsWorkersCounted == "number")
                                     this.statsWorkersCounted++;
                             }
                             if (this.statsWorkersCounted === this.clusters.size + this.services.size) {

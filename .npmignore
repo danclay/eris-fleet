@@ -1,3 +1,9 @@
+# Dev
+src/
+test/CI/
+test/dev/
+tsconfig.json
+
 # Logs
 logs
 *.log

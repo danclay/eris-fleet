@@ -1,6 +1,6 @@
 <div align="center">
   <p>
-  <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Library" /></a>
+  <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Library" /></a>
     <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
     <a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
@@ -111,7 +111,8 @@ module.exports = class BotWorker extends BaseClusterWorker {
     }
 }
 ```
-The bot above will respond with "Pong!" when it recieves the command "!ping". **Make sure your bot file extends BaseClusterWorker!**
+**Make sure your bot file extends BaseClusterWorker!**
+The bot above will respond with "Pong!" when it recieves the command "!ping".
 
 ## Services
 
@@ -153,7 +154,7 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
     }
 }
 ```
-**Make sure your bot file extends BaseServiceWorker!**
+**Make sure your service file extends BaseServiceWorker!**
 This service will simply return a value within an object sent to it within the command message called "smileyFace". Services can be used for much more than this though. To send a command to this service, you could use this:
 ```js
 const reply = await this.ipc.command("myService", {smileyFace: ":)"}, true);
@@ -361,31 +362,35 @@ Admiral.on("Hello", (r) => {
 
 ### Fetch a user
 
-Fetches a user from another cluster. Not much to explain here. The only argument used should be the ID of the user. Be sure to `await` this or use `.then()`
+Fetches a user from another cluster. Not much to explain here. The only argument used should be the ID of the user. Be sure to `await` this or use `.then()`.
 ```js
 await this.ipc.fetchUser(123456789);
 ```
+**This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
 ### Fetch a guild
 
-Fetches a guild from another cluster. The only argument used should be the ID of the guild. Be sure to `await` this or use `.then()`
+Fetches a guild from another cluster. The only argument used should be the ID of the guild. Be sure to `await` this or use `.then()`.
 ```js
 await this.ipc.fetchGuild(123456789);
 ```
+**This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
 ### Fetch a channel
 
-Fetches a channel from another cluster. The only argument used should be the ID of the channel. Be sure to `await` this or use `.then()`
+Fetches a channel from another cluster. The only argument used should be the ID of the channel. Be sure to `await` this or use `.then()`.
 ```js
 await this.ipc.fetchChannel(123456789);
 ```
+**This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
 ### Fetch a member
 
-Fetches a member from another cluster. The first argument should be the ID of the guild. The second argument should the be ID of the member. Be sure to `await` this or use `.then()`
+Fetches a member from another cluster. The first argument should be the ID of the guild. The second argument should the be ID of the member. Be sure to `await` this or use `.then()`.
 ```js
 await this.ipc.fetchMember(123456789, 987654321); 
 ```
+**This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
 ### Send a command to a service
 
@@ -400,6 +405,7 @@ Be sure to use `await` or `.then()`, especially if you expect a response.
 ```js
 await this.ipc.command("ServiceName", "hello service!", true); 
 ```
+You can catch errors with service commands with `.catch()`.
 
 ### Get the latest stats
 
