@@ -11,16 +11,14 @@ module.exports = class BotWorker extends BaseClusterWorker {
 
 	async handleMessage (msg) {
 		if (msg.content === "," && !msg.author.bot) {
-			console.log(1);
 			const test = await this.ipc.fetchMember(msg.guildID, msg.author.id);
-			console.log(2);
 			if (test) {
 				this.bot.createMessage(msg.channel.id, test.id);
 			} else {
 				this.bot.createMessage(msg.channel.id, "Uh oh");
 			}
-		} else if (msg.content === ".") {
-			this.ipc.reshard();
+		} else if (msg.content === "!shutdown") {
+			this.ipc.totalShutdown();
 		}
 	}
 

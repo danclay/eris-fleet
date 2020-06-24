@@ -153,23 +153,11 @@ export class Cluster {
 					this.shutdown = true;
 					if (this.app) {
 						if (this.app.shutdown) {
-							let safe = false;
 							// Ask app to shutdown
 							this.app.shutdown(() => {
-								safe = true;
 								this.bot.disconnect({reconnect: false});
 								if (process.send) process.send({op: "shutdown"});
 							});
-							if (message.killTimeout > 0) {
-								setTimeout(() => {
-									if (!safe) {
-										console.error(`Cluster ${this.clusterID} took too long to shutdown. Performing shutdown anyway.`);
-										
-										this.bot.disconnect({reconnect: false});
-										if (process.send) process.send({op: "shutdown"});
-									}
-								}, message.killTimeout);
-							}
 						} else {
 							this.bot.disconnect({reconnect: false});
 							if (process.send) process.send({op: "shutdown"});

@@ -17,7 +17,6 @@ interface ClusterConnectMessage {
 }
 interface ShutdownMessage {
     op: "shutdown" | string;
-    killTimeout: number;
 }
 interface ServiceConnectMessage {
     serviceName: string;
