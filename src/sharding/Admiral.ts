@@ -868,7 +868,7 @@ export class Admiral extends EventEmitter {
 					} else if (item.message.op == "shutdown") {
 						worker.send(item.message);
 						setTimeout(() => {
-							if (this.queue.queue[0].workerID == item.workerID) {
+							if (this.queue.queue[0]) if (this.queue.queue[0].workerID == item.workerID) {
 								const worker = master.workers[item.workerID];
 								if (worker) {
 									worker.kill();

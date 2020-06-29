@@ -704,29 +704,30 @@ class Admiral extends events_1.EventEmitter {
                         worker.send(item.message);
                         setTimeout(() => {
                             var _a;
-                            if (this.queue.queue[0].workerID == item.workerID) {
-                                const worker = master.workers[item.workerID];
-                                if (worker) {
-                                    worker.kill();
-                                    const name = () => {
-                                        const cluster = this.clusters.find((c) => c.workerID == item.workerID);
-                                        const service = this.services.find((s) => s.workerID == item.workerID);
-                                        if (cluster) {
-                                            return "Cluster " + cluster.clusterID;
+                            if (this.queue.queue[0])
+                                if (this.queue.queue[0].workerID == item.workerID) {
+                                    const worker = master.workers[item.workerID];
+                                    if (worker) {
+                                        worker.kill();
+                                        const name = () => {
+                                            const cluster = this.clusters.find((c) => c.workerID == item.workerID);
+                                            const service = this.services.find((s) => s.workerID == item.workerID);
+                                            if (cluster) {
+                                                return "Cluster " + cluster.clusterID;
+                                            }
+                                            else if (service) {
+                                                return "Service " + service.serviceName;
+                                            }
+                                            else {
+                                                return "Worker " + item.workerID;
+                                            }
+                                        };
+                                        this.warn("Admiral | Safe shutdown failed for " + name() + ". Preformed hard shutdown instead.");
+                                        if (this.softKills.get(item.workerID)) {
+                                            (_a = this.softKills.get(item.workerID)) === null || _a === void 0 ? void 0 : _a.fn(true);
                                         }
-                                        else if (service) {
-                                            return "Service " + service.serviceName;
-                                        }
-                                        else {
-                                            return "Worker " + item.workerID;
-                                        }
-                                    };
-                                    this.warn("Admiral | Safe shutdown failed for " + name() + ". Preformed hard shutdown instead.");
-                                    if (this.softKills.get(item.workerID)) {
-                                        (_a = this.softKills.get(item.workerID)) === null || _a === void 0 ? void 0 : _a.fn(true);
                                     }
                                 }
-                            }
                         }, this.killTimeout);
                     }
                     else {
