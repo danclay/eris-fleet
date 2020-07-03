@@ -620,7 +620,7 @@ export class Admiral extends EventEmitter {
 							const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
 							if (cluster) {
 								this.prelimStats.guilds += message.stats.guilds;
-								this.prelimStats.users += message.stats.guilds;
+								this.prelimStats.users += message.stats.users;
 								this.prelimStats.voice += message.stats.voice;
 								this.prelimStats.clustersRam += message.stats.ram;
 								this.prelimStats.largeGuilds += message.stats.largeGuilds;
