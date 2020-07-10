@@ -207,7 +207,7 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | clusterTimeout | How long to wait between connecting clusters to Discord (in ms)                                                                              | Yes       | 5000                      |
 | nodeArgs       | Node arguments to pass to clusters                                                                                                           | Yes       |                           |
 | statsInterval  | How often to update the stats (in ms) after all clusters are connected. To disable stats, set to 'disable'                                   | Yes       | 60000                     |
-| services       | Services to register. An array of the following object:  `{name: "name of your service", path: "absolute path to your service"}` Your services will start in the order of this array.             | Yes       |                           |
+| services       | Services to register. The format of the services array is shown below this table. Your services will start in the order of this array.             | Yes       |                           |
 | firstShardID   | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | 0                         |
 | lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
 | lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
@@ -216,8 +216,41 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
 | killTimeout    | Timeout before killing the proccess during shutdown (in ms)                                                                                | Yes       | 10000                  |
 | fetchTimeout    | Timeout before giving up on a value fetch (in ms)                                                                                           | Yes       | infinite                  |
-| objectLogging  | Sends logs in an object format that follows: `{source: "the source", message: "the message", timestamp: "the UTC timestamp"}`                 | Yes       | false                     |
-| startingStatus  | Status to set while the cluster is getting ready. Follows this format (shown in typescript): `{status: "online" | "idle" | "dnd" | "invisible", game?: {name: string, type?: 0 | 1 | 2 | 3, url?: string}}` Note that if you want to clear it you will have to do it yourself in your bot.js file.                 | Yes       |                      |
+| objectLogging  | Sends logs in an object format shown below this table                 | Yes       | false                     |
+| startingStatus  | Status to set while the cluster is getting ready. Follows the format shown below this table. Note that if you want to clear it you will have to do it yourself in your bot.js file.                 | Yes       |                      |
+
+### Formats
+
+Here are the formats mentioned in the table above.
+
+#### services
+
+```ts
+Array<{name: "name of your service", path: "absolute path to your service"}>
+```
+
+#### objectLogging
+
+```ts
+{
+    source: String, 
+    message: String, 
+    timestamp: Number
+}
+```
+
+#### startingStatus
+
+```ts
+{
+    status: "online" | "idle" | "dnd" | "invisible", 
+    game?: {
+        name: String,
+        type?: 0 | 1 | 2 | 3, 
+        url?: String
+    }
+}
+```
 
 ### Choose what to log
 
@@ -327,10 +360,11 @@ this.ipc.register("stats", (message) => {
   console.log(message.msg);
 });
 ```
+You can register to a single event multiple times with multiple functions.
 
 ### Unregister
 
-You can unregister events you registered above.
+You can unregister events you registered above. **Note: This will delete all registrations to a single event.**
 ```js
 this.ipc.unregister("stats");
 ```
@@ -342,12 +376,16 @@ You can broadcast events that other clusters can recieve by [registering](#regis
 this.ipc.broadcast("hello clusters!", "Want to chat?");
 ```
 
+**The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.**
+
 ### Send to a specific cluster
 
 You can send a message from one cluster to another specific cluster based on the cluster ID. The first argument is the ID of the cluster to send the message to. The second argument is the name of the event the other cluster should be registered to. The third argument is optional and is the message to send.
 ```js
 this.ipc.sendTo(1, "Hello cluster 1!", "Squad up?");
 ```
+
+**The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.**
 
 ### Send an event to the master process
 

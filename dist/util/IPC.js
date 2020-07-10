@@ -9,17 +9,19 @@ class IPC extends events_1.EventEmitter {
         process.on("message", msg => {
             const event = this.events.get(msg.op);
             if (event) {
-                event.fn(msg);
+                event.forEach(fn => {
+                    fn(msg);
+                });
             }
         });
     }
     register(event, callback) {
-        if (this.events.get(event)) {
-            if (process.send)
-                process.send({ op: "error", msg: "IPC | Can't register 2 events with the same name." });
+        const existingEvent = this.events.get(event);
+        if (existingEvent) {
+            this.events.set(event, existingEvent.concat([callback]));
         }
         else {
-            this.events.set(event, { fn: callback });
+            this.events.set(event, [callback]);
         }
     }
     unregister(event) {
