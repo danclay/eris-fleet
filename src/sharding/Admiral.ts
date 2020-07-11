@@ -166,7 +166,7 @@ export class Admiral extends EventEmitter {
 	private whatToLog: string[];
 	private softKills: Map<
 		number,
-		{ fn: () => void; type?: "cluster" | "service"; id?: string | number }
+		{ fn: (failed?: boolean) => void; type?: "cluster" | "service"; id?: string | number }
 	>;
 	private launchingManager: Map<number, { waiting: () => void } | "launched">;
 	private objectLogging: boolean;
@@ -193,7 +193,7 @@ export class Admiral extends EventEmitter {
 		this.clientOptions = options.clientOptions || {};
 		this.clusterTimeout = options.clusterTimeout || 5e3;
 		this.serviceTimeout = options.serviceTimeout || 0;
-		this.killTimeout = options.killTimeout || 0;
+		this.killTimeout = options.killTimeout || 10e3;
 		this.nodeArgs = options.nodeArgs;
 		this.statsInterval = options.statsInterval || 60e3;
 		this.firstShardID = options.firstShardID || 0;
@@ -616,15 +616,11 @@ export class Admiral extends EventEmitter {
 					}
 					case "collectStats": {
 						if (this.prelimStats && !this.pauseStats) {
-							const cluster = this.clusters.find(
-								(c: ClusterCollection) => c.workerID == worker.id,
-							);
-							const service = this.services.find(
-								(s: ServiceCollection) => s.workerID == worker.id,
-							);
+							const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+							const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
 							if (cluster) {
 								this.prelimStats.guilds += message.stats.guilds;
-								this.prelimStats.users += message.stats.guilds;
+								this.prelimStats.users += message.stats.users;
 								this.prelimStats.voice += message.stats.voice;
 								this.prelimStats.clustersRam += message.stats.ram;
 								this.prelimStats.largeGuilds += message.stats.largeGuilds;
@@ -771,13 +767,23 @@ export class Admiral extends EventEmitter {
 							process.exit(0);
 						} else {
 							let total = 0;
+							let done = 0;
+							const doneFn = () => {
+								done++;
+								if (done == total) {
+									if (this.whatToLog.includes("total_shutdown")) {
+										this.log("Admiral | Total fleet shutdown complete. Ending process.");
+									}
+									process.exit(0);
+								}
+							};
 							this.clusters.forEach((cluster) => {
 								total++;
 								process.nextTick(() => {
 									const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == cluster.clusterID).workerID;
 									if (workerID) {
 										const worker = master.workers[workerID];
-										if (worker) this.shutdownWorker(worker, message.hard ? false : true);
+										if (worker) this.shutdownWorker(worker, message.hard ? false : true, doneFn);
 									}
 								});
 							});
@@ -787,22 +793,9 @@ export class Admiral extends EventEmitter {
 									const workerID = this.services.find((s: ServiceCollection) => s.serviceName == service.serviceName).workerID;
 									if (workerID) {
 										const worker = master.workers[workerID];
-										if (worker) this.shutdownWorker(worker, message.hard ? false : true);
+										if (worker) this.shutdownWorker(worker, message.hard ? false : true, doneFn);
 									}
 								});
-							});
-
-							let done = 0;
-							on("message", (worker, message) => {
-								if (message.op == "shutdown") {
-									done++;
-									if (done == total) {
-										if (this.whatToLog.includes("total_shutdown")) {
-											this.log("Admiral | Total fleet shutdown complete. Ending process.");
-										}
-										process.exit(0);
-									}
-								}
 							});
 						}
 
@@ -837,7 +830,24 @@ export class Admiral extends EventEmitter {
 			});
 
 			on("exit", (worker, code, signal) => {
-				this.restartWorker(worker);
+				if (this.softKills.get(worker.id)) {
+					const name = () => {
+						const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
+						const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+						if (cluster) {
+							return "Cluster " + cluster.clusterID;
+						} else if (service) {
+							return "Service " + service.serviceName;
+						} else {
+							return "Worker " + worker.id;
+						}
+					};
+					this.warn("Admiral | " + name() + " died during a soft kill.");
+					this.queue.execute();
+					this.softKills.get(worker.id)?.fn(true);
+				} else {
+					this.restartWorker(worker);
+				}
 			});
 
 			this.queue.on("execute", (item) => {
@@ -855,6 +865,31 @@ export class Admiral extends EventEmitter {
 								},
 							});
 						}
+					} else if (item.message.op == "shutdown") {
+						worker.send(item.message);
+						setTimeout(() => {
+							if (this.queue.queue[0]) if (this.queue.queue[0].workerID == item.workerID) {
+								const worker = master.workers[item.workerID];
+								if (worker) {
+									worker.kill();
+									const name = () => {
+										const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == item.workerID);
+										const service = this.services.find((s: ServiceCollection) => s.workerID == item.workerID);
+										if (cluster) {
+											return "Cluster " + cluster.clusterID;
+										} else if (service) {
+											return "Service " + service.serviceName;
+										} else {
+											return "Worker " + item.workerID;
+										}
+									};
+									this.warn("Admiral | Safe shutdown failed for " + name() + ". Preformed hard shutdown instead.");
+									if (this.softKills.get(item.workerID)) {
+										this.softKills.get(item.workerID)?.fn(true);
+									}
+								}
+							}
+						}, this.killTimeout);
 					} else {
 						worker.send(item.message);
 					}
@@ -1166,17 +1201,18 @@ export class Admiral extends EventEmitter {
 			workerID: worker.id,
 			type: "n",
 			message: {
-				op: "shutdown",
-				killTimeout: this.killTimeout,
+				op: "shutdown"
 			},
 		};
 		if (cluster) {
 			if (soft) {
 				// Preform soft shutdown
 				this.softKills.set(worker.id, {
-					fn: () => {
-						this.log(`Admiral | Safely shutdown cluster ${cluster.clusterID}`);
-						worker.kill();
+					fn: (failed?: boolean) => {
+						if (!failed) {
+							this.log(`Admiral | Safely shutdown cluster ${cluster.clusterID}`);
+							worker.kill();
+						}
 						if (!customMaps) this.clusters.delete(cluster.clusterID);
 						this.softKills.delete(worker.id);
 						this.queue.execute();

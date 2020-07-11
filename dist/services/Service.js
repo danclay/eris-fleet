@@ -92,22 +92,11 @@ class Service {
                     case "shutdown": {
                         if (this.app) {
                             if (this.app.shutdown) {
-                                let safe = false;
                                 // Ask app to shutdown
                                 this.app.shutdown(() => {
-                                    safe = true;
                                     if (process.send)
                                         process.send({ op: "shutdown" });
                                 });
-                                if (message.killTimeout > 0) {
-                                    setTimeout(() => {
-                                        if (!safe) {
-                                            console.error(`Service ${this.serviceName} took too long to shutdown. Performing shutdown anyway.`);
-                                            if (process.send)
-                                                process.send({ op: "shutdown" });
-                                        }
-                                    }, message.killTimeout);
-                                }
                             }
                             else {
                                 if (process.send)

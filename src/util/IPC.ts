@@ -2,7 +2,7 @@ import {EventEmitter} from "events";
 import * as Admiral from "../sharding/Admiral";
 
 export class IPC extends EventEmitter {
-	private events: Map<string | number, {fn: (msg: unknown) => void}>;
+	private events: Map<string | number, Array<(msg: unknown) => void>>;
 
 	public constructor() {
 		super();
@@ -11,16 +11,19 @@ export class IPC extends EventEmitter {
 		process.on("message", msg => {
 			const event = this.events.get(msg.op);
 			if (event) {
-				event.fn(msg);
+				event.forEach(fn => {
+					fn(msg);
+				});
 			}
 		});
 	}
 
 	public register(event: string, callback: (msg: unknown) => void): void {
-		if (this.events.get(event)) {
-			if (process.send) process.send({op: "error", msg: "IPC | Can't register 2 events with the same name."});
+		const existingEvent = this.events.get(event);
+		if (existingEvent) {
+			this.events.set(event, existingEvent.concat([callback]));
 		} else {
-			this.events.set(event, {fn: callback});
+			this.events.set(event, [callback]);
 		}
 	}
 
