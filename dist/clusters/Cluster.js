@@ -35,12 +35,10 @@ class Cluster {
             process.send({ op: "warn", msg: str, source: "Cluster " + this.clusterID }); };
         //Spawns
         process.on("uncaughtException", (err) => {
-            if (process.send)
-                process.send({ op: "error", msg: util_1.inspect(err) });
+            console.error(util_1.inspect(err));
         });
         process.on("unhandledRejection", (reason, promise) => {
-            if (process.send)
-                process.send({ op: "error", msg: "Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason });
+            console.error("Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason);
         });
         if (process.send)
             process.send({ op: "launched" });

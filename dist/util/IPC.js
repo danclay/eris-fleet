@@ -50,10 +50,10 @@ class IPC extends events_1.EventEmitter {
             process.send({ op: "fetchUser", id });
         return new Promise((resolve, reject) => {
             const callback = (r) => {
-                this.removeListener(id.toString(), callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
-            this.on(id.toString(), callback);
+            this.on(id, callback);
         });
     }
     async fetchGuild(id) {
@@ -61,10 +61,10 @@ class IPC extends events_1.EventEmitter {
             process.send({ op: "fetchGuild", id });
         return new Promise((resolve, reject) => {
             const callback = (r) => {
-                this.removeListener(id.toString(), callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
-            this.on(id.toString(), callback);
+            this.on(id, callback);
         });
     }
     async fetchChannel(id) {
@@ -72,10 +72,10 @@ class IPC extends events_1.EventEmitter {
             process.send({ op: "fetchChannel", id });
         return new Promise((resolve, reject) => {
             const callback = (r) => {
-                this.removeListener(id.toString(), callback);
+                this.removeListener(id, callback);
                 resolve(r);
             };
-            this.on(id.toString(), callback);
+            this.on(id, callback);
         });
     }
     async fetchMember(guildID, memberID) {

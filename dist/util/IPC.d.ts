@@ -9,10 +9,10 @@ export declare class IPC extends EventEmitter {
     broadcast(op: string, message?: unknown): void;
     admiralBroadcast(op: string, message?: unknown): void;
     sendTo(cluster: number, op: string, message?: unknown): void;
-    fetchUser(id: number): Promise<any>;
-    fetchGuild(id: number): Promise<any>;
-    fetchChannel(id: number): Promise<any>;
-    fetchMember(guildID: number, memberID: number): Promise<any>;
+    fetchUser(id: string): Promise<any>;
+    fetchGuild(id: string): Promise<any>;
+    fetchChannel(id: string): Promise<any>;
+    fetchMember(guildID: string, memberID: string): Promise<any>;
     command(service: string, message?: unknown, receptive?: boolean): Promise<unknown>;
     getStats(): Promise<Admiral.Stats>;
     restartCluster(clusterID: number, hard?: boolean): void;

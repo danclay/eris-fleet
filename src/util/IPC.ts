@@ -46,46 +46,46 @@ export class IPC extends EventEmitter {
 		if (process.send) process.send({op: "sendTo", cluster: cluster, event: {msg: message, op}});
 	}
 
-	public async fetchUser(id: number): Promise<any> {
+	public async fetchUser(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchUser", id});
 
 		return new Promise((resolve, reject) => {
 			const callback = (r: unknown) => {
-				this.removeListener(id.toString(), callback);
+				this.removeListener(id, callback);
 				resolve(r);
 			};
 
-			this.on(id.toString(), callback);
+			this.on(id, callback);
 		});
 	}
 
-	public async fetchGuild(id: number): Promise<any> {
+	public async fetchGuild(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchGuild", id});
 
 		return new Promise((resolve, reject) => {
 			const callback = (r: unknown) => {
-				this.removeListener(id.toString(), callback);
+				this.removeListener(id, callback);
 				resolve(r);
 			};
 
-			this.on(id.toString(), callback);
+			this.on(id, callback);
 		});
 	}
 
-	public async fetchChannel(id: number): Promise<any> {
+	public async fetchChannel(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchChannel", id});
 
 		return new Promise((resolve, reject) => {
 			const callback = (r: unknown) => {
-				this.removeListener(id.toString(), callback);
+				this.removeListener(id, callback);
 				resolve(r);
 			};
 
-			this.on(id.toString(), callback);
+			this.on(id, callback);
 		});
 	}
 
-	public async fetchMember(guildID: number, memberID: number): Promise<any> {
+	public async fetchMember(guildID: string, memberID: string): Promise<any> {
 		const UUID = JSON.stringify({guildID, memberID});
 		if (process.send) process.send({op: "fetchMember", id: UUID});
 
