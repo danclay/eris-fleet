@@ -404,7 +404,7 @@ Admiral.on("Hello", (r) => {
 
 Fetches a user from another cluster. Not much to explain here. The only argument used should be the ID of the user. Be sure to `await` this or use `.then()`.
 ```js
-await this.ipc.fetchUser(123456789);
+await this.ipc.fetchUser('123456789');
 ```
 **This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
@@ -412,7 +412,7 @@ await this.ipc.fetchUser(123456789);
 
 Fetches a guild from another cluster. The only argument used should be the ID of the guild. Be sure to `await` this or use `.then()`.
 ```js
-await this.ipc.fetchGuild(123456789);
+await this.ipc.fetchGuild('123456789');
 ```
 **This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
@@ -420,7 +420,7 @@ await this.ipc.fetchGuild(123456789);
 
 Fetches a channel from another cluster. The only argument used should be the ID of the channel. Be sure to `await` this or use `.then()`.
 ```js
-await this.ipc.fetchChannel(123456789);
+await this.ipc.fetchChannel('123456789');
 ```
 **This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 
@@ -428,7 +428,7 @@ await this.ipc.fetchChannel(123456789);
 
 Fetches a member from another cluster. The first argument should be the ID of the guild. The second argument should the be ID of the member. Be sure to `await` this or use `.then()`.
 ```js
-await this.ipc.fetchMember(123456789, 987654321); 
+await this.ipc.fetchMember('123456789', '987654321'); 
 ```
 **This will return null if no value can be found or if it takes too long (See fetchTimout in options)**
 

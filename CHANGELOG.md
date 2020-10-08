@@ -2,6 +2,9 @@
 
 This may skip some little bug fixes.
 
+## 0.3.4
+Fixed [issue 60](https://github.com/danclay/eris-fleet/issues/60) where Discord snowflake IDs were being treated as numbers. They are now treated as strings.
+
 ## 0.3.0
 - Added resharding
 - Fixed some issues with the IPC

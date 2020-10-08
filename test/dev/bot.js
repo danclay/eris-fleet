@@ -7,19 +7,11 @@ module.exports = class BotWorker extends BaseClusterWorker {
 		super(setup);
 
 		this.bot.on("messageCreate", this.handleMessage.bind(this));
-
-		this.ipc.register('yeet', (msg) => {
-			console.log("1 " + msg.op)
-		})
-
-		this.ipc.register('yeet', (msg) => {
-			console.log("2 " + msg.op)
-		})
 	}
 
 	async handleMessage (msg) {
-		if (msg.content === '!test') {
-			this.ipc.broadcast('yeet', 'yes')
+		if (msg.content.startsWith('!test')) {
+			this.bot.createMessage(msg.channel.id, (await this.ipc.fetchMember(msg.content.replace('!test', ""), msg.author.id)).id)
 		}
 	}
 

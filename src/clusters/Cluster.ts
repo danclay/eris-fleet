@@ -29,11 +29,11 @@ export class Cluster {
 
 		//Spawns
 		process.on("uncaughtException", (err: Error) => {
-			if (process.send) process.send({op: "error", msg: inspect(err)});
+			console.error(inspect(err));
 		});
 
 		process.on("unhandledRejection", (reason, promise) => {
-			if (process.send) process.send({op: "error", msg: "Unhandled Rejection at: " + inspect(promise) + " reason: " + reason});
+			console.error("Unhandled Rejection at: " + inspect(promise) + " reason: " + reason);
 		});
 
 		if (process.send) process.send({op: "launched"});
