@@ -2,7 +2,7 @@
   "name": "eris-fleet",
   "version": "0.3.4",
   "dependencies": {
-    "eris": "^0.13.3"
+    "eris": "^0.14.0"
   },
   "description": "Cluster management for Discord bots using the Eris library. Inspired by eris-sharder and @brussell98/megane.",
   "main": "dist/index.js",
