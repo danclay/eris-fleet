@@ -9,7 +9,7 @@ class BaseServiceWorker {
         this.ipc = new IPC_1.IPC();
         this.readyPromise = new Promise((resolve, reject) => {
             this.serviceReady = () => {
-                resolve();
+                resolve(undefined);
             };
             this.serviceStartingError = (err) => {
                 reject(err);
