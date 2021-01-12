@@ -13,6 +13,9 @@ module.exports = class BotWorker extends BaseClusterWorker {
 		if (msg.content.startsWith('!test')) {
 			this.bot.createMessage(msg.channel.id, (await this.ipc.fetchMember(msg.content.replace('!test', ""), msg.author.id)).id)
 		}
+		if (msg.content.startsWith('!a')) {
+			this.bot.createMessage(msg.channel.id, "t")
+		}
 	}
 
 	shutdown (done) {
