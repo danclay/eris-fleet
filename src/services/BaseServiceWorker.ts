@@ -24,7 +24,7 @@ export class BaseServiceWorker {
 		this.ipc = new IPC();
 		this.readyPromise = new Promise((resolve, reject) => {
 			this.serviceReady = () => {
-				resolve();
+				resolve(undefined);
 			};
 			this.serviceStartingError = (err: unknown) => {
 				reject(err);

@@ -510,7 +510,7 @@ export class Admiral extends EventEmitter {
 					case "shutdown": {
 						const workerID = this.queue.queue[0].workerID;
 						if (this.softKills.get(workerID)) {
-								this.softKills.get(workerID)?.fn();
+							this.softKills.get(workerID)?.fn();
 						}
 						// if (!this.queue.queue[1]) this.emit("ready");
 						break;
@@ -662,14 +662,14 @@ export class Admiral extends EventEmitter {
 						break;
 					}
 					case "getStats": {
-							// Sends the latest stats upon request from the IPC
-							master.workers[worker.id]?.send({
-								op: "return",
-								id: "statsReturn",
-								value: this.stats,
-							});
+						// Sends the latest stats upon request from the IPC
+						master.workers[worker.id]?.send({
+							op: "return",
+							id: "statsReturn",
+							value: this.stats,
+						});
 
-							break;
+						break;
 					}
 					case "broadcast": {
 						this.broadcast(message.event.op, message.event.msg);
