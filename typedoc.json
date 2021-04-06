@@ -1,0 +1,7 @@
+{
+	"entryPoints": ["./src/index.ts"],
+	"readme": "./README.md",
+	"out": "docs",
+	"includeVersion": true,
+	"gitRevision": "master"
+}

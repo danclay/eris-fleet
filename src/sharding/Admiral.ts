@@ -68,7 +68,7 @@ export interface Options {
 	fetchTimeout?: number;
 }
 
-interface ShardStats {
+export interface ShardStats {
 	latency: number;
 	id: number;
 	ready: boolean;
@@ -77,7 +77,7 @@ interface ShardStats {
 	users: number;
 }
 
-interface ClusterStats {
+export interface ClusterStats {
 	id: number;
 	guilds: number;
 	users: number;
@@ -88,7 +88,7 @@ interface ClusterStats {
 	shardStats: ShardStats[] | [];
 }
 
-interface ServiceStats {
+export interface ServiceStats {
 	name: number;
 	ram: number;
 }
@@ -134,6 +134,7 @@ interface WorkerCollection {
 	};
 }
 
+/** The sharding manager */
 export class Admiral extends EventEmitter {
 	/** Map of clusters by  to worker by ID */
 	public clusters!: Collection;
@@ -182,6 +183,10 @@ export class Admiral extends EventEmitter {
 	}>;
 	private fetchTimeout: number;
 
+	/** 
+	 * Creates the sharding manager
+	 * @param options Options to configure the sharding manager
+	*/
 	public constructor(options: Options) {
 		super();
 		this.objectLogging = options.objectLogging || false;

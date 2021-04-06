@@ -2,6 +2,10 @@
 
 This may skip some little bug fixes.
 
+## 0.3.6
+- Updated ipc.fetchMember to use Eris's guild.fetchMembers function. This should fix it only returning cached members
+- Updated Eris from 0.14.0 to 0.15.0
+
 ## 0.3.4
 Fixed [issue 60](https://github.com/danclay/eris-fleet/issues/60) where Discord snowflake IDs were being treated as numbers. They are now treated as strings.
 

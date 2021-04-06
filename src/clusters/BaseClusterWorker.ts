@@ -8,11 +8,18 @@ export interface Setup {
 }
 
 export class BaseClusterWorker {
+	/** The Eris client */
 	public bot: Client;
+	/** ID of the cluster */
 	public clusterID: number;
+	/** ID of the worker */
 	public workerID: number;
+	/** IPC functions */
 	public ipc: IPC;
-	/** Function called for graceful shutdown of the cluster */
+	/** 
+	 * Graceful shotdown of the cluster. Have a function within your bot class called "shutdown" to use this.
+	 * @param done Call this function when your shutdown function is complete. 
+	*/
 	public shutdown?: (done: () => void) => void;
 
 	public constructor(setup: Setup) {

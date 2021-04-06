@@ -11,6 +11,8 @@
   </p>
 </div>
 
+### [Documentation](https://danclay.github.io/eris-fleet/) | [Eris](https://abal.moe/Eris/docs/)
+
 # About
 
 A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [megane](https://github.com/brussell98/megane) with services and configurable logging.

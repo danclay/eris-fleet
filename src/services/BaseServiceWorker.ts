@@ -6,16 +6,26 @@ export interface Setup {
 }
 
 export class BaseServiceWorker {
+	/** ID of the worker */
 	public workerID: number;
+	/** IPC functions */
 	public ipc: IPC;
 	public serviceName: string;
 	/** Function to report a service being ready */
 	public serviceReady!: () => void;
 	/** Function to report error during service launch */
 	public serviceStartingError!: (error: unknown) => void;
+	/** @internal */
 	public readyPromise!: Promise<undefined>;
+	/** 
+	 * Function to handle commands. Have a function called "handleCommand in your service class to use this."
+	 * @param data Data sent in the command
+	*/
 	public handleCommand!: (data: unknown) => unknown;
-	/** Function called for graceful shutdown of the service */
+	/** 
+	 * Graceful shotdown of the service. Have a function within your bot class called "shutdown" to use this.
+	 * @param done Call this function when your shutdown function is complete. 
+	*/
 	public shutdown?: (done: () => void) => void;
 
 	public constructor(setup: Setup) {
