@@ -4,6 +4,13 @@ test/CI/
 test/dev/
 tsconfig.json
 .github/
+typedoc.json
+.eslintrc.json
+docs
+.eslintignore
+.travis.yml
+.gitattributes
+test/
 
 # Logs
 logs
