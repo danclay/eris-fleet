@@ -30,7 +30,12 @@ const Eris = __importStar(require("eris"));
 const Cluster_1 = require("../clusters/Cluster");
 const Service_1 = require("../services/Service");
 const path = __importStar(require("path"));
+/** The sharding manager */
 class Admiral extends events_1.EventEmitter {
+    /**
+     * Creates the sharding manager
+     * @param options Options to configure the sharding manager
+    */
     constructor(options) {
         super();
         this.objectLogging = options.objectLogging || false;

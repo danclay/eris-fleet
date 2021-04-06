@@ -58,7 +58,7 @@ export interface Options {
     /** How long to wait before giving up on a fetch */
     fetchTimeout?: number;
 }
-interface ShardStats {
+export interface ShardStats {
     latency: number;
     id: number;
     ready: boolean;
@@ -66,7 +66,7 @@ interface ShardStats {
     guilds: number;
     users: number;
 }
-interface ClusterStats {
+export interface ClusterStats {
     id: number;
     guilds: number;
     users: number;
@@ -76,7 +76,7 @@ interface ClusterStats {
     ram: number;
     shardStats: ShardStats[] | [];
 }
-interface ServiceStats {
+export interface ServiceStats {
     name: number;
     ram: number;
 }
@@ -93,6 +93,7 @@ export interface Stats {
     clusters: ClusterStats[];
     services: ServiceStats[];
 }
+/** The sharding manager */
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by  to worker by ID */
     clusters: Collection;
@@ -132,6 +133,10 @@ export declare class Admiral extends EventEmitter {
     private statsStarted;
     private fetches;
     private fetchTimeout;
+    /**
+     * Creates the sharding manager
+     * @param options Options to configure the sharding manager
+    */
     constructor(options: Options);
     private launch;
     /** Reshard */
