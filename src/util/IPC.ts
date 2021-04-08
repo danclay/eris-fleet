@@ -169,10 +169,15 @@ export class IPC extends EventEmitter {
 			return new Promise((resolve, reject) => {
 				const callback = (r: any) => {
 					this.removeListener(UUID, callback);
-					if (r.value.err) {
-						reject(r.value.err);
-					} else {
+
+					if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
 						resolve(r.value);
+					} else {
+						if (r.value.err) {
+							reject(r.value.err);
+						} else {
+							resolve(r.value);
+						}
 					}
 				};
 	
