@@ -121,7 +121,7 @@ export class Cluster {
 					const getShardUsers = (id: number) => {
 						let users = 0;
 						for(const [key, value] of Object.entries(this.bot.guildShardMap)) {
-							const guild = this.bot.guilds.find(g => g.id == key);
+							const guild = this.bot.guilds.get(key);
 							if (Number(value) == id && guild) users += guild.memberCount;
 						}
 						return users;
