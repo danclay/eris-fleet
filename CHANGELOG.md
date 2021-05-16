@@ -2,6 +2,9 @@
 
 This may skip some little bug fixes.
 
+## 0.3.7
+- Fix error on ipc service command when a non-object is the return value
+
 ## 0.3.6
 - Updated ipc.fetchMember to use Eris's guild.fetchMembers function. This should fix it only returning cached members
 - Updated Eris from 0.14.0 to 0.15.0
