@@ -139,6 +139,20 @@ export declare class Admiral extends EventEmitter {
     */
     constructor(options: Options);
     private launch;
+    /** Restart cluster */
+    restartCluster(clusterID: number, hard: boolean): void;
+    /** Restart all clusters */
+    restartAllClusters(hard: boolean): void;
+    /** Restart service */
+    restartService(serviceName: string, hard: boolean): void;
+    /**  Restart all services */
+    restartAllServices(hard: boolean): void;
+    /** Shutdown cluster */
+    shutdownCluster(clusterID: number, hard: boolean): void;
+    /** Shutdown Service */
+    shutdownService(serviceName: string, hard: boolean): void;
+    /** Total Shutdown */
+    totalShutdown(hard: boolean): void;
     /** Reshard */
     reshard(): void;
     private startService;
