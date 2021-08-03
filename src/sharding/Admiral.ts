@@ -689,120 +689,37 @@ export class Admiral extends EventEmitter {
 						break;
 					}
 					case "restartCluster": {
-						const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == message.clusterID).workerID;
-						if (workerID) {
-							const worker = master.workers[workerID];
-							if (worker) {
-								this.restartWorker(worker, true, message.hard ? false : true);
-							}
-						}
+						this.restartCluster(message.clusterID, message.hard);
 
 						break;
 					}
 					case "restartAllClusters": {
-						this.clusters.forEach((cluster) => {
-							process.nextTick(() => {
-								const workerID = this.clusters.find(
-									(c: ClusterCollection) => c.clusterID == cluster.clusterID,
-								).workerID;
-								const worker = master.workers[workerID];
-								if (worker) this.restartWorker(worker, true, message.hard ? false : true);
-							});
-						});
+						this.restartAllClusters(message.hard);
 
 						break;
 					}
 					case "restartService": {
-						const workerID = this.services.find(
-							(s: ServiceCollection) => s.serviceName == message.serviceName,
-						).workerID;
-						if (workerID) {
-							const worker = master.workers[workerID];
-							if (worker) this.restartWorker(worker, true, message.hard ? false : true);
-						}
+						this.restartService(message.serviceName, message.hard);
 
 						break;
 					}
 					case "restartAllServices": {
-						this.services.forEach((service) => {
-							process.nextTick(() => {
-								const workerID = this.services.find(
-									(s: ServiceCollection) =>
-										s.serviceName == service.serviceName,
-								).workerID;
-								const worker = master.workers[workerID];
-								if (worker) this.restartWorker(worker, true, message.hard ? false : true);
-							});
-						});
+						this.restartAllServices(message.hard);
 
 						break;
 					}
 					case "shutdownCluster": {
-						const workerID = this.clusters.find(
-							(c: ClusterCollection) => c.clusterID == message.clusterID,
-						).workerID;
-						if (workerID) {
-							const worker = master.workers[workerID];
-							if (worker) this.shutdownWorker(worker, message.hard ? false : true);
-						}
+						this.shutdownCluster(message.clusterID, message.hard);
 
 						break;
 					}
 					case "shutdownService": {
-						const workerID = this.services.find(
-							(s: ServiceCollection) => s.serviceName == message.serviceName,
-						).workerID;
-						if (workerID) {
-							const worker = master.workers[workerID];
-							if (worker) this.shutdownWorker(worker, message.hard ? false : true);
-						}
+						this.shutdownService(message.serviceName, message.hard);
 
 						break;
 					}
 					case "totalShutdown": {
-						if (this.whatToLog.includes("total_shutdown")) {
-							this.log("Admiral | Starting total fleet shutdown.");
-						}
-						if (message.hard) {
-							if (this.whatToLog.includes("total_shutdown")) {
-								this.log(
-									"Admiral | Total fleet hard shutdown complete. Ending process.",
-								);
-							}
-							process.exit(0);
-						} else {
-							let total = 0;
-							let done = 0;
-							const doneFn = () => {
-								done++;
-								if (done == total) {
-									if (this.whatToLog.includes("total_shutdown")) {
-										this.log("Admiral | Total fleet shutdown complete. Ending process.");
-									}
-									process.exit(0);
-								}
-							};
-							this.clusters.forEach((cluster) => {
-								total++;
-								process.nextTick(() => {
-									const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == cluster.clusterID).workerID;
-									if (workerID) {
-										const worker = master.workers[workerID];
-										if (worker) this.shutdownWorker(worker, message.hard ? false : true, doneFn);
-									}
-								});
-							});
-							this.services.forEach((service) => {
-								total++;
-								process.nextTick(() => {
-									const workerID = this.services.find((s: ServiceCollection) => s.serviceName == service.serviceName).workerID;
-									if (workerID) {
-										const worker = master.workers[workerID];
-										if (worker) this.shutdownWorker(worker, message.hard ? false : true, doneFn);
-									}
-								});
-							});
-						}
+						this.totalShutdown(message.hard);
 
 						break;
 					}
@@ -965,6 +882,150 @@ export class Admiral extends EventEmitter {
 			} else if (process.env.type === "service") {
 				new Service();
 			}
+		}
+	}
+	
+	/**
+	 * Restarts a specific cluster
+	 * @param clusterID ID of the cluster to restart
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public restartCluster(clusterID: number, hard: boolean): void {
+		const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == clusterID).workerID;
+		if (workerID) {
+			const worker = master.workers[workerID];
+			if (worker) {
+				this.restartWorker(worker, true, hard ? false : true);
+			}
+		}
+
+	}
+
+	/**
+	 * Restarts all clusters
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public restartAllClusters(hard: boolean): void {
+		this.clusters.forEach((cluster) => {
+			process.nextTick(() => {
+				const workerID = this.clusters.find(
+					(c: ClusterCollection) => c.clusterID == cluster.clusterID,
+				).workerID;
+				const worker = master.workers[workerID];
+				if (worker) this.restartWorker(worker, true, hard ? false : true);
+			});
+		});
+	}
+
+	/**
+	 * Restarts a specific service
+	 * @param serviceName Name of the service
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public restartService(serviceName: string, hard: boolean): void {
+		const workerID = this.services.find(
+			(s: ServiceCollection) => s.serviceName == serviceName,
+		).workerID;
+		if (workerID) {
+			const worker = master.workers[workerID];
+			if (worker) this.restartWorker(worker, true, hard ? false : true);
+		}
+	}
+
+	/**
+	 * Restarts all services
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public restartAllServices(hard: boolean): void {
+		this.services.forEach((service) => {
+			process.nextTick(() => {
+				const workerID = this.services.find(
+					(s: ServiceCollection) =>
+						s.serviceName == service.serviceName,
+				).workerID;
+				const worker = master.workers[workerID];
+				if (worker) this.restartWorker(worker, true, hard ? false : true);
+			});
+		});
+	}
+
+	/**
+	 * Shuts down a cluster
+	 * @param clusterID The ID of the cluster to shutdown
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public shutdownCluster(clusterID: number, hard: boolean): void {
+		const workerID = this.clusters.find(
+			(c: ClusterCollection) => c.clusterID == clusterID,
+		).workerID;
+		if (workerID) {
+			const worker = master.workers[workerID];
+			if (worker) this.shutdownWorker(worker, hard ? false : true);
+		}
+	}
+
+	/**
+	 * Shuts down a cluster
+	 * @param serviceName The name of the service
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public shutdownService(serviceName: string, hard: boolean): void {
+		const workerID = this.services.find(
+			(s: ServiceCollection) => s.serviceName == serviceName,
+		).workerID;
+		if (workerID) {
+			const worker = master.workers[workerID];
+			if (worker) this.shutdownWorker(worker, hard ? false : true);
+		}
+	}
+
+	/**
+	 * Shuts down everything and exits the master process
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
+	public totalShutdown(hard: boolean): void {
+		if (this.whatToLog.includes("total_shutdown")) {
+			this.log("Admiral | Starting total fleet shutdown.");
+		}
+		if (hard) {
+			if (this.whatToLog.includes("total_shutdown")) {
+				this.log(
+					"Admiral | Total fleet hard shutdown complete. Ending process.",
+				);
+			}
+			process.exit(0);
+		} else {
+			let total = 0;
+			let done = 0;
+			const doneFn = () => {
+				done++;
+				if (done == total) {
+					if (this.whatToLog.includes("total_shutdown")) {
+						this.log("Admiral | Total fleet shutdown complete. Ending process.");
+					}
+					process.exit(0);
+				}
+			};
+			this.clusters.forEach((cluster) => {
+				total++;
+				process.nextTick(() => {
+					const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == cluster.clusterID).workerID;
+					if (workerID) {
+						const worker = master.workers[workerID];
+						if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
+					}
+				});
+			});
+			this.services.forEach((service) => {
+				total++;
+				process.nextTick(() => {
+					const workerID = this.services.find((s: ServiceCollection) => s.serviceName == service.serviceName).workerID;
+					if (workerID) {
+						const worker = master.workers[workerID];
+						if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
+					}
+				});
+			});
 		}
 	}
 

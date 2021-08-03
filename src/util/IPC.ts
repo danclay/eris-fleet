@@ -255,7 +255,7 @@ export class IPC extends EventEmitter {
 	}
 
 	/**
-	 * Shuts down everything and exists the master process
+	 * Shuts down everything and exits the master process
 	 * @param hard Whether to ignore the soft shutdown function
 	*/
 	public totalShutdown(hard?: boolean): void {
