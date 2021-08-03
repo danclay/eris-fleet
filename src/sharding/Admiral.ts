@@ -885,7 +885,11 @@ export class Admiral extends EventEmitter {
 		}
 	}
 	
-	/** Restart cluster */
+	/**
+	 * Restarts a specific cluster
+	 * @param clusterID ID of the cluster to restart
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public restartCluster(clusterID: number, hard: boolean): void {
 		const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == clusterID).workerID;
 		if (workerID) {
@@ -897,7 +901,10 @@ export class Admiral extends EventEmitter {
 
 	}
 
-	/** Restart all clusters */
+	/**
+	 * Restarts all clusters
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public restartAllClusters(hard: boolean): void {
 		this.clusters.forEach((cluster) => {
 			process.nextTick(() => {
@@ -910,7 +917,11 @@ export class Admiral extends EventEmitter {
 		});
 	}
 
-	/** Restart service */
+	/**
+	 * Restarts a specific service
+	 * @param serviceName Name of the service
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public restartService(serviceName: string, hard: boolean): void {
 		const workerID = this.services.find(
 			(s: ServiceCollection) => s.serviceName == serviceName,
@@ -921,7 +932,10 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	/**  Restart all services */
+	/**
+	 * Restarts all services
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public restartAllServices(hard: boolean): void {
 		this.services.forEach((service) => {
 			process.nextTick(() => {
@@ -935,7 +949,11 @@ export class Admiral extends EventEmitter {
 		});
 	}
 
-	/** Shutdown cluster */
+	/**
+	 * Shuts down a cluster
+	 * @param clusterID The ID of the cluster to shutdown
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public shutdownCluster(clusterID: number, hard: boolean): void {
 		const workerID = this.clusters.find(
 			(c: ClusterCollection) => c.clusterID == clusterID,
@@ -946,7 +964,11 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	/** Shutdown Service */
+	/**
+	 * Shuts down a cluster
+	 * @param serviceName The name of the service
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public shutdownService(serviceName: string, hard: boolean): void {
 		const workerID = this.services.find(
 			(s: ServiceCollection) => s.serviceName == serviceName,
@@ -957,7 +979,10 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	/** Total Shutdown */
+	/**
+	 * Shuts down everything and exits the master process
+	 * @param hard Whether to ignore the soft shutdown function
+	*/
 	public totalShutdown(hard: boolean): void {
 		if (this.whatToLog.includes("total_shutdown")) {
 			this.log("Admiral | Starting total fleet shutdown.");
