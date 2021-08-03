@@ -4,10 +4,11 @@
     <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
     <a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
-    <a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://api.travis-ci.com/danclay/eris-fleet.svg?branch=master" alt="Build" /></a>
+	<a href="https://david-dm.org/danclay/eris-fleet?type=peer"><img src="https://img.shields.io/david/peer/danclay/eris-fleet.svg?type=peer&cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
+    <a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://img.shields.io/travis/com/danclay/eris-fleet/master?cacheSeconds=3600&style=flat-square" alt="Build" /></a>
   </p>
   <p>
-    <a href="https://nodei.co/npm/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
+    <a href="https://www.npmjs.com/package/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
   </p>
 </div>
 
@@ -32,6 +33,12 @@ For some more documentation check the [wiki on Github](https://github.com/dancla
 - Use a modified version of eris
 - Soft cluster and service restarts where the old worker is killed after the new one is ready
 - Graceful shutdowns
+
+## Help
+
+If you still have questions, you can join the support server on Discord: [Discord server](https://discord.gg/tk2n3naJn3)
+
+[![Support server on Discord](https://discord.com/api/guilds/866589508392976384/widget.png?style=banner2)](https://discord.gg/tk2n3naJn3)
 
 # Installation
 Run `npm install eris-fleet` or with yarn: `yarn add eris-fleet`.
@@ -294,13 +301,19 @@ console.error(inspect(yourError)); // Logs the error
 
 To restart clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.
 ```js
+// from a cluster/service
 this.ipc.restartCluster(0);
+// or from the master process
+Admiral.restartCluster(0);
 ```
 The above code will restart the cluster while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. If you want to kill the worker immediately, use `this.ipc.restartCluster(0, true)`. The second argument is whether you want to preform a hard restart. This is false by default. 
 
 You can also restart all the clusters. You can do this by using
 ```js
+// from a cluster/service
 this.ipc.restartAllClusters();
+// or from the master process
+Admiral.restartAllClusters();
 ```
 **This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.** If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
 
@@ -308,7 +321,10 @@ this.ipc.restartAllClusters();
 
 You can shutdown clusters. Use the following to shutdown clusters:
 ```js
+// from a cluster/service
 this.ipc.shutdownCluster(0);
+// or from the master process
+Admiral.shutdownCluster(0);
 ```
 The above code will shutdown the cluster gracefully. If you would like to kill the worker immediately, use `this.ipc.shutdownCluster(0, true)`.
 **You cannot restart a cluster after shutting it down.** A future update may allow this.
@@ -317,13 +333,19 @@ The above code will shutdown the cluster gracefully. If you would like to kill t
 
 To restart services, you can do the following in your bot.js file. "myService" is a placeholder for the name of the service you wish to restart.
 ```js
+// from a cluster/service
 this.ipc.restartService("myService");
+// or from the master process
+Admiral.restartService("myService");
 ```
 The above code will restart the service while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. All commands will be sent to the original worker until the new worker is ready. If you want to kill the worker immediately, use `this.ipc.restartService("myService", true)`. The second argument is whether you want to preform a hard restart. This is false by default. 
 
 You can also restart all the clusters. You can do this by using 
 ```js
+// from a cluster/service
 this.ipc.restartAllServices();
+// or from the master process
+Admiral.restartAllServices();
 ```
 If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
 
@@ -331,7 +353,10 @@ If you want to preform a hard restart, use `this.ipc.restartAllClusters(true)`.
 
 You can shutdown services. Use the following to shutdown services:
 ```js
+// from a cluster/service
 this.ipc.shutdownService("myService");
+// or from the master process
+Admiral.shutdownService("myService");
 ```
 The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use `this.ipc.shutdownService("myService", true)`.
 **You cannot restart a service after shutting it down.** A future update may allow this.
@@ -340,7 +365,10 @@ The above code will shutdown the service gracefully. If you would like to kill t
 
 You can totally shutdown your fleet using the following:
 ```js
+// from a cluster/service
 this.ipc.totalShutdown();
+// or from the master process
+Admiral.totalShutdown();
 ```
 The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use `this.ipc.totalShutdown(true)`.
 **A total shutdown exits all processes, including the master process.**
@@ -349,7 +377,10 @@ The above code will shutdown the service gracefully. If you would like to kill t
 
 You can order a resharding with the following:
 ```js
+// from a cluster/service
 this.ipc.reshard();
+// or from the master process
+Admiral.reshard();
 ```
 Resharding attempts to recalculate the number of shards while keeping your bot running. This is done by keeping the old workers running until the new ones are ready. Your code will only load on the new workers once they are all ready for the transition. **This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.**
 
@@ -375,7 +406,10 @@ this.ipc.unregister("stats");
 
 You can broadcast events that other clusters can recieve by [registering](#register) with the event. The first argument is the name of the event you are broadcasting (this should match the name of the event other clusters are registered to). The second argument is optional and is the the message you want to send. Note that the cluster sending this will also recieve the broadcast since this broadcasts to **all** clusters.
 ```js
+// from a cluster/service
 this.ipc.broadcast("hello clusters!", "Want to chat?");
+// or from the master process
+Admiral.broadcast("hello clusters!", "Want to chat?");
 ```
 
 **The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.**
@@ -474,6 +508,7 @@ if (isMaster) {
     Admiral.broadcast("the operation", "an optional message");
     // Reshards
     Admiral.reshard();
+	// NOTE: More options listed in the IPC section of this document
 }
 
 ```
