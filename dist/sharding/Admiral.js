@@ -725,7 +725,11 @@ class Admiral extends events_1.EventEmitter {
             }
         }
     }
-    /** Restart cluster */
+    /**
+     * Restarts a specific cluster
+     * @param clusterID ID of the cluster to restart
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartCluster(clusterID, hard) {
         const workerID = this.clusters.find((c) => c.clusterID == clusterID).workerID;
         if (workerID) {
@@ -735,7 +739,10 @@ class Admiral extends events_1.EventEmitter {
             }
         }
     }
-    /** Restart all clusters */
+    /**
+     * Restarts all clusters
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartAllClusters(hard) {
         this.clusters.forEach((cluster) => {
             process.nextTick(() => {
@@ -746,7 +753,11 @@ class Admiral extends events_1.EventEmitter {
             });
         });
     }
-    /** Restart service */
+    /**
+     * Restarts a specific service
+     * @param serviceName Name of the service
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartService(serviceName, hard) {
         const workerID = this.services.find((s) => s.serviceName == serviceName).workerID;
         if (workerID) {
@@ -755,7 +766,10 @@ class Admiral extends events_1.EventEmitter {
                 this.restartWorker(worker, true, hard ? false : true);
         }
     }
-    /**  Restart all services */
+    /**
+     * Restarts all services
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartAllServices(hard) {
         this.services.forEach((service) => {
             process.nextTick(() => {
@@ -766,7 +780,11 @@ class Admiral extends events_1.EventEmitter {
             });
         });
     }
-    /** Shutdown cluster */
+    /**
+     * Shuts down a cluster
+     * @param clusterID The ID of the cluster to shutdown
+     * @param hard Whether to ignore the soft shutdown function
+    */
     shutdownCluster(clusterID, hard) {
         const workerID = this.clusters.find((c) => c.clusterID == clusterID).workerID;
         if (workerID) {
@@ -775,7 +793,11 @@ class Admiral extends events_1.EventEmitter {
                 this.shutdownWorker(worker, hard ? false : true);
         }
     }
-    /** Shutdown Service */
+    /**
+     * Shuts down a cluster
+     * @param serviceName The name of the service
+     * @param hard Whether to ignore the soft shutdown function
+    */
     shutdownService(serviceName, hard) {
         const workerID = this.services.find((s) => s.serviceName == serviceName).workerID;
         if (workerID) {
@@ -784,7 +806,10 @@ class Admiral extends events_1.EventEmitter {
                 this.shutdownWorker(worker, hard ? false : true);
         }
     }
-    /** Total Shutdown */
+    /**
+     * Shuts down everything and exits the master process
+     * @param hard Whether to ignore the soft shutdown function
+    */
     totalShutdown(hard) {
         if (this.whatToLog.includes("total_shutdown")) {
             this.log("Admiral | Starting total fleet shutdown.");

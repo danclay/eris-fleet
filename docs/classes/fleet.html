@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Fleet | eris-fleet - v0.3.7</title>
-	<meta name="description" content="Documentation for eris-fleet - v0.3.7">
+	<title>Fleet | eris-fleet - v0.3.8</title>
+	<meta name="description" content="Documentation for eris-fleet - v0.3.8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
 	<script async src="../assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">eris-fleet - v0.3.7</a>
+					<a href="../index.html" class="title">eris-fleet - v0.3.8</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -52,7 +52,7 @@
 		<div class="container">
 			<ul class="tsd-breadcrumb">
 				<li>
-					<a href="../modules.html">eris-fleet - v0.3.7</a>
+					<a href="../modules.html">eris-fleet - v0.3.8</a>
 				</li>
 				<li>
 					<a href="fleet.html">Fleet</a>
@@ -162,12 +162,19 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="fleet.html#removealllisteners" class="tsd-kind-icon">remove<wbr>All<wbr>Listeners</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="fleet.html#removelistener" class="tsd-kind-icon">remove<wbr>Listener</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#reshard" class="tsd-kind-icon">reshard</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#restartallclusters" class="tsd-kind-icon">restart<wbr>All<wbr>Clusters</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#restartallservices" class="tsd-kind-icon">restart<wbr>All<wbr>Services</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#restartcluster" class="tsd-kind-icon">restart<wbr>Cluster</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#restartservice" class="tsd-kind-icon">restart<wbr>Service</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="fleet.html#restartworker" class="tsd-kind-icon">restart<wbr>Worker</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="fleet.html#setmaxlisteners" class="tsd-kind-icon">set<wbr>Max<wbr>Listeners</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#shutdowncluster" class="tsd-kind-icon">shutdown<wbr>Cluster</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#shutdownservice" class="tsd-kind-icon">shutdown<wbr>Service</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="fleet.html#shutdownworker" class="tsd-kind-icon">shutdown<wbr>Worker</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="fleet.html#startcluster" class="tsd-kind-icon">start<wbr>Cluster</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="fleet.html#startservice" class="tsd-kind-icon">start<wbr>Service</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="fleet.html#startstats" class="tsd-kind-icon">start<wbr>Stats</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#totalshutdown" class="tsd-kind-icon">total<wbr>Shutdown</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="fleet.html#warn" class="tsd-kind-icon">warn</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="fleet.html#listenercount-1" class="tsd-kind-icon">listener<wbr>Count</a></li>
 							</ul>
@@ -662,7 +669,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1523">src/sharding/Admiral.ts:1523</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1584">src/sharding/Admiral.ts:1584</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -688,7 +695,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1131">src/sharding/Admiral.ts:1131</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1192">src/sharding/Admiral.ts:1192</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -705,7 +712,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1151">src/sharding/Admiral.ts:1151</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1212">src/sharding/Admiral.ts:1212</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -731,7 +738,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1560">src/sharding/Admiral.ts:1560</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1621">src/sharding/Admiral.ts:1621</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -784,7 +791,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1535">src/sharding/Admiral.ts:1535</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1596">src/sharding/Admiral.ts:1596</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -828,7 +835,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1456">src/sharding/Admiral.ts:1456</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1517">src/sharding/Admiral.ts:1517</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -875,7 +882,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L906">src/sharding/Admiral.ts:906</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L823">src/sharding/Admiral.ts:823</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -940,7 +947,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1585">src/sharding/Admiral.ts:1585</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1646">src/sharding/Admiral.ts:1646</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1284,7 +1291,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L972">src/sharding/Admiral.ts:972</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1033">src/sharding/Admiral.ts:1033</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1292,6 +1299,142 @@
 									<p>Reshard</p>
 								</div>
 							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="restartallclusters" class="tsd-anchor"></a>
+					<h3>restart<wbr>All<wbr>Clusters</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">restart<wbr>All<wbr>Clusters<span class="tsd-signature-symbol">(</span>hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L908">src/sharding/Admiral.ts:908</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Restarts all clusters</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="restartallservices" class="tsd-anchor"></a>
+					<h3>restart<wbr>All<wbr>Services</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">restart<wbr>All<wbr>Services<span class="tsd-signature-symbol">(</span>hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L939">src/sharding/Admiral.ts:939</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Restarts all services</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="restartcluster" class="tsd-anchor"></a>
+					<h3>restart<wbr>Cluster</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">restart<wbr>Cluster<span class="tsd-signature-symbol">(</span>clusterID<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L893">src/sharding/Admiral.ts:893</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Restarts a specific cluster</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>clusterID: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>ID of the cluster to restart</p>
+									</div>
+								</li>
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="restartservice" class="tsd-anchor"></a>
+					<h3>restart<wbr>Service</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">restart<wbr>Service<span class="tsd-signature-symbol">(</span>serviceName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L925">src/sharding/Admiral.ts:925</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Restarts a specific service</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>serviceName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Name of the service</p>
+									</div>
+								</li>
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -1306,7 +1449,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1290">src/sharding/Admiral.ts:1290</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1351">src/sharding/Admiral.ts:1351</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1349,6 +1492,80 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="shutdowncluster" class="tsd-anchor"></a>
+					<h3>shutdown<wbr>Cluster</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">shutdown<wbr>Cluster<span class="tsd-signature-symbol">(</span>clusterID<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L957">src/sharding/Admiral.ts:957</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Shuts down a cluster</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>clusterID: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The ID of the cluster to shutdown</p>
+									</div>
+								</li>
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="shutdownservice" class="tsd-anchor"></a>
+					<h3>shutdown<wbr>Service</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">shutdown<wbr>Service<span class="tsd-signature-symbol">(</span>serviceName<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L972">src/sharding/Admiral.ts:972</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Shuts down a cluster</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>serviceName: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The name of the service</p>
+									</div>
+								</li>
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
 					<a name="shutdownworker" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> shutdown<wbr>Worker</h3>
@@ -1359,7 +1576,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1174">src/sharding/Admiral.ts:1174</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1235">src/sharding/Admiral.ts:1235</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1411,7 +1628,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1061">src/sharding/Admiral.ts:1061</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1122">src/sharding/Admiral.ts:1122</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1428,7 +1645,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1015">src/sharding/Admiral.ts:1015</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1076">src/sharding/Admiral.ts:1076</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -1445,9 +1662,40 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1481">src/sharding/Admiral.ts:1481</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1542">src/sharding/Admiral.ts:1542</a></li>
 								</ul>
 							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="totalshutdown" class="tsd-anchor"></a>
+					<h3>total<wbr>Shutdown</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">total<wbr>Shutdown<span class="tsd-signature-symbol">(</span>hard<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L986">src/sharding/Admiral.ts:986</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Shuts down everything and exits the master process</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>hard: <span class="tsd-signature-type">boolean</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Whether to ignore the soft shutdown function</p>
+									</div>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -1462,7 +1710,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1610">src/sharding/Admiral.ts:1610</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L1671">src/sharding/Admiral.ts:1671</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1718,11 +1966,29 @@
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="fleet.html#reshard" class="tsd-kind-icon">reshard</a>
 							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#restartallclusters" class="tsd-kind-icon">restart<wbr>All<wbr>Clusters</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#restartallservices" class="tsd-kind-icon">restart<wbr>All<wbr>Services</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#restartcluster" class="tsd-kind-icon">restart<wbr>Cluster</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#restartservice" class="tsd-kind-icon">restart<wbr>Service</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="fleet.html#restartworker" class="tsd-kind-icon">restart<wbr>Worker</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="fleet.html#setmaxlisteners" class="tsd-kind-icon">set<wbr>Max<wbr>Listeners</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#shutdowncluster" class="tsd-kind-icon">shutdown<wbr>Cluster</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#shutdownservice" class="tsd-kind-icon">shutdown<wbr>Service</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="fleet.html#shutdownworker" class="tsd-kind-icon">shutdown<wbr>Worker</a>
@@ -1735,6 +2001,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="fleet.html#startstats" class="tsd-kind-icon">start<wbr>Stats</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="fleet.html#totalshutdown" class="tsd-kind-icon">total<wbr>Shutdown</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="fleet.html#warn" class="tsd-kind-icon">warn</a>

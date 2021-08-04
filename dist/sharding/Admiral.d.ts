@@ -139,19 +139,44 @@ export declare class Admiral extends EventEmitter {
     */
     constructor(options: Options);
     private launch;
-    /** Restart cluster */
+    /**
+     * Restarts a specific cluster
+     * @param clusterID ID of the cluster to restart
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartCluster(clusterID: number, hard: boolean): void;
-    /** Restart all clusters */
+    /**
+     * Restarts all clusters
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartAllClusters(hard: boolean): void;
-    /** Restart service */
+    /**
+     * Restarts a specific service
+     * @param serviceName Name of the service
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartService(serviceName: string, hard: boolean): void;
-    /**  Restart all services */
+    /**
+     * Restarts all services
+     * @param hard Whether to ignore the soft shutdown function
+    */
     restartAllServices(hard: boolean): void;
-    /** Shutdown cluster */
+    /**
+     * Shuts down a cluster
+     * @param clusterID The ID of the cluster to shutdown
+     * @param hard Whether to ignore the soft shutdown function
+    */
     shutdownCluster(clusterID: number, hard: boolean): void;
-    /** Shutdown Service */
+    /**
+     * Shuts down a cluster
+     * @param serviceName The name of the service
+     * @param hard Whether to ignore the soft shutdown function
+    */
     shutdownService(serviceName: string, hard: boolean): void;
-    /** Total Shutdown */
+    /**
+     * Shuts down everything and exits the master process
+     * @param hard Whether to ignore the soft shutdown function
+    */
     totalShutdown(hard: boolean): void;
     /** Reshard */
     reshard(): void;

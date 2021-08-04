@@ -2,6 +2,9 @@
 
 This may skip some little bug fixes.
 
+## 0.3.8
+- Cluster and service control are now accessible via the "Admiral" class
+
 ## 0.3.7
 - Fix error on ipc service command when a non-object is the return value
 

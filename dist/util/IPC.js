@@ -247,7 +247,7 @@ class IPC extends events_1.EventEmitter {
             process.send({ op: "shutdownService", serviceName, hard: hard ? true : false });
     }
     /**
-     * Shuts down everything and exists the master process
+     * Shuts down everything and exits the master process
      * @param hard Whether to ignore the soft shutdown function
     */
     totalShutdown(hard) {

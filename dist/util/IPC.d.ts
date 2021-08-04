@@ -105,7 +105,7 @@ export declare class IPC extends EventEmitter {
     */
     shutdownService(serviceName: string, hard?: boolean): void;
     /**
-     * Shuts down everything and exists the master process
+     * Shuts down everything and exits the master process
      * @param hard Whether to ignore the soft shutdown function
     */
     totalShutdown(hard?: boolean): void;

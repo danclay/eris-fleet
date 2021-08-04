@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>eris-fleet - v0.3.7</title>
-	<meta name="description" content="Documentation for eris-fleet - v0.3.7">
+	<title>eris-fleet - v0.3.8</title>
+	<meta name="description" content="Documentation for eris-fleet - v0.3.8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 	<script async src="assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">eris-fleet - v0.3.7</a>
+					<a href="index.html" class="title">eris-fleet - v0.3.8</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -50,7 +50,7 @@
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<h1>eris-fleet - v0.3.7</h1>
+			<h1>eris-fleet - v0.3.8</h1>
 		</div>
 	</div>
 </header>
@@ -64,10 +64,11 @@
 						<a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="NPM version" /></a>
 						<a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
 							<a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
-							<a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://api.travis-ci.com/danclay/eris-fleet.svg?branch=master" alt="Build" /></a>
+							<a href="https://david-dm.org/danclay/eris-fleet?type=peer"><img src="https://img.shields.io/david/peer/danclay/eris-fleet.svg?type=peer&cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
+							<a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://img.shields.io/travis/com/danclay/eris-fleet/master?cacheSeconds=3600&style=flat-square" alt="Build" /></a>
 					</p>
 					<p>
-						<a href="https://nodei.co/npm/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
+						<a href="https://www.npmjs.com/package/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
 					</p>
 				</div>
 				<a href="#documentation--eris" id="documentation--eris" style="color: inherit; text-decoration: none;">
@@ -94,6 +95,11 @@
 					<li>Soft cluster and service restarts where the old worker is killed after the new one is ready</li>
 					<li>Graceful shutdowns</li>
 				</ul>
+				<a href="#help" id="help" style="color: inherit; text-decoration: none;">
+					<h2>Help</h2>
+				</a>
+				<p>If you still have questions, you can join the support server on Discord: <a href="https://discord.gg/tk2n3naJn3">Discord server</a></p>
+				<p><a href="https://discord.gg/tk2n3naJn3"><img src="https://discord.com/api/guilds/866589508392976384/widget.png?style=banner2" alt="Support server on Discord"></a></p>
 				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
 					<h1>Installation</h1>
 				</a>
@@ -384,18 +390,27 @@
 					<h3>Restart clusters</h3>
 				</a>
 				<p>To restart clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>The above code will restart the cluster while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. If you want to kill the worker immediately, use <code>this.ipc.restartCluster(0, true)</code>. The second argument is whether you want to preform a hard restart. This is false by default. </p>
 				<p>You can also restart all the clusters. You can do this by using</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllClusters</span><span style="color: #000000">();</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllClusters</span><span style="color: #000000">();</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllClusters</span><span style="color: #000000">();</span>
 </code></pre>
 				<p><strong>This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.</strong> If you want to preform a hard restart, use <code>this.ipc.restartAllClusters(true)</code>.</p>
 				<a href="#shutdown-clusters" id="shutdown-clusters" style="color: inherit; text-decoration: none;">
 					<h3>Shutdown clusters</h3>
 				</a>
 				<p>You can shutdown clusters. Use the following to shutdown clusters:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>The above code will shutdown the cluster gracefully. If you would like to kill the worker immediately, use <code>this.ipc.shutdownCluster(0, true)</code>.
 				<strong>You cannot restart a cluster after shutting it down.</strong> A future update may allow this.</p>
@@ -403,18 +418,27 @@
 					<h3>Restart services</h3>
 				</a>
 				<p>To restart services, you can do the following in your bot.js file. &quot;myService&quot; is a placeholder for the name of the service you wish to restart.</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>The above code will restart the service while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. All commands will be sent to the original worker until the new worker is ready. If you want to kill the worker immediately, use <code>this.ipc.restartService(&quot;myService&quot;, true)</code>. The second argument is whether you want to preform a hard restart. This is false by default. </p>
 				<p>You can also restart all the clusters. You can do this by using </p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllServices</span><span style="color: #000000">();</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllServices</span><span style="color: #000000">();</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllServices</span><span style="color: #000000">();</span>
 </code></pre>
 				<p>If you want to preform a hard restart, use <code>this.ipc.restartAllClusters(true)</code>.</p>
 				<a href="#shutdown-services" id="shutdown-services" style="color: inherit; text-decoration: none;">
 					<h3>Shutdown services</h3>
 				</a>
 				<p>You can shutdown services. Use the following to shutdown services:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use <code>this.ipc.shutdownService(&quot;myService&quot;, true)</code>.
 				<strong>You cannot restart a service after shutting it down.</strong> A future update may allow this.</p>
@@ -422,7 +446,10 @@
 					<h3>Total shutdown</h3>
 				</a>
 				<p>You can totally shutdown your fleet using the following:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">totalShutdown</span><span style="color: #000000">();</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">totalShutdown</span><span style="color: #000000">();</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">totalShutdown</span><span style="color: #000000">();</span>
 </code></pre>
 				<p>The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use <code>this.ipc.totalShutdown(true)</code>.
 				<strong>A total shutdown exits all processes, including the master process.</strong></p>
@@ -430,7 +457,10 @@
 					<h3>Resharding</h3>
 				</a>
 				<p>You can order a resharding with the following:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
 </code></pre>
 				<p>Resharding attempts to recalculate the number of shards while keeping your bot running. This is done by keeping the old workers running until the new ones are ready. Your code will only load on the new workers once they are all ready for the transition. <strong>This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.</strong></p>
 				<a href="#register" id="register" style="color: inherit; text-decoration: none;">
@@ -453,7 +483,10 @@
 					<h3>Broadcast to all workers</h3>
 				</a>
 				<p>You can broadcast events that other clusters can recieve by <a href="#register">registering</a> with the event. The first argument is the name of the event you are broadcasting (this should match the name of the event other clusters are registered to). The second argument is optional and is the the message you want to send. Note that the cluster sending this will also recieve the broadcast since this broadcasts to <strong>all</strong> clusters.</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;hello clusters!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Want to chat?&quot;</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
+<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;hello clusters!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Want to chat?&quot;</span><span style="color: #000000">);</span>
+<span style="color: #008000">// or from the master process</span>
+<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;hello clusters!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Want to chat?&quot;</span><span style="color: #000000">);</span>
 </code></pre>
 				<p><strong>The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.</strong></p>
 				<a href="#send-to-a-specific-cluster" id="send-to-a-specific-cluster" style="color: inherit; text-decoration: none;">
@@ -540,6 +573,7 @@
 <span style="color: #000000">    </span><span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;the operation&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;an optional message&quot;</span><span style="color: #000000">);</span>
 <span style="color: #000000">    </span><span style="color: #008000">// Reshards</span>
 <span style="color: #000000">    </span><span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
+<span style="color: #000000">    </span><span style="color: #008000">// NOTE: More options listed in the IPC section of this document</span>
 <span style="color: #000000">}</span>
 
 </code></pre>
