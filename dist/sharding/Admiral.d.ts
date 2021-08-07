@@ -8,11 +8,7 @@ interface ServiceCreator {
 }
 export interface StartingStatus {
     status: "online" | "idle" | "dnd" | "offline";
-    game?: {
-        name: string;
-        type: 0 | 1 | 2 | 3;
-        url?: string;
-    };
+    game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
 export interface Options {
     /** Absolute path to the js file */
@@ -46,7 +42,12 @@ export interface Options {
     /** Option to have less logging show up */
     lessLogging?: boolean;
     /** Allows for more logging customization (overrides generic lessLogging option) */
-    whatToLog?: any;
+    whatToLog?: {
+        /** Whitelist of what to log */
+        whitelist?: string[];
+        /** Blacklist of what to log */
+        blacklist?: string[];
+    };
     /** Amount of time to wait before doing a forced shutdown during shutdowns */
     killTimeout?: number;
     /** Whether to split the source in to an Object */
@@ -57,8 +58,8 @@ export interface Options {
     fasterStart?: boolean;
     /** How long to wait before giving up on a fetch */
     fetchTimeout?: number;
-    /** Extended eris client class (if using one) */
-    customClient?: any;
+    /** Extended eris client class (should extend Eris.Client) */
+    customClient?: typeof Eris.Client;
 }
 export interface ShardStats {
     latency: number;

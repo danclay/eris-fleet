@@ -5,11 +5,11 @@ import {inspect} from "util";
 import * as Admiral from "../sharding/Admiral";
 
 interface ClusterInput {
-	erisClient: any;
-};
+	erisClient: typeof Eris.Client;
+}
 
 export class Cluster {
-	private erisClient: any;
+	private erisClient: typeof Eris.Client;
 	firstShardID!: number;
 	lastShardID!: number;
 	path!: string;

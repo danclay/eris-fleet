@@ -1,7 +1,7 @@
 import * as Eris from "eris";
 import { BaseClusterWorker } from "./BaseClusterWorker";
 interface ClusterInput {
-    erisClient: any;
+    erisClient: typeof Eris.Client;
 }
 export declare class Cluster {
     private erisClient;
