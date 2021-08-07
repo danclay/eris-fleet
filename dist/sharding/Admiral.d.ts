@@ -60,6 +60,8 @@ export interface Options {
     fetchTimeout?: number;
     /** Extended eris client class (should extend Eris.Client) */
     customClient?: typeof Eris.Client;
+    /** Whether to use a central request handler (uses the eris request handler in the master process) */
+    useCentralRequestHandler?: boolean;
 }
 export interface ShardStats {
     latency: number;
@@ -116,6 +118,7 @@ export declare class Admiral extends EventEmitter {
     clusterTimeout: number;
     killTimeout: number;
     private erisClient;
+    private useCentralRequestHandler;
     private nodeArgs?;
     private statsInterval;
     stats?: Stats;
@@ -143,6 +146,7 @@ export declare class Admiral extends EventEmitter {
     */
     constructor(options: Options);
     private launch;
+    private centralApiRequest;
     /**
      * Restarts a specific cluster
      * @param clusterID ID of the cluster to restart

@@ -1,5 +1,6 @@
 import {EventEmitter} from "events";
 import * as Admiral from "../sharding/Admiral";
+import crypto from "crypto";
 
 export class IPC extends EventEmitter {
 	private events: Map<string | number, Array<(msg: unknown) => void>>;
@@ -155,7 +156,7 @@ export class IPC extends EventEmitter {
 	public async command(service: string, message?: unknown, receptive?: boolean): Promise<unknown> {
 		if (!message) message = null;
 		if (!receptive) receptive = false;
-		const UUID = JSON.stringify({timestamp: Date.now(), message, service, receptive});
+		const UUID = JSON.stringify({rand: crypto.randomBytes(16).toString("hex"), service});
 		if (process.send) process.send({op: "serviceCommand", 
 			command: {
 				service,

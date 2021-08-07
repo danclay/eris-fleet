@@ -3,6 +3,7 @@ import {worker} from "cluster";
 import {BaseClusterWorker} from "./BaseClusterWorker";
 import {inspect} from "util";
 import * as Admiral from "../sharding/Admiral";
+import { CentralRequestHandler } from "../util/CentralRequestHandler";
 
 interface ClusterInput {
 	erisClient: typeof Eris.Client;
@@ -19,6 +20,7 @@ export class Cluster {
 	shards!: number;
 	clientOptions!: Eris.ClientOptions;
 	whatToLog!: string[];
+	useCentralRequestHandler!: boolean;
 	bot!: Eris.Client;
 	private token!: string;
 	app?: BaseClusterWorker;
@@ -59,6 +61,7 @@ export class Cluster {
 					this.clientOptions = message.clientOptions;
 					this.token = message.token;
 					this.whatToLog = message.whatToLog;
+					this.useCentralRequestHandler = message.useCentralRequestHandler;
 					if (message.startingStatus) this.startingStatus = message.startingStatus;
 
 					if (this.shards < 0) return;
@@ -203,6 +206,13 @@ export class Cluster {
 			} else {
 				App = App.default ? App.default : App;
 			}
+		}
+
+		// central request handler
+		if (this.useCentralRequestHandler) {
+			bot.requestHandler = new CentralRequestHandler(App.ipc, {
+				timeout: bot.options.requestTimeout
+			});
 		}
 
 		this.bot = bot;

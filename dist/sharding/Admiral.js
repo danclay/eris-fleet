@@ -49,6 +49,7 @@ class Admiral extends events_1.EventEmitter {
         this.serviceTimeout = options.serviceTimeout || 0;
         this.killTimeout = options.killTimeout || 10e3;
         this.erisClient = options.customClient || Eris.Client;
+        this.useCentralRequestHandler = options.useCentralRequestHandler || false;
         this.nodeArgs = options.nodeArgs;
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
@@ -518,6 +519,10 @@ class Admiral extends events_1.EventEmitter {
                             }
                             break;
                         }
+                        case "centralApiRequest": {
+                            this.centralApiRequest(worker, message.request.UUID, message.request.data);
+                            break;
+                        }
                         case "getStats": {
                             // Sends the latest stats upon request from the IPC
                             (_c = master.workers[worker.id]) === null || _c === void 0 ? void 0 : _c.send({
@@ -727,6 +732,26 @@ class Admiral extends events_1.EventEmitter {
                 new Service_1.Service();
             }
         }
+    }
+    centralApiRequest(worker, UUID, request) {
+        const reply = (resolved, value) => {
+            worker.send({
+                op: "centralApiResponse",
+                id: UUID,
+                value: {
+                    resolved,
+                    value
+                }
+            });
+        };
+        //@ts-ignore
+        this.eris.requestHandler.request(...request)
+            .then((value) => {
+            reply(true, value);
+        })
+            .catch((error) => {
+            reply(false, error);
+        });
     }
     /**
      * Restarts a specific cluster
@@ -1014,6 +1039,7 @@ class Admiral extends events_1.EventEmitter {
                     clientOptions: this.clientOptions,
                     whatToLog: this.whatToLog,
                     startingStatus: this.startingStatus,
+                    useCentralRequestHandler: this.useCentralRequestHandler
                 },
             });
         }
@@ -1246,6 +1272,7 @@ class Admiral extends events_1.EventEmitter {
                     clientOptions: this.clientOptions,
                     whatToLog: this.whatToLog,
                     startingStatus: this.startingStatus,
+                    useCentralRequestHandler: this.useCentralRequestHandler
                 },
             };
         }

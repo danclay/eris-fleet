@@ -69,6 +69,8 @@ export interface Options {
 	fetchTimeout?: number;
 	/** Extended eris client class (should extend Eris.Client) */
 	customClient?: typeof Eris.Client;
+	/** Whether to use a central request handler (uses the eris request handler in the master process) */
+	useCentralRequestHandler?: boolean;
 }
 
 export interface ShardStats {
@@ -157,6 +159,7 @@ export class Admiral extends EventEmitter {
 	public clusterTimeout: number;
 	public killTimeout: number;
 	private erisClient: typeof Eris.Client;
+	private useCentralRequestHandler: boolean;
 	private nodeArgs?: string[];
 	private statsInterval: number | "disable";
 	public stats?: Stats;
@@ -204,6 +207,7 @@ export class Admiral extends EventEmitter {
 		this.serviceTimeout = options.serviceTimeout || 0;
 		this.killTimeout = options.killTimeout || 10e3;
 		this.erisClient = options.customClient || Eris.Client;
+		this.useCentralRequestHandler = options.useCentralRequestHandler || false;
 		this.nodeArgs = options.nodeArgs;
 		this.statsInterval = options.statsInterval || 60e3;
 		this.firstShardID = options.firstShardID || 0;
@@ -671,6 +675,10 @@ export class Admiral extends EventEmitter {
 
 						break;
 					}
+					case "centralApiRequest": {
+						this.centralApiRequest(worker, message.request.UUID, message.request.data);
+						break;
+					}
 					case "getStats": {
 						// Sends the latest stats upon request from the IPC
 						master.workers[worker.id]?.send({
@@ -890,6 +898,27 @@ export class Admiral extends EventEmitter {
 				new Service();
 			}
 		}
+	}
+
+	private centralApiRequest(worker: master.Worker, UUID: string, request: any[]) {
+		const reply = (resolved: boolean, value: unknown) => {
+			worker.send({
+				op: "centralApiResponse",
+				id: UUID,
+				value: {
+					resolved,
+					value
+				}
+			});
+		};
+		//@ts-ignore
+		this.eris.requestHandler.request(...request)
+			.then((value) => {
+				reply(true, value);
+			})
+			.catch((error) => {
+				reply(false, error);
+			});
 	}
 	
 	/**
@@ -1196,6 +1225,7 @@ export class Admiral extends EventEmitter {
 					clientOptions: this.clientOptions,
 					whatToLog: this.whatToLog,
 					startingStatus: this.startingStatus,
+					useCentralRequestHandler: this.useCentralRequestHandler
 				},
 			});
 		}
@@ -1464,6 +1494,7 @@ export class Admiral extends EventEmitter {
 					clientOptions: this.clientOptions,
 					whatToLog: this.whatToLog,
 					startingStatus: this.startingStatus,
+					useCentralRequestHandler: this.useCentralRequestHandler
 				},
 			};
 		} else if (service) {

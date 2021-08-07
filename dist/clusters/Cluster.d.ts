@@ -14,6 +14,7 @@ export declare class Cluster {
     shards: number;
     clientOptions: Eris.ClientOptions;
     whatToLog: string[];
+    useCentralRequestHandler: boolean;
     bot: Eris.Client;
     private token;
     app?: BaseClusterWorker;

@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPC = void 0;
 const events_1 = require("events");
+const crypto_1 = __importDefault(require("crypto"));
 class IPC extends events_1.EventEmitter {
     constructor() {
         super();
@@ -149,7 +153,7 @@ class IPC extends events_1.EventEmitter {
             message = null;
         if (!receptive)
             receptive = false;
-        const UUID = JSON.stringify({ timestamp: Date.now(), message, service, receptive });
+        const UUID = JSON.stringify({ rand: crypto_1.default.randomBytes(16).toString("hex"), service });
         if (process.send)
             process.send({ op: "serviceCommand",
                 command: {

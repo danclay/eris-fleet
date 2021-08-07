@@ -22,6 +22,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cluster = void 0;
 const cluster_1 = require("cluster");
 const util_1 = require("util");
+const CentralRequestHandler_1 = require("../util/CentralRequestHandler");
 class Cluster {
     constructor(input) {
         this.erisClient = input.erisClient;
@@ -56,6 +57,7 @@ class Cluster {
                         this.clientOptions = message.clientOptions;
                         this.token = message.token;
                         this.whatToLog = message.whatToLog;
+                        this.useCentralRequestHandler = message.useCentralRequestHandler;
                         if (message.startingStatus)
                             this.startingStatus = message.startingStatus;
                         if (this.shards < 0)
@@ -220,6 +222,12 @@ class Cluster {
             else {
                 App = App.default ? App.default : App;
             }
+        }
+        // central request handler
+        if (this.useCentralRequestHandler) {
+            bot.requestHandler = new CentralRequestHandler_1.CentralRequestHandler(App.ipc, {
+                timeout: bot.options.requestTimeout
+            });
         }
         this.bot = bot;
         const setStatus = () => {

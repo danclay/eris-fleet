@@ -14,6 +14,7 @@ interface ClusterConnectMessage {
 	path: string;
 	whatToLog: string[];
 	startingStatus?: Admiral.StartingStatus;
+	useCentralRequestHandler: boolean;
 }
 
 interface ShutdownMessage {
