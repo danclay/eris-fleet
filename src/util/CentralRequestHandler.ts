@@ -1,5 +1,8 @@
 import { IPC } from "./IPC";
 import crypto from "crypto";
+import { inspect } from "util";
+import { reconstructError } from "./ErrorHandler";
+import Eris from "eris";
 
 
 interface CentralRequestHandlerOptions {
@@ -26,14 +29,24 @@ export class CentralRequestHandler {
 		});
 	}
 
-	public request(...args: any[]): Promise<unknown> {
+	public request(method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.MessageFile, _route?: string, short?: boolean): Promise<unknown> {
 		const UUID = crypto.randomBytes(16).toString("hex");
 
-		if (process.send) process.send({op: "centralApiRequest", request: {UUID, data: args}});
+		let fileString;
+		if (file) {
+			if (file.file) {
+				fileString = Buffer.from(file.file).toString("base64");
+				file.file = "";
+			}
+		}
+		const data = {method, url, auth, body, file, fileString, _route, short};
+
+		if (process.send) process.send({op: "centralApiRequest", request: {UUID, data}});
 
 		return new Promise((resolve, reject) => {
 			// timeout
 			const timeout = setTimeout(() => {
+				this.requests.delete(UUID);
 				reject(`Request timed out (>${this.timeout}ms)`);
 			}, this.timeout);
 
@@ -43,7 +56,7 @@ export class CentralRequestHandler {
 				if (r.resolved) {
 					resolve(r.value);
 				} else {
-					reject(r.value);
+					reject(reconstructError(r.value));
 				}
 			};
 

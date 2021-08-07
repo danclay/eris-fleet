@@ -8,6 +8,7 @@ import * as Eris from "eris";
 import {Cluster} from "../clusters/Cluster";
 import {Service} from "../services/Service";
 import * as path from "path";
+import { inspect } from "util";
 
 interface ServiceCreator {
 	name: string;
@@ -198,7 +199,7 @@ export class Admiral extends EventEmitter {
 		super();
 		this.objectLogging = options.objectLogging || false;
 		this.path = options.path;
-		this.token = options.token;
+		this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
 		this.guildsPerShard = options.guildsPerShard || 1300;
 		this.shardCount = options.shards || "auto";
 		this.clusterCount = options.clusters || "auto";
@@ -900,7 +901,7 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private centralApiRequest(worker: master.Worker, UUID: string, request: any[]) {
+	private centralApiRequest(worker: master.Worker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.MessageFile, fileString?: string, _route?: string, short?: boolean}) {
 		const reply = (resolved: boolean, value: unknown) => {
 			worker.send({
 				op: "centralApiResponse",
@@ -911,13 +912,17 @@ export class Admiral extends EventEmitter {
 				}
 			});
 		};
-		//@ts-ignore
-		this.eris.requestHandler.request(...request)
+
+		if (data.fileString && data.file) {
+			data.file.file = Buffer.from(data.fileString, "base64");
+		}
+
+		this.eris.requestHandler.request(data.method, data.url, data.auth, data.body, data.file, data._route, data.short)
 			.then((value) => {
 				reply(true, value);
 			})
 			.catch((error) => {
-				reply(false, error);
+				reply(false, error.toJSON());
 			});
 	}
 	
@@ -1758,3 +1763,18 @@ export class Admiral extends EventEmitter {
 		this.emit("warn", log);
 	}
 }
+
+// Convert error to JSON
+if (!("toJSON" in Error.prototype))
+	Object.defineProperty(Error.prototype, "toJSON", {
+		value: function () {
+			return {
+				message: this.message,
+				stack: this.stack,
+				name: this.name,
+				code: this.code
+			};
+		},
+		configurable: true,
+		writable: true
+	});

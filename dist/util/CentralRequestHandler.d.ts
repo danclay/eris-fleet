@@ -1,4 +1,5 @@
 import { IPC } from "./IPC";
+import Eris from "eris";
 interface CentralRequestHandlerOptions {
     timeout: number;
 }
@@ -7,6 +8,8 @@ export declare class CentralRequestHandler {
     private ipc;
     private requests;
     constructor(ipc: IPC, options: CentralRequestHandlerOptions);
-    request(...args: any[]): Promise<unknown>;
+    request(method: Eris.RequestMethod, url: string, auth?: boolean, body?: {
+        [s: string]: unknown;
+    }, file?: Eris.MessageFile, _route?: string, short?: boolean): Promise<unknown>;
 }
 export {};

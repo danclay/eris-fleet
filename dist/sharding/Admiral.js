@@ -40,7 +40,7 @@ class Admiral extends events_1.EventEmitter {
         super();
         this.objectLogging = options.objectLogging || false;
         this.path = options.path;
-        this.token = options.token;
+        this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
         this.guildsPerShard = options.guildsPerShard || 1300;
         this.shardCount = options.shards || "auto";
         this.clusterCount = options.clusters || "auto";
@@ -733,7 +733,7 @@ class Admiral extends events_1.EventEmitter {
             }
         }
     }
-    centralApiRequest(worker, UUID, request) {
+    centralApiRequest(worker, UUID, data) {
         const reply = (resolved, value) => {
             worker.send({
                 op: "centralApiResponse",
@@ -744,13 +744,15 @@ class Admiral extends events_1.EventEmitter {
                 }
             });
         };
-        //@ts-ignore
-        this.eris.requestHandler.request(...request)
+        if (data.fileString && data.file) {
+            data.file.file = Buffer.from(data.fileString, "base64");
+        }
+        this.eris.requestHandler.request(data.method, data.url, data.auth, data.body, data.file, data._route, data.short)
             .then((value) => {
             reply(true, value);
         })
             .catch((error) => {
-            reply(false, error);
+            reply(false, error.toJSON());
         });
     }
     /**
@@ -1532,4 +1534,18 @@ class Admiral extends events_1.EventEmitter {
     }
 }
 exports.Admiral = Admiral;
+// Convert error to JSON
+if (!("toJSON" in Error.prototype))
+    Object.defineProperty(Error.prototype, "toJSON", {
+        value: function () {
+            return {
+                message: this.message,
+                stack: this.stack,
+                name: this.name,
+                code: this.code
+            };
+        },
+        configurable: true,
+        writable: true
+    });
 //# sourceMappingURL=Admiral.js.map

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CentralRequestHandler = void 0;
 const crypto_1 = __importDefault(require("crypto"));
+const ErrorHandler_1 = require("./ErrorHandler");
 class CentralRequestHandler {
     constructor(ipc, options) {
         this.timeout = options.timeout;
@@ -19,13 +20,22 @@ class CentralRequestHandler {
             }
         });
     }
-    request(...args) {
+    request(method, url, auth, body, file, _route, short) {
         const UUID = crypto_1.default.randomBytes(16).toString("hex");
+        let fileString;
+        if (file) {
+            if (file.file) {
+                fileString = Buffer.from(file.file).toString("base64");
+                file.file = "";
+            }
+        }
+        const data = { method, url, auth, body, file, fileString, _route, short };
         if (process.send)
-            process.send({ op: "centralApiRequest", request: { UUID, data: args } });
+            process.send({ op: "centralApiRequest", request: { UUID, data } });
         return new Promise((resolve, reject) => {
             // timeout
             const timeout = setTimeout(() => {
+                this.requests.delete(UUID);
                 reject(`Request timed out (>${this.timeout}ms)`);
             }, this.timeout);
             const callback = (r) => {
@@ -35,7 +45,7 @@ class CentralRequestHandler {
                     resolve(r.value);
                 }
                 else {
-                    reject(r.value);
+                    reject(ErrorHandler_1.reconstructError(r.value));
                 }
             };
             this.requests.set(UUID, callback);
