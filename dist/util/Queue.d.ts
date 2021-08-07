@@ -33,8 +33,10 @@ export interface QueueItem {
 export declare class Queue extends EventEmitter {
     /** The queue */
     queue: QueueItem[];
+    /** Pauses all non-authorized executions */
+    override: string | undefined;
     constructor();
-    execute(first?: boolean): void;
-    item(item: QueueItem): void;
+    execute(first?: boolean, override?: string): void;
+    item(item: QueueItem, override?: string): void;
 }
 export {};

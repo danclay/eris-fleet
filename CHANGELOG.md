@@ -2,6 +2,9 @@
 
 This may skip some little bug fixes.
 
+## 0.3.9
+- Added support for extended eris class
+
 ## 0.3.8
 - Cluster and service control are now accessible via the "Admiral" class
 

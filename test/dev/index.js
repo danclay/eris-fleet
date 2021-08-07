@@ -22,6 +22,9 @@ const options = {
 const Admiral = new Fleet(options);
 
 if (isMaster) {
+	setTimeout(() => {
+		Admiral.totalShutdown()
+	}, 5e3)
   // Code to only run for your master process
   Admiral.on('log', (m) => console.log(m));
   Admiral.on('debug', (m) => console.debug(m));

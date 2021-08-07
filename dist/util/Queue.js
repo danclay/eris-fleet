@@ -7,7 +7,9 @@ class Queue extends events_1.EventEmitter {
         super();
         this.queue = [];
     }
-    execute(first) {
+    execute(first, override) {
+        if (this.override && override !== this.override)
+            return;
         if (!first)
             this.queue.splice(0, 1);
         const item = this.queue[0];
@@ -15,10 +17,12 @@ class Queue extends events_1.EventEmitter {
             return;
         this.emit("execute", item);
     }
-    item(item) {
+    item(item, override) {
+        if (this.override && override !== this.override)
+            return;
         this.queue.push(item);
         if (this.queue.length == 1)
-            this.execute(true);
+            this.execute(true, override);
     }
 }
 exports.Queue = Queue;
