@@ -203,30 +203,31 @@ Below is more in-depth documentation.
 ## Admiral 
 
 Here is a complete list of options you can pass to the Admiral through the Fleet constructor.
-| Property       | Description                                                                                                                                  | Optional? | Default Value             |
-|----------------|----------------------------------------------------------------------------------------------------------------------------------------------|-----------|---------------------------|
-| path           | Absolute path to your bot file                                                                                                               | No        |                           |
-| token          | Token for your bot                                                                                                                           | No        |                           |
-| guildsPerShard | How many guild per shard                                                                                                                     | Yes       | 1300                      |
-| shards         | How many shards you want (overrides guildsPerShard)                                                                                          | Yes       | 'auto'                    |
-| clusters       | How many clusters you want to spawn  (this is overridden if there are more chunks than clusters specified)                                   | Yes       | # of CPU Cores            |
-| clientOptions  | Options to pass to the Eris client                                                                                                           | Yes       |                           |
-| timeout        | How long to wait for shards to connect to Discord (in ms)                                                                                    | Yes       | 30000                     |
-| serviceTimeout | How long to wait for services to tell the admiral they are ready for use (in ms)                                                             | Yes       | infinite                  |
-| clusterTimeout | How long to wait between connecting clusters to Discord (in ms)                                                                              | Yes       | 5000                      |
-| nodeArgs       | Node arguments to pass to clusters                                                                                                           | Yes       |                           |
-| statsInterval  | How often to update the stats (in ms) after all clusters are connected. To disable stats, set to 'disable'                                   | Yes       | 60000                     |
-| services       | Services to register. The format of the services array is shown below this table. Your services will start in the order of this array.             | Yes       |                           |
-| firstShardID   | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | 0                         |
-| lastShardID    | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes       | Total count of shards - 1 |
-| lessLogging    | Reduces the number of logs the Admiral sends (boolean)                                                                                       | Yes       | false                     |
-| whatToLog      | Choose what to log (see details below)                                                                                                       | Yes       |                           |
-| whatToLog.whitelist | Whitelist for lessLogging                                                                                                             | Yes       |                     |
-| whatToLog.blacklist | Blacklist for lessLogging                                                                                                             | Yes       |                     |
-| killTimeout    | Timeout before killing the proccess during shutdown (in ms)                                                                                | Yes       | 10000                  |
-| fetchTimeout    | Timeout before giving up on a value fetch (in ms)                                                                                           | Yes       | infinite                  |
-| objectLogging  | Sends logs in an object format shown below this table                 | Yes       | false                     |
-| startingStatus  | Status to set while the cluster is getting ready. Follows the format shown below this table. Note that if you want to clear it you will have to do it yourself in your bot.js file.                 | Yes       |                      |
+| Property | Description | Optional? | Default Value |
+|---|---|---|---|
+| path | Absolute path to your bot file | No |  |
+| token | Token for your bot | No |  |
+| guildsPerShard | How many guild per shard | Yes | 1300 |
+| shards | How many shards you want (overrides guildsPerShard) | Yes | 'auto' |
+| clusters | How many clusters you want to spawn  (this is overridden if there are more chunks than clusters specified) | Yes | # of CPU Cores |
+| clientOptions | Options to pass to the Eris client | Yes |  |
+| timeout | How long to wait for shards to connect to Discord (in ms) | Yes | 30000 |
+| serviceTimeout | How long to wait for services to tell the admiral they are ready for use (in ms) | Yes | infinite |
+| clusterTimeout | How long to wait between connecting clusters to Discord (in ms) | Yes | 5000 |
+| nodeArgs | Node arguments to pass to clusters | Yes |  |
+| statsInterval | How often to update the stats (in ms) after all clusters are connected. To disable stats, set to 'disable' | Yes | 60000 |
+| services | Services to register. The format of the services array is shown below this table. Your services will start in the order of this array. | Yes |  |
+| firstShardID | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes | 0 |
+| lastShardID | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes | Total count of shards - 1 |
+| lessLogging | Reduces the number of logs the Admiral sends (boolean) | Yes | false |
+| whatToLog | Choose what to log (see details below) | Yes |  |
+| whatToLog.whitelist | Whitelist for lessLogging | Yes |  |
+| whatToLog.blacklist | Blacklist for lessLogging | Yes |  |
+| killTimeout | Timeout before killing the proccess during shutdown (in ms) | Yes | 10000 |
+| fetchTimeout | Timeout before giving up on a value fetch (in ms) | Yes | infinite |
+| objectLogging | Sends logs in an object format shown below this table | Yes | false |
+| startingStatus | Status to set while the cluster is getting ready. Follows the format shown below this table. Note that if you want to clear it you will have to do it yourself in your bot.js file. | Yes |  |
+| customClient | Extended Eris client class (should extend Eris.Client) | Yes |  |
 
 ### Formats
 
@@ -552,6 +553,8 @@ Stats are given in the following object format:
 ```
 
 ## Using a specific version of eris or a modified version of eris
+
+You can use an extended Eris client by passing it to the options (see the options section).
 
 Eris-fleet is able to use packages such as eris-additions if you desire. To do so, modify your bot file to match the following template:
 ```js
