@@ -57,6 +57,8 @@ export interface Options {
     fasterStart?: boolean;
     /** How long to wait before giving up on a fetch */
     fetchTimeout?: number;
+    /** Extended eris client class (if using one) */
+    customClient?: any;
 }
 export interface ShardStats {
     latency: number;
@@ -112,6 +114,7 @@ export declare class Admiral extends EventEmitter {
     serviceTimeout: number;
     clusterTimeout: number;
     killTimeout: number;
+    private erisClient;
     private nodeArgs?;
     private statsInterval;
     stats?: Stats;

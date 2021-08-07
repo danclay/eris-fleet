@@ -4,7 +4,12 @@ import {BaseClusterWorker} from "./BaseClusterWorker";
 import {inspect} from "util";
 import * as Admiral from "../sharding/Admiral";
 
+interface ClusterInput {
+	erisClient: any;
+};
+
 export class Cluster {
+	private erisClient: any;
 	firstShardID!: number;
 	lastShardID!: number;
 	path!: string;
@@ -21,7 +26,9 @@ export class Cluster {
 	shutdown?: boolean;
 	private startingStatus?: Admiral.StartingStatus;
 
-	constructor() {
+	constructor(input: ClusterInput) {
+		this.erisClient = input.erisClient;
+
 		console.log = (str: unknown) => {if (process.send) process.send({op: "log", msg: str, source: "Cluster " + this.clusterID});};
 		console.debug = (str: unknown) => {if (process.send) process.send({op: "debug", msg: str, source: "Cluster " + this.clusterID});};
 		console.error = (str: unknown) => {if (process.send) process.send({op: "error", msg: str, source: "Cluster " + this.clusterID});};
@@ -190,7 +197,7 @@ export class Cluster {
 			bot = new App.Eris.Client(this.token, options);
 			App = App.BotWorker;
 		} else {
-			bot = new Eris.Client(this.token, options);
+			bot = new this.erisClient(this.token, options);
 			if (App.BotWorker) {
 				App = App.BotWorker;
 			} else {

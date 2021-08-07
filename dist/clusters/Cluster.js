@@ -20,11 +20,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cluster = void 0;
-const Eris = __importStar(require("eris"));
 const cluster_1 = require("cluster");
 const util_1 = require("util");
+;
 class Cluster {
-    constructor() {
+    constructor(input) {
+        this.erisClient = input.erisClient;
         console.log = (str) => { if (process.send)
             process.send({ op: "log", msg: str, source: "Cluster " + this.clusterID }); };
         console.debug = (str) => { if (process.send)
@@ -212,7 +213,7 @@ class Cluster {
             App = App.BotWorker;
         }
         else {
-            bot = new Eris.Client(this.token, options);
+            bot = new this.erisClient(this.token, options);
             if (App.BotWorker) {
                 App = App.BotWorker;
             }

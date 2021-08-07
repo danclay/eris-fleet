@@ -66,6 +66,8 @@ export interface Options {
 	fasterStart?: boolean;
 	/** How long to wait before giving up on a fetch */
 	fetchTimeout?: number;
+	/** Extended eris client class (if using one) */
+	customClient?: any;
 }
 
 export interface ShardStats {
@@ -153,6 +155,7 @@ export class Admiral extends EventEmitter {
 	public serviceTimeout: number;
 	public clusterTimeout: number;
 	public killTimeout: number;
+	private erisClient: any;
 	private nodeArgs?: string[];
 	private statsInterval: number | "disable";
 	public stats?: Stats;
@@ -199,6 +202,7 @@ export class Admiral extends EventEmitter {
 		this.clusterTimeout = options.clusterTimeout || 5e3;
 		this.serviceTimeout = options.serviceTimeout || 0;
 		this.killTimeout = options.killTimeout || 10e3;
+		this.erisClient = options.customClient || Eris.Client;
 		this.nodeArgs = options.nodeArgs;
 		this.statsInterval = options.statsInterval || 60e3;
 		this.firstShardID = options.firstShardID || 0;
@@ -307,7 +311,7 @@ export class Admiral extends EventEmitter {
 
 		if (this.clusterCount === "auto") this.clusterCount = cpus().length;
 
-		this.eris = new Eris.Client(this.token);
+		this.eris = new this.erisClient(this.token);
 
 		this.launch();
 
@@ -878,7 +882,9 @@ export class Admiral extends EventEmitter {
 			});
 		} else if (master.isWorker) {
 			if (process.env.type === "cluster") {
-				new Cluster();
+				new Cluster({
+					erisClient: this.erisClient
+				});
 			} else if (process.env.type === "service") {
 				new Service();
 			}

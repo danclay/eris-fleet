@@ -48,6 +48,7 @@ class Admiral extends events_1.EventEmitter {
         this.clusterTimeout = options.clusterTimeout || 5e3;
         this.serviceTimeout = options.serviceTimeout || 0;
         this.killTimeout = options.killTimeout || 10e3;
+        this.erisClient = options.customClient || Eris.Client;
         this.nodeArgs = options.nodeArgs;
         this.statsInterval = options.statsInterval || 60e3;
         this.firstShardID = options.firstShardID || 0;
@@ -156,7 +157,7 @@ class Admiral extends events_1.EventEmitter {
         }
         if (this.clusterCount === "auto")
             this.clusterCount = os_1.cpus().length;
-        this.eris = new Eris.Client(this.token);
+        this.eris = new this.erisClient(this.token);
         this.launch();
         if (master.isMaster) {
             cluster_1.on("message", (worker, message) => {
@@ -718,7 +719,9 @@ class Admiral extends events_1.EventEmitter {
         }
         else if (master.isWorker) {
             if (process.env.type === "cluster") {
-                new Cluster_1.Cluster();
+                new Cluster_1.Cluster({
+                    erisClient: this.erisClient
+                });
             }
             else if (process.env.type === "service") {
                 new Service_1.Service();

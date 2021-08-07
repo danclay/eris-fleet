@@ -1,6 +1,10 @@
 import * as Eris from "eris";
 import { BaseClusterWorker } from "./BaseClusterWorker";
+interface ClusterInput {
+    erisClient: any;
+}
 export declare class Cluster {
+    private erisClient;
     firstShardID: number;
     lastShardID: number;
     path: string;
@@ -16,7 +20,8 @@ export declare class Cluster {
     App: any;
     shutdown?: boolean;
     private startingStatus?;
-    constructor();
+    constructor(input: ClusterInput);
     private connect;
     private loadCode;
 }
+export {};
