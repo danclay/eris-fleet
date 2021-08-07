@@ -83,6 +83,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#clientoptions" class="tsd-kind-icon">client<wbr>Options</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#clustertimeout" class="tsd-kind-icon">cluster<wbr>Timeout</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#clusters" class="tsd-kind-icon">clusters</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#customclient" class="tsd-kind-icon">custom<wbr>Client</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#fasterstart" class="tsd-kind-icon">faster<wbr>Start</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#fetchtimeout" class="tsd-kind-icon">fetch<wbr>Timeout</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="options.html#firstshardid" class="tsd-kind-icon">first<wbr>ShardID</a></li>
@@ -114,7 +115,7 @@
 					<div class="tsd-signature tsd-kind-icon">client<wbr>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ClientOptions</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L38">src/sharding/Admiral.ts:38</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L34">src/sharding/Admiral.ts:34</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -129,7 +130,7 @@
 					<div class="tsd-signature tsd-kind-icon">cluster<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L44">src/sharding/Admiral.ts:44</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L40">src/sharding/Admiral.ts:40</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -144,7 +145,7 @@
 					<div class="tsd-signature tsd-kind-icon">clusters<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;auto&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L36">src/sharding/Admiral.ts:36</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L32">src/sharding/Admiral.ts:32</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -154,12 +155,27 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="customclient" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> custom<wbr>Client</h3>
+					<div class="tsd-signature tsd-kind-icon">custom<wbr>Client<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">typeof </span><span class="tsd-signature-type">Client</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L71">src/sharding/Admiral.ts:71</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Extended eris client class (should extend Eris.Client)</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="fasterstart" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> faster<wbr>Start</h3>
 					<div class="tsd-signature tsd-kind-icon">faster<wbr>Start<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L66">src/sharding/Admiral.ts:66</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L67">src/sharding/Admiral.ts:67</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -174,7 +190,7 @@
 					<div class="tsd-signature tsd-kind-icon">fetch<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L68">src/sharding/Admiral.ts:68</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L69">src/sharding/Admiral.ts:69</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -189,7 +205,7 @@
 					<div class="tsd-signature tsd-kind-icon">first<wbr>ShardID<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L52">src/sharding/Admiral.ts:52</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L48">src/sharding/Admiral.ts:48</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -204,7 +220,7 @@
 					<div class="tsd-signature tsd-kind-icon">guilds<wbr>Per<wbr>Shard<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L32">src/sharding/Admiral.ts:32</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L28">src/sharding/Admiral.ts:28</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -219,7 +235,7 @@
 					<div class="tsd-signature tsd-kind-icon">kill<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L60">src/sharding/Admiral.ts:60</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L61">src/sharding/Admiral.ts:61</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -234,7 +250,7 @@
 					<div class="tsd-signature tsd-kind-icon">last<wbr>ShardID<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L54">src/sharding/Admiral.ts:54</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L50">src/sharding/Admiral.ts:50</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -249,7 +265,7 @@
 					<div class="tsd-signature tsd-kind-icon">less<wbr>Logging<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L56">src/sharding/Admiral.ts:56</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L52">src/sharding/Admiral.ts:52</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -264,7 +280,7 @@
 					<div class="tsd-signature tsd-kind-icon">node<wbr>Args<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L46">src/sharding/Admiral.ts:46</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L42">src/sharding/Admiral.ts:42</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -279,7 +295,7 @@
 					<div class="tsd-signature tsd-kind-icon">object<wbr>Logging<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L62">src/sharding/Admiral.ts:62</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L63">src/sharding/Admiral.ts:63</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -294,7 +310,7 @@
 					<div class="tsd-signature tsd-kind-icon">path<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L28">src/sharding/Admiral.ts:28</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L24">src/sharding/Admiral.ts:24</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -309,7 +325,7 @@
 					<div class="tsd-signature tsd-kind-icon">service<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L42">src/sharding/Admiral.ts:42</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L38">src/sharding/Admiral.ts:38</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -324,7 +340,7 @@
 					<div class="tsd-signature tsd-kind-icon">services<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceCreator</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L50">src/sharding/Admiral.ts:50</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L46">src/sharding/Admiral.ts:46</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -339,7 +355,7 @@
 					<div class="tsd-signature tsd-kind-icon">shards<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;auto&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L34">src/sharding/Admiral.ts:34</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L30">src/sharding/Admiral.ts:30</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -354,7 +370,7 @@
 					<div class="tsd-signature tsd-kind-icon">starting<wbr>Status<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">StartingStatus</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L64">src/sharding/Admiral.ts:64</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L65">src/sharding/Admiral.ts:65</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -369,7 +385,7 @@
 					<div class="tsd-signature tsd-kind-icon">stats<wbr>Interval<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;disable&quot;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L48">src/sharding/Admiral.ts:48</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L44">src/sharding/Admiral.ts:44</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -384,7 +400,7 @@
 					<div class="tsd-signature tsd-kind-icon">timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L40">src/sharding/Admiral.ts:40</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L36">src/sharding/Admiral.ts:36</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -399,7 +415,7 @@
 					<div class="tsd-signature tsd-kind-icon">token<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L30">src/sharding/Admiral.ts:30</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L26">src/sharding/Admiral.ts:26</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -411,16 +427,37 @@
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 					<a name="whattolog" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> what<wbr>ToLog</h3>
-					<div class="tsd-signature tsd-kind-icon">what<wbr>ToLog<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+					<div class="tsd-signature tsd-kind-icon">what<wbr>ToLog<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>blacklist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">; </span>whitelist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L58">src/sharding/Admiral.ts:58</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L54">src/sharding/Admiral.ts:54</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
 							<p>Allows for more logging customization (overrides generic lessLogging option)</p>
 						</div>
+					</div>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> blacklist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Blacklist of what to log</p>
+									</div>
+								</div>
+							</li>
+							<li class="tsd-parameter">
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> whitelist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Whitelist of what to log</p>
+									</div>
+								</div>
+							</li>
+						</ul>
 					</div>
 				</section>
 			</section>
@@ -469,6 +506,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="options.html#clusters" class="tsd-kind-icon">clusters</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="options.html#customclient" class="tsd-kind-icon">custom<wbr>Client</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="options.html#fasterstart" class="tsd-kind-icon">faster<wbr>Start</a>
