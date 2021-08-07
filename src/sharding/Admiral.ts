@@ -795,7 +795,7 @@ export class Admiral extends EventEmitter {
 					} else if (item.message.op == "shutdown") {
 						worker.send(item.message);
 						setTimeout(() => {
-							if (this.queue.queue[0]) if (this.queue.queue[0].workerID == item.workerID) {
+							if (this.queue.queue[0]) if (this.queue.queue[0].workerID == item.workerID && item.op === "shutdown") {
 								const worker = master.workers[item.workerID];
 								if (worker) {
 									worker.kill();
@@ -1002,11 +1002,16 @@ export class Admiral extends EventEmitter {
 			}
 			process.exit(0);
 		} else {
+			// clear queue
+			this.queue.override = "shutdownWorker";
+			this.queue.queue = [];
 			let total = 0;
 			let done = 0;
 			const doneFn = () => {
 				done++;
 				if (done == total) {
+					// clear override
+					this.queue.override = undefined;
 					if (this.whatToLog.includes("total_shutdown")) {
 						this.log("Admiral | Total fleet shutdown complete. Ending process.");
 					}
@@ -1016,21 +1021,22 @@ export class Admiral extends EventEmitter {
 			this.clusters.forEach((cluster) => {
 				total++;
 				process.nextTick(() => {
-					const workerID = this.clusters.find((c: ClusterCollection) => c.clusterID == cluster.clusterID).workerID;
-					if (workerID) {
-						const worker = master.workers[workerID];
-						if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
-					}
+					const worker = master.workers[cluster.workerID];
+					if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
 				});
 			});
 			this.services.forEach((service) => {
 				total++;
 				process.nextTick(() => {
-					const workerID = this.services.find((s: ServiceCollection) => s.serviceName == service.serviceName).workerID;
-					if (workerID) {
-						const worker = master.workers[workerID];
-						if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
-					}
+					const worker = master.workers[service.workerID];
+					if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
+				});
+			});
+			this.launchingWorkers.forEach((workerData, workerID) => {
+				total++;
+				process.nextTick(() => {
+					const worker = master.workers[workerID];
+					if (worker) this.shutdownWorker(worker, hard ? false : true, doneFn);
 				});
 			});
 		}
@@ -1239,9 +1245,10 @@ export class Admiral extends EventEmitter {
 		return r;
 	}
 
-	private shutdownWorker(worker: master.Worker, soft?: boolean, callback?: () => void, customMaps?: { clusters?: Collection; services?: Collection }) {
-		let cluster: ClusterCollection;
-		let service: ServiceCollection;
+	private shutdownWorker(worker: master.Worker, soft?: boolean, callback?: () => void, customMaps?: { clusters?: Collection; services?: Collection; launchingWorkers?: Collection }) {
+		let cluster: ClusterCollection | undefined;
+		let service: ServiceCollection | undefined;
+		let launchingWorker: WorkerCollection | undefined;
 		if (customMaps) {
 			if (customMaps.clusters) {
 				cluster = customMaps.clusters.find(
@@ -1261,6 +1268,9 @@ export class Admiral extends EventEmitter {
 					(s: ServiceCollection) => s.workerID == worker.id,
 				);
 			}
+			if (customMaps.launchingWorkers) {
+				launchingWorker = customMaps.launchingWorkers.get(worker.id);
+			}
 		} else {
 			cluster = this.clusters.find(
 				(c: ClusterCollection) => c.workerID == worker.id,
@@ -1268,6 +1278,15 @@ export class Admiral extends EventEmitter {
 			service = this.services.find(
 				(s: ServiceCollection) => s.workerID == worker.id,
 			);
+			launchingWorker = this.launchingWorkers.get(worker.id);
+		}
+
+		if (launchingWorker) {
+			if (launchingWorker.cluster) {
+				cluster = launchingWorker.cluster;
+			} else if (launchingWorker.service) {
+				service = launchingWorker.service;
+			}
 		}
 
 		const item = {
@@ -1283,12 +1302,16 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(worker.id, {
 					fn: (failed?: boolean) => {
 						if (!failed) {
-							this.log(`Admiral | Safely shutdown cluster ${cluster.clusterID}`);
+							this.log(`Admiral | Safely shutdown cluster ${cluster!.clusterID}`);
 							worker.kill();
 						}
-						if (!customMaps) this.clusters.delete(cluster.clusterID);
+						if (!customMaps) {
+							this.clusters.delete(cluster!.clusterID);
+							// if was launching
+							this.launchingWorkers.delete(worker.id);
+						}
 						this.softKills.delete(worker.id);
-						this.queue.execute();
+						this.queue.execute(false, "shutdownWorker");
 						if (callback) callback();
 					},
 				});
@@ -1314,12 +1337,16 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(worker.id, {
 					fn: () => {
 						this.log(
-							`Admiral | Safely shutdown service ${service.serviceName}`,
+							`Admiral | Safely shutdown service ${service!.serviceName}`,
 						);
 						worker.kill();
-						if (!customMaps) this.services.delete(service.serviceName);
+						if (!customMaps) {
+							this.services.delete(service!.serviceName);
+							// if was launching
+							this.launchingWorkers.delete(worker.id);
+						}
 						this.softKills.delete(worker.id);
-						this.queue.execute();
+						this.queue.execute(false, "shutdownWorker");
 						if (callback) callback();
 					},
 				});
@@ -1345,12 +1372,12 @@ export class Admiral extends EventEmitter {
 			if (this.queue.queue[0]) {
 				if (this.queue.queue[0].workerID == worker.id) {
 					this.queue.queue[0] = item;
-					this.queue.execute(true);
+					this.queue.execute(true, "shutdownWorker");
 				} else {
-					this.queue.item(item);
+					this.queue.item(item, "shutdownWorker");
 				}
 			} else {
-				this.queue.item(item);
+				this.queue.item(item, "shutdownWorker");
 			}
 		}
 	}

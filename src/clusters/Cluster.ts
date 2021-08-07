@@ -169,7 +169,7 @@ export class Cluster {
 							if (process.send) process.send({op: "shutdown"});
 						}
 					} else {
-						this.bot.disconnect({reconnect: false});
+						if (this.bot) this.bot.disconnect({reconnect: false});
 						if (process.send) process.send({op: "shutdown"});
 					}
 

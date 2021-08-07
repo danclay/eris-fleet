@@ -37,21 +37,25 @@ export interface QueueItem {
 export class Queue extends EventEmitter {
 	/** The queue */
 	public queue: QueueItem[];
+	/** Pauses all non-authorized executions */
+	public override: string | undefined;
 
 	public constructor() {
 		super();
 		this.queue = [];
 	}
 
-	public execute(first?: boolean): void {
+	public execute(first?: boolean, override?: string): void {
+		if (this.override && override !== this.override) return;
 		if (!first) this.queue.splice(0, 1);
 		const item = this.queue[0];
 		if (!item) return;
 		this.emit("execute", item);
 	}
 
-	public item(item: QueueItem): void {
+	public item(item: QueueItem, override?: string): void {
+		if (this.override && override !== this.override) return;
 		this.queue.push(item);
-		if (this.queue.length == 1) this.execute(true);
+		if (this.queue.length == 1) this.execute(true, override);
 	}
 }

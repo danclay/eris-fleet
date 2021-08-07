@@ -22,7 +22,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cluster = void 0;
 const cluster_1 = require("cluster");
 const util_1 = require("util");
-;
 class Cluster {
     constructor(input) {
         this.erisClient = input.erisClient;
@@ -188,7 +187,8 @@ class Cluster {
                             }
                         }
                         else {
-                            this.bot.disconnect({ reconnect: false });
+                            if (this.bot)
+                                this.bot.disconnect({ reconnect: false });
                             if (process.send)
                                 process.send({ op: "shutdown" });
                         }
