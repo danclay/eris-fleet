@@ -1,3 +1,4 @@
+import { IpcHandledLog } from "./../util/IPC";
 import {EventEmitter} from "events";
 import {cpus} from "os";
 import * as master from "cluster";
@@ -9,15 +10,35 @@ import {Cluster} from "../clusters/Cluster";
 import {Service} from "../services/Service";
 import * as path from "path";
 import { inspect } from "util";
+import { errorToJSON, reconstructError } from "../util/ErrorHandler";
 
 interface ServiceCreator {
 	name: string;
 	path: string;
 }
 
+export interface ObjectLog {
+	source?: string;
+	timestamp: number;
+	message: unknown;
+} 
+
 export interface StartingStatus {
 	status: "online" | "idle" | "dnd" | "offline";
 	game?: Eris.ActivityPartial<Eris.BotActivityType>;
+}
+
+export interface ReshardOptions {
+	/** Guilds per shard */
+	guildsPerShard?: number;
+	/** First shard ID to use on this instance of eris-fleet */
+	firstShardID?: number;
+	/** Last shard ID to use on this instance of eris-fleet */
+	lastShardID?: number;
+	/** Number of shards */
+	shards?: number | "auto";
+	/** Number of clusters */
+	clusters?: number | "auto";
 }
 
 export interface Options {
@@ -35,7 +56,7 @@ export interface Options {
 	clientOptions?: Eris.ClientOptions;
 	/** How long to wait for shards to connect to discord */
 	timeout?: number;
-	/** How long to wait for a service to connect */
+	/** How long to wait for a service to start */
 	serviceTimeout?: number;
 	/** How long between starting clusters */
 	clusterTimeout?: number;
@@ -91,7 +112,11 @@ export interface ClusterStats {
 	voice: number;
 	largeGuilds: number;
 	ram: number;
-	shardStats: ShardStats[] | [];
+	/**
+	 * @deprecated Use "shards"
+	 */
+	shardStats: ShardStats[];
+	shards: ShardStats[];
 }
 
 export interface ServiceStats {
@@ -140,7 +165,10 @@ interface WorkerCollection {
 	};
 }
 
-/** The sharding manager */
+/** 
+ * The sharding manager
+ * @public
+*/
 export class Admiral extends EventEmitter {
 	/** Map of clusters by  to worker by ID */
 	public clusters!: Collection;
@@ -326,141 +354,19 @@ export class Admiral extends EventEmitter {
 				if (message.op) {
 					switch (message.op) {
 					case "log": {
-						let source;
-						if (message.source) {
-							source = message.source;
-						} else {
-							let cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
-							let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
-							if (!service && !cluster) {
-								const soft = this.softKills.get(worker.id);
-								const launching = this.launchingWorkers.get(worker.id);
-								if (soft) {
-									if (soft.type == "cluster") {
-										cluster = {clusterID: soft.id};
-									} else if (soft.type == "service") {
-										service = {serviceName: soft.id};
-									}
-								} else if (launching) {
-									if (launching.cluster) {
-										cluster = {clusterID: launching.cluster.clusterID};
-									} else if (launching.service) {
-										service = {serviceName: launching.service.serviceName};
-									}
-								}
-							}
-							if (cluster) {
-								source = `Cluster ${cluster.clusterID}`;
-							} else if (service) {
-								source = `Service ${service.serviceName}`;
-							}
-						}
-						this.log(message.msg, source);
+						this.ipcLog("log", message, worker);
 						break;
 					}
 					case "debug": {
-						let source;
-						if (message.source) {
-							source = message.source;
-						} else {
-							let cluster = this.clusters.find(
-								(c: ClusterCollection) => c.workerID == worker.id,
-							);
-							let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
-							if (!service && !cluster) {
-								const soft = this.softKills.get(worker.id);
-								const launching = this.launchingWorkers.get(worker.id);
-								if (soft) {
-									if (soft.type == "cluster") {
-										cluster = {clusterID: soft.id};
-									} else if (soft.type == "service") {
-										service = {serviceName: soft.id};
-									}
-								} else if (launching) {
-									if (launching.cluster) {
-										cluster = {clusterID: launching.cluster.clusterID};
-									} else if (launching.service) {
-										service = {serviceName: launching.service.serviceName};
-									}
-								}
-							}
-							if (cluster) {
-								source = `Cluster ${cluster.clusterID}`;
-							} else if (service) {
-								source = `Service ${service.serviceName}`;
-							}
-						}
-						this.debug(message.msg, source);
+						this.ipcLog("debug", message, worker);
 						break;
 					}
 					case "error": {
-						let source;
-						if (message.source) {
-							source = message.source;
-						} else {
-							let cluster = this.clusters.find(
-								(c: ClusterCollection) => c.workerID == worker.id,
-							);
-							let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
-							if (!service && !cluster) {
-								const soft = this.softKills.get(worker.id);
-								const launching = this.launchingWorkers.get(worker.id);
-								if (soft) {
-									if (soft.type == "cluster") {
-										cluster = {clusterID: soft.id};
-									} else if (soft.type == "service") {
-										service = {serviceName: soft.id};
-									}
-								} else if (launching) {
-									if (launching.cluster) {
-										cluster = {clusterID: launching.cluster.clusterID};
-									} else if (launching.service) {
-										service = {serviceName: launching.service.serviceName};
-									}
-								}
-							}
-							if (cluster) {
-								source = `Cluster ${cluster.clusterID}`;
-							} else if (service) {
-								source = `Service ${service.serviceName}`;
-							}
-						}
-						this.error(message.msg, source);
+						this.ipcLog("error", message, worker);
 						break;
 					}
 					case "warn": {
-						let source;
-						if (message.source) {
-							source = message.source;
-						} else {
-							let cluster = this.clusters.find(
-								(c: ClusterCollection) => c.workerID == worker.id,
-							);
-							let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
-							if (!service && !cluster) {
-								const soft = this.softKills.get(worker.id);
-								const launching = this.launchingWorkers.get(worker.id);
-								if (soft) {
-									if (soft.type == "cluster") {
-										cluster = {clusterID: soft.id};
-									} else if (soft.type == "service") {
-										service = {serviceName: soft.id};
-									}
-								} else if (launching) {
-									if (launching.cluster) {
-										cluster = {clusterID: launching.cluster.clusterID};
-									} else if (launching.service) {
-										service = {serviceName: launching.service.serviceName};
-									}
-								}
-							}
-							if (cluster) {
-								source = `Cluster ${cluster.clusterID}`;
-							} else if (service) {
-								source = `Service ${service.serviceName}`;
-							}
-						}
-						this.warn(message.msg, source);
+						this.ipcLog("warn", message, worker);
 						break;
 					}
 					case "launched": {
@@ -559,13 +465,14 @@ export class Admiral extends EventEmitter {
 									},
 								});
 								this.error(
+									`A service I requested (${
+										message.command.service
+									}) is unavailable.`,
 									`Cluster ${
 										this.clusters.find(
 											(c: ClusterCollection) => c.workerID == worker.id,
 										).clusterID
-									} | A service I requested (${
-										message.command.service
-									}) is unavailable.`,
+									}`
 								);
 							}
 						} else {
@@ -579,16 +486,91 @@ export class Admiral extends EventEmitter {
 								},
 							});
 							this.error(
+								`A service I requested (${
+									message.command.service
+								}) does not exist.`,
 								`Cluster ${
 									this.clusters.find(
 										(c: ClusterCollection) => c.workerID == worker.id,
 									).clusterID
-								} | A service I requested (${
-									message.command.service
-								}) does not exist.`,
+								}`
 							);
 						}
 
+						break;
+					}
+					case "clusterCommand": {
+						const cluster = this.clusters.get(message.command.clusterID);
+						if (cluster) {
+							const clusterWorker = master.workers[cluster.workerID];
+							if (clusterWorker) {
+								clusterWorker.send({
+									op: "command",
+									command: message.command,
+									UUID: worker.id,
+								});
+							} else {
+								worker.send({
+									op: "return",
+									id: message.command.UUID,
+									value: {
+										value: {
+											err: `Cluster ${message.command.clusterID} is unavailable.`,
+										},
+									},
+								});
+								this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
+							}
+						} else {
+							worker.send({
+								op: "return",
+								id: message.command.UUID,
+								value: {
+									value: {
+										err: `Cluster ${message.command.clusterID} does not exist.`,
+									},
+								},
+							});
+							this.error(`The cluster I requested (${message.command.clusterID}) does not exist.`, `Worker ${worker.id}`);
+						}
+
+						break;
+					}
+					case "clusterEval": {
+						const cluster = this.clusters.get(message.request.clusterID);
+						if (cluster) {
+							const clusterWorker = master.workers[cluster.workerID];
+							if (clusterWorker) {
+								clusterWorker.send({
+									op: "eval",
+									request: message.request,
+									UUID: worker.id,
+								});
+							} else {
+								worker.send({
+									op: "return",
+									id: message.command.UUID,
+									value: {
+										value: {
+											err: `Cluster ${message.command.clusterID} is unavailable.`,
+										},
+									},
+								});
+								this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
+							}
+						} else {
+							worker.send({
+								op: "return",
+								id: message.command.UUID,
+								value: {
+									value: {
+										err: `Cluster ${message.command.clusterID} does not exist.`,
+									},
+								},
+							});
+							this.error(`The cluster I requested (${message.command.clusterID}) does not exist.`, `Worker ${worker.id}`);
+						}
+						
 						break;
 					}
 					case "return": {
@@ -667,7 +649,7 @@ export class Admiral extends EventEmitter {
 								});
 								this.emit("stats", this.stats);
 								if (this.whatToLog.includes("stats_update")) {
-									this.log("Admiral | Stats updated.");
+									this.log("Stats updated.", "Admiral");
 								}
 
 								// Sends the clusters the latest stats
@@ -697,7 +679,7 @@ export class Admiral extends EventEmitter {
 					case "sendTo": {
 						const worker = master.workers[this.clusters.get(message.cluster).workerID];
 						if (worker) {
-							worker.send({op: message.event.op, msg: message.event.msg});
+							worker.send({op: "ipcEvent", event: message.event.op, msg: message.event.msg});
 						}
 
 						break;
@@ -732,13 +714,18 @@ export class Admiral extends EventEmitter {
 
 						break;
 					}
+					case "createService": {
+						this.createService(message.serviceName, message.servicePath);
+
+						break;
+					}
 					case "totalShutdown": {
 						this.totalShutdown(message.hard);
 
 						break;
 					}
 					case "reshard": {
-						this.reshard();
+						this.reshard(message.options);
 
 						break;
 					}
@@ -759,9 +746,9 @@ export class Admiral extends EventEmitter {
 					(s: ServiceCollection) => s.workerID == worker.id,
 				);
 				if (cluster) {
-					this.warn(`Admiral | Cluster ${cluster.clusterID} disconnected :(`);
+					this.warn(`Cluster ${cluster.clusterID} disconnected :(`, "Admiral");
 				} else if (service) {
-					this.warn(`Admiral | Service ${service.serviceName} disconnected :(`);
+					this.warn(`Service ${service.serviceName} disconnected :(`, "Admiral");
 				}
 			});
 
@@ -778,7 +765,7 @@ export class Admiral extends EventEmitter {
 							return "Worker " + worker.id;
 						}
 					};
-					this.warn("Admiral | " + name() + " died during a soft kill.");
+					this.warn(name() + " died during a soft kill.", "Admiral");
 					this.queue.execute();
 					this.softKills.get(worker.id)?.fn(true);
 				} else {
@@ -819,7 +806,7 @@ export class Admiral extends EventEmitter {
 											return "Worker " + item.workerID;
 										}
 									};
-									this.warn("Admiral | Safe shutdown failed for " + name() + ". Preformed hard shutdown instead.");
+									this.warn("Safe shutdown failed for " + name() + ". Preformed hard shutdown instead.", "Admiral");
 									if (this.softKills.get(item.workerID)) {
 										this.softKills.get(item.workerID)?.fn(true);
 									}
@@ -844,9 +831,9 @@ export class Admiral extends EventEmitter {
 			process.nextTick(() => {
 				if (this.whatToLog.includes("admiral_start")) {
 					if (this.resharding) {
-						this.log("Fleet | Resharding");
+						this.log("Resharding", "Fleet");
 					} else {
-						this.log("Fleet | Started Admiral");
+						this.log("Started Admiral", "Fleet");
 					}
 				}
 				this.calculateShards().then((shards) => {
@@ -865,7 +852,8 @@ export class Admiral extends EventEmitter {
 
 					if (this.whatToLog.includes("admiral_start")) {
 						this.log(
-							`Admiral | Starting ${shards} shard(s) in ${this.clusterCount} cluster(s)`,
+							`Starting ${shards} shard(s) in ${this.clusterCount} cluster(s)`,
+							"Admiral"
 						);
 					}
 
@@ -884,7 +872,7 @@ export class Admiral extends EventEmitter {
 
 					// Start stuff
 					if (this.servicesToCreate && !this.resharding) {
-						this.startService();
+						this.startService(this.servicesToCreate);
 					} else {
 						this.startCluster();
 					}
@@ -922,7 +910,15 @@ export class Admiral extends EventEmitter {
 				reply(true, value);
 			})
 			.catch((error) => {
-				reply(false, error.toJSON());
+				const msg = {
+					convertedErrorObject: false,
+					error
+				};
+				if (error instanceof Error) {
+					msg.error = errorToJSON(error);
+					msg.convertedErrorObject = true;
+				}
+				reply(false, msg);
 			});
 	}
 	
@@ -1020,19 +1016,38 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
+	/** 
+	 * Create a service
+	 * @param serviceName Unique ame of the service
+	 * @param servicePath Absolute path to the service file
+	 */
+	public createService(serviceName: string, servicePath: string): void {
+		// if path is not absolute
+		if (!path.isAbsolute(servicePath)) {
+			this.error("Service path must be absolute!", "Admiral");
+			return;
+		}
+
+		// if is duplicate
+		if (this.services.get(serviceName)) {
+			this.error(`Service ${serviceName} already exists!`, "Admiral");
+			return;
+		}
+
+		this.startService([{name: serviceName, path: servicePath}], true);
+	}
+
 	/**
 	 * Shuts down everything and exits the master process
 	 * @param hard Whether to ignore the soft shutdown function
 	*/
 	public totalShutdown(hard: boolean): void {
 		if (this.whatToLog.includes("total_shutdown")) {
-			this.log("Admiral | Starting total fleet shutdown.");
+			this.log("Starting total fleet shutdown.", "Admiral");
 		}
 		if (hard) {
 			if (this.whatToLog.includes("total_shutdown")) {
-				this.log(
-					"Admiral | Total fleet hard shutdown complete. Ending process.",
-				);
+				this.log("Total fleet hard shutdown complete. Ending process.", "Admiral");
 			}
 			process.exit(0);
 		} else {
@@ -1047,7 +1062,7 @@ export class Admiral extends EventEmitter {
 					// clear override
 					this.queue.override = undefined;
 					if (this.whatToLog.includes("total_shutdown")) {
-						this.log("Admiral | Total fleet shutdown complete. Ending process.");
+						this.log("Total fleet shutdown complete. Ending process.", "Admiral");
 					}
 					process.exit(0);
 				}
@@ -1076,19 +1091,29 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	/** Reshard */
-	public reshard(): void {
+	/** Reshard 
+	 * @param options Change the resharding options
+	*/
+	public reshard(options?: ReshardOptions): void {
 		if (!this.resharding) {
 			const oldClusters = new Collection;
 			this.clusters.forEach((o: ClusterCollection) => {
 				oldClusters.set(o.clusterID, o);
 			});
 			this.resharding = true;
+			// set new values
+			if (options) {
+				if (options.guildsPerShard) this.guildsPerShard = options.guildsPerShard;
+				if (options.firstShardID) this.firstShardID = options.firstShardID;
+				if (options.lastShardID) this.lastShardID = options.lastShardID;
+				if (options.shards) this.shardCount = options.shards || "auto";
+				if (options.clusters) this.clusterCount = options.clusters || "auto";
+			}
 			this.launch();
 			this.once("ready", () => {
 				this.resharding = false;
 				if (this.whatToLog.includes("resharding_worker_killed")) {
-					this.log("Admiral | Killing old clusters");
+					this.log("Killing old clusters", "Admiral");
 				}
 				let i = 0;
 				oldClusters.forEach((c) => {
@@ -1096,19 +1121,17 @@ export class Admiral extends EventEmitter {
 					if (oldWorker) {
 						this.shutdownWorker(oldWorker, true, () => {
 							if (this.whatToLog.includes("resharding_worker_killed")) {
-								this.log(`Admiral | Killed old worker for cluster ${c.clusterID}`);
+								this.log(`Killed old worker for cluster ${c.clusterID}`, "Admiral");
 							}
 							const newWorker = master.workers[this.clusters.find((newC: ClusterCollection) => newC.clusterID == c.clusterID).workerID];
 							if (this.whatToLog.includes("resharding_transition")) {
-								this.log(`Admiral | Transitioning to new worker for cluster ${c.clusterID}`);
+								this.log(`Transitioning to new worker for cluster ${c.clusterID}`, "Admiral");
 							}
 							if (newWorker) newWorker.send({op: "loadCode"});
 							i++;
 							if (i == oldClusters.size) {
 								if (this.whatToLog.includes("resharding_transition_complete")) {
-									this.log(
-										"Admiral | Transitioned all clusters to the new workers!",
-									);
+									this.log("Transitioned all clusters to the new workers!", "Admiral");
 								}
 							}
 						}, {clusters: oldClusters});
@@ -1120,10 +1143,11 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private async startService() {
-		if (this.servicesToCreate) {
-			for (let i = 0; i < this.servicesToCreate.length; i++) {
-				const service = this.servicesToCreate[i];
+	private async startService(servicesToStart?: ServiceCreator[], onlyServices?: boolean) {
+		if (!servicesToStart) servicesToStart = this.servicesToCreate;
+		if (servicesToStart) {
+			for (let i = 0; i < servicesToStart.length; i++) {
+				const service = servicesToStart[i];
 				const worker = master.fork({
 					type: "service",
 					NODE_ENV: process.env.NODE_ENV,
@@ -1154,15 +1178,15 @@ export class Admiral extends EventEmitter {
 					},
 				});
 				if (this.whatToLog.includes("service_launch")) {
-					this.log("Admiral | Launching service " + service.name);
+					this.log("Launching service " + service.name, "Admiral");
 				}
 			}
 		}
 		process.nextTick(() => {
 			if (this.whatToLog.includes("all_services_launched")) {
-				this.log("Admiral | All services launched!");
+				this.log("All services launched!", "Admiral");
 			}
-			this.startCluster();
+			if (!onlyServices) this.startCluster();
 		});
 	}
 
@@ -1186,10 +1210,10 @@ export class Admiral extends EventEmitter {
 					workerID: worker.id,
 				},
 			});
-			if (this.whatToLog.includes("cluster_launch")) this.log("Admiral | Launching cluster " + i);
+			if (this.whatToLog.includes("cluster_launch")) this.log("Launching cluster " + i, "Admiral");
 		}
 
-		if (this.whatToLog.includes("all_clusters_launched")) this.log("Admiral | All clusters launched!");
+		if (this.whatToLog.includes("all_clusters_launched")) this.log("All clusters launched!", "Admiral");
 
 		if (this.chunks) this.chunks.forEach((chunk, clusterID) => {
 			const workerID = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID == clusterID).cluster.workerID;
@@ -1234,7 +1258,7 @@ export class Admiral extends EventEmitter {
 				},
 			});
 		}
-		if (this.whatToLog.includes("shards_spread")) this.log("Admiral | All shards spread!");
+		if (this.whatToLog.includes("shards_spread")) this.log("All shards spread!", "Admiral");
 	}
 
 	private async calculateShards() {
@@ -1242,7 +1266,7 @@ export class Admiral extends EventEmitter {
 		if (shards === "auto") {
 			const gateway = await this.eris.getBotGateway();
 			if (this.whatToLog.includes("gateway_shards")) {
-				this.log(`Admiral | Gateway recommends ${gateway.shards} shards.`);
+				this.log(`Gateway recommends ${gateway.shards} shards.`, "Admiral");
 			}
 			shards = Number(gateway.shards);
 			if (shards === 1) {
@@ -1337,7 +1361,7 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(worker.id, {
 					fn: (failed?: boolean) => {
 						if (!failed) {
-							this.log(`Admiral | Safely shutdown cluster ${cluster!.clusterID}`);
+							this.log(`Safely shutdown cluster ${cluster!.clusterID}`, "Admiral");
 							worker.kill();
 						}
 						if (!customMaps) {
@@ -1351,16 +1375,12 @@ export class Admiral extends EventEmitter {
 					},
 				});
 				if (this.whatToLog.includes("cluster_shutdown")) {
-					this.log(
-						`Admiral | Performing soft shutdown of cluster ${cluster.clusterID}`,
-					);
+					this.log(`Performing soft shutdown of cluster ${cluster.clusterID}`, "Admiral");
 				}
 			} else {
 				worker.kill();
 				if (this.whatToLog.includes("cluster_shutdown")) {
-					this.log(
-						`Admiral | Hard shutdown of cluster ${cluster.clusterID} complete`,
-					);
+					this.log(`Hard shutdown of cluster ${cluster.clusterID} complete`, "Admiral");
 				}
 				if (!customMaps) this.clusters.delete(cluster.clusterID);
 			}
@@ -1371,9 +1391,7 @@ export class Admiral extends EventEmitter {
 				// Preform soft shutdown
 				this.softKills.set(worker.id, {
 					fn: () => {
-						this.log(
-							`Admiral | Safely shutdown service ${service!.serviceName}`,
-						);
+						this.log(`Safely shutdown service ${service!.serviceName}`, "Admiral");
 						worker.kill();
 						if (!customMaps) {
 							this.services.delete(service!.serviceName);
@@ -1386,16 +1404,12 @@ export class Admiral extends EventEmitter {
 					},
 				});
 				if (this.whatToLog.includes("service_shutdown")) {
-					this.log(
-						`Admiral | Performing soft shutdown of service ${service.serviceName}`,
-					);
+					this.log(`Performing soft shutdown of service ${service.serviceName}`, "Admiral");
 				}
 			} else {
 				worker.kill();
 				if (this.whatToLog.includes("service_shutdown")) {
-					this.log(
-						`Admiral | Hard shutdown of service ${service.serviceName} complete`,
-					);
+					this.log(`Hard shutdown of service ${service.serviceName} complete`, "Admiral");
 				}
 				if (!customMaps) this.services.delete(service.serviceName);
 			}
@@ -1438,15 +1452,11 @@ export class Admiral extends EventEmitter {
 					fn: () => {
 						this.softKills.delete(newWorker.id);
 						if (this.whatToLog.includes("cluster_restart")) {
-							this.log(
-								`Admiral | Killing old worker for cluster ${cluster.clusterID}`,
-							);
+							this.log(`Killing old worker for cluster ${cluster.clusterID}`, "Admiral");
 						}
 						this.shutdownWorker(worker, true, () => {
 							if (this.whatToLog.includes("cluster_restart")) {
-								this.log(
-									`Admiral | Killed old worker for cluster ${cluster.clusterID}`,
-								);
+								this.log(`Killed old worker for cluster ${cluster.clusterID}`, "Admiral");
 							}
 							newWorker.send({op: "loadCode"});
 							this.clusters.delete(cluster.clusterID);
@@ -1461,18 +1471,14 @@ export class Admiral extends EventEmitter {
 					id: cluster.clusterID,
 				});
 				if (this.whatToLog.includes("cluster_restart")) {
-					this.log(
-						`Admiral | Performing soft restart of cluster ${cluster.clusterID}`,
-					);
+					this.log(`Performing soft restart of cluster ${cluster.clusterID}`, "Admiral");
 				}
 			} else {
 				if (manual) {
 					worker.kill();
-					this.warn(
-						`Admiral | Cluster ${cluster.clusterID} killed upon request`,
-					);
+					this.warn(`Cluster ${cluster.clusterID} killed upon request`, "Admiral");
 				} else {
-					this.warn(`Admiral | Cluster ${cluster.clusterID} died :(`);
+					this.warn(`Cluster ${cluster.clusterID} died :(`, "Admiral");
 				}
 				this.clusters.delete(cluster.clusterID);
 				this.clusters.set(
@@ -1480,7 +1486,7 @@ export class Admiral extends EventEmitter {
 					Object.assign(cluster, {workerID: newWorker.id}),
 				);
 				if (this.whatToLog.includes("cluster_restart")) {
-					this.log(`Admiral | Restarting cluster ${cluster.clusterID}`);
+					this.log(`Restarting cluster ${cluster.clusterID}`, "Admiral");
 				}
 			}
 
@@ -1513,15 +1519,11 @@ export class Admiral extends EventEmitter {
 					fn: () => {
 						this.softKills.delete(newWorker.id);
 						if (this.whatToLog.includes("service_restart")) {
-							this.log(
-								`Admiral | Killing old worker for service ${service.serviceName}`,
-							);
+							this.log(`Killing old worker for service ${service.serviceName}`, "Admiral");
 						}
 						this.shutdownWorker(worker, true, () => {
 							if (this.whatToLog.includes("service_restart")) {
-								this.log(
-									`Admiral | Killed old worker for service ${service.serviceName}`,
-								);
+								this.log(`Killed old worker for service ${service.serviceName}`, "Admiral");
 							}
 							this.services.delete(service.serviceName);
 							this.services.set(
@@ -1534,18 +1536,14 @@ export class Admiral extends EventEmitter {
 					id: service.serviceName,
 				});
 				if (this.whatToLog.includes("service_restart")) {
-					this.log(
-						`Admiral | Performing soft restart of service ${service.serviceName}`,
-					);
+					this.log(`Performing soft restart of service ${service.serviceName}`, "Admiral");
 				}
 			} else {
 				if (manual) {
 					worker.kill();
-					this.warn(
-						`Admiral | Service ${service.serviceName} killed upon request`,
-					);
+					this.warn(`Service ${service.serviceName} killed upon request`, "Admiral");
 				} else {
-					this.warn(`Admiral | Service ${service.serviceName} died :(`);
+					this.warn(`Service ${service.serviceName} died :(`, "Admiral");
 				}
 				this.services.delete(service.serviceName);
 				this.services.set(
@@ -1553,7 +1551,7 @@ export class Admiral extends EventEmitter {
 					Object.assign(service, {workerID: newWorker.id}),
 				);
 				if (this.whatToLog.includes("service_restart")) {
-					this.log(`Admiral | Restarting service ${service.serviceName}`);
+					this.log(`Restarting service ${service.serviceName}`, "Admiral");
 				}
 			}
 
@@ -1655,126 +1653,98 @@ export class Admiral extends EventEmitter {
 		if (!msg) msg = null;
 		this.clusters.forEach((c: ClusterCollection) => {
 			const worker = master.workers[c.workerID];
-			if (worker) process.nextTick(() => worker.send({op, msg}));
+			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
 		});
 		this.services.forEach((s: ServiceCollection) => {
 			const worker = master.workers[s.workerID];
-			if (worker) process.nextTick(() => worker.send({op, msg}));
+			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
 		});
 	}
 
-	public error(message: any, source?: string): void {
-		let log = message;
-		if (this.objectLogging) {
-			log = {
-				source: "",
-				message: message,
-				timestamp: new Date().getTime(),
-			};
-			if (source) {
-				log.source = source;
-			} else {
-				if (typeof message == "string") {
-					const split = message.split("|");
-					log.source = split[0].trim();
-					log.message = split[1].trim();
+	private ipcLog(type: "log" | "error" | "warn" | "debug", message: unknown, worker: master.Worker) {
+		// convert log if convered
+		let messageToLog = message;
+		let source;
+
+		if (message !== null && message !== undefined && typeof message !== "string" && message instanceof Object) {
+			if ("ipcLogObject" in message) {
+				const ipcHandledMessage = message as IpcHandledLog;
+				source = ipcHandledMessage.source;
+				messageToLog = ipcHandledMessage.msg;
+				if (ipcHandledMessage.valueTranslatedFrom) {
+					switch(ipcHandledMessage.valueTranslatedFrom) {
+					case "Error": {
+						messageToLog = reconstructError(ipcHandledMessage.msg as NodeJS.ErrnoException);
+						break;
+					}
+					}
 				}
 			}
 		} else {
-			if (source) {
-				log = `${source} | ${message}`;
+			messageToLog = message as unknown;
+		}
+
+		if (!source) {
+			let cluster = this.clusters.find(
+				(c: ClusterCollection) => c.workerID == worker.id,
+			);
+			let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+			if (!service && !cluster) {
+				const soft = this.softKills.get(worker.id);
+				const launching = this.launchingWorkers.get(worker.id);
+				if (soft) {
+					if (soft.type == "cluster") {
+						cluster = {clusterID: soft.id};
+					} else if (soft.type == "service") {
+						service = {serviceName: soft.id};
+					}
+				} else if (launching) {
+					if (launching.cluster) {
+						cluster = {clusterID: launching.cluster.clusterID};
+					} else if (launching.service) {
+						service = {serviceName: launching.service.serviceName};
+					}
+				}
+			}
+			if (cluster) {
+				source = `Cluster ${cluster.clusterID}`;
+			} else if (service) {
+				source = `Service ${service.serviceName}`;
 			}
 		}
-		this.emit("error", log);
+
+		this.emitLog(type, messageToLog, source);
 	}
 
-	public debug(message: any, source?: string): void {
+	private emitLog(type: "log" | "error" | "warn" | "debug", message: unknown, source?: string) {
 		let log = message;
 		if (this.objectLogging) {
 			log = {
-				source: "",
+				source,
 				message: message,
 				timestamp: new Date().getTime(),
 			};
-			if (source) {
-				log.source = source;
-			} else {
-				if (typeof message == "string") {
-					const split = message.split("|");
-					log.source = split[0].trim();
-					log.message = split[1].trim();
-				}
-			}
 		} else {
 			if (source) {
-				log = `${source} | ${message}`;
+				log = `${source} | ${typeof message === "string" ? message : inspect(message)}`;
 			}
 		}
-		this.emit("debug", log);
+		this.emit(type, log);
 	}
 
-	public log(message: any, source?: string): void {
-		let log = message;
-		if (this.objectLogging) {
-			log = {
-				source: "",
-				message: message,
-				timestamp: new Date().getTime(),
-			};
-			if (source) {
-				log.source = source;
-			} else {
-				if (typeof message == "string") {
-					const split = message.split("|");
-					log.source = split[0].trim();
-					log.message = split[1].trim();
-				}
-			}
-		} else {
-			if (source) {
-				log = `${source} | ${message}`;
-			}
-		}
-		this.emit("log", log);
+	public error(message: unknown, source?: string): void {
+		this.emitLog("error", message, source);
 	}
 
-	public warn(message: any, source?: string): void {
-		let log = message;
-		if (this.objectLogging) {
-			log = {
-				source: "",
-				message: message,
-				timestamp: new Date().getTime(),
-			};
-			if (source) {
-				log.source = source;
-			} else {
-				if (typeof message == "string") {
-					const split = message.split("|");
-					log.source = split[0].trim();
-					log.message = split[1].trim();
-				}
-			}
-		} else {
-			if (source) {
-				log = `${source} | ${message}`;
-			}
-		}
-		this.emit("warn", log);
+	public debug(message: unknown, source?: string): void {
+		this.emitLog("debug", message, source);
+	}
+
+	public log(message: unknown, source?: string): void {
+		this.emitLog("log", message, source);
+	}
+
+	public warn(message: unknown, source?: string): void {
+		this.emitLog("warn", message, source);
 	}
 }
-
-// Convert error to JSON
-if (!("toJSON" in Error.prototype))
-	Object.defineProperty(Error.prototype, "toJSON", {
-		value: function () {
-			return {
-				message: this.message,
-				stack: this.stack,
-				name: this.name,
-				code: this.code
-			};
-		},
-		configurable: true,
-		writable: true
-	});

@@ -45,7 +45,13 @@ class CentralRequestHandler {
                     resolve(r.value);
                 }
                 else {
-                    reject(ErrorHandler_1.reconstructError(r.value));
+                    const value = r.value;
+                    if (value.convertedErrorObject) {
+                        reject(ErrorHandler_1.reconstructError(value.error));
+                    }
+                    else {
+                        reject(value.error);
+                    }
                 }
             };
             this.requests.set(UUID, callback);

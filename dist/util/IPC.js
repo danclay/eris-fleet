@@ -6,18 +6,80 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPC = void 0;
 const events_1 = require("events");
 const crypto_1 = __importDefault(require("crypto"));
+const ErrorHandler_1 = require("./ErrorHandler");
+const path_1 = __importDefault(require("path"));
 class IPC extends events_1.EventEmitter {
     constructor() {
         super();
         this.events = new Map();
+        this.ipcEventListeners = new Map();
+        // register user event listener
+        this.ipcEventListeners.set("ipcEvent", [(msg) => {
+                const event = this.events.get(msg.event);
+                if (event) {
+                    event.forEach(fn => {
+                        fn(msg.msg);
+                    });
+                }
+            }]);
         process.on("message", msg => {
-            const event = this.events.get(msg.op);
+            const event = this.ipcEventListeners.get(msg.op);
             if (event) {
                 event.forEach(fn => {
                     fn(msg);
                 });
             }
         });
+    }
+    sendLog(type, value, source) {
+        let valueToSend = value;
+        let valueTranslatedFrom = undefined;
+        if (value instanceof Error) {
+            valueTranslatedFrom = "Error";
+            valueToSend = ErrorHandler_1.errorToJSON(value);
+        }
+        if (process.send)
+            process.send({
+                op: type,
+                ipcLogObject: true,
+                msg: valueToSend,
+                source,
+                valueTranslatedFrom,
+                valueTypeof: typeof value,
+                timestamp: new Date().getTime()
+            });
+    }
+    /**
+     * Sends a log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     */
+    log(message, source) {
+        this.sendLog("log", message, source);
+    }
+    /**
+     * Sends an error log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     */
+    error(message, source) {
+        this.sendLog("error", message, source);
+    }
+    /**
+     * Sends a warn log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     */
+    warn(message, source) {
+        this.sendLog("warn", message, source);
+    }
+    /**
+     * Sends a debug log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     */
+    debug(message, source) {
+        this.sendLog("debug", message, source);
     }
     /**
      * Register for an event. This will recieve broadcasts and messages sent to this cluster
@@ -83,11 +145,9 @@ class IPC extends events_1.EventEmitter {
         if (process.send)
             process.send({ op: "fetchUser", id });
         return new Promise((resolve, reject) => {
-            const callback = (r) => {
-                this.removeListener(id, callback);
+            this.once(id, (r) => {
                 resolve(r);
-            };
-            this.on(id, callback);
+            });
         });
     }
     /**
@@ -99,11 +159,9 @@ class IPC extends events_1.EventEmitter {
         if (process.send)
             process.send({ op: "fetchGuild", id });
         return new Promise((resolve, reject) => {
-            const callback = (r) => {
-                this.removeListener(id, callback);
+            this.once(id, (r) => {
                 resolve(r);
-            };
-            this.on(id, callback);
+            });
         });
     }
     /**
@@ -115,11 +173,9 @@ class IPC extends events_1.EventEmitter {
         if (process.send)
             process.send({ op: "fetchChannel", id });
         return new Promise((resolve, reject) => {
-            const callback = (r) => {
-                this.removeListener(id, callback);
+            this.once(id, (r) => {
                 resolve(r);
-            };
-            this.on(id, callback);
+            });
         });
     }
     /**
@@ -133,13 +189,11 @@ class IPC extends events_1.EventEmitter {
         if (process.send)
             process.send({ op: "fetchMember", id: UUID });
         return new Promise((resolve, reject) => {
-            const callback = (r) => {
+            this.once(UUID, (r) => {
                 if (r)
                     r.id = memberID;
-                this.removeListener(UUID, callback);
                 resolve(r);
-            };
-            this.on(UUID, callback);
+            });
         });
     }
     /**
@@ -153,7 +207,7 @@ class IPC extends events_1.EventEmitter {
             message = null;
         if (!receptive)
             receptive = false;
-        const UUID = JSON.stringify({ rand: crypto_1.default.randomBytes(16).toString("hex"), service });
+        const UUID = "serviceCommand" + crypto_1.default.randomBytes(16).toString("hex");
         if (process.send)
             process.send({ op: "serviceCommand",
                 command: {
@@ -165,8 +219,7 @@ class IPC extends events_1.EventEmitter {
             });
         if (receptive) {
             return new Promise((resolve, reject) => {
-                const callback = (r) => {
-                    this.removeListener(UUID, callback);
+                this.once(UUID, (r) => {
                     if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
                         resolve(r.value);
                     }
@@ -178,8 +231,85 @@ class IPC extends events_1.EventEmitter {
                             resolve(r.value);
                         }
                     }
-                };
-                this.on(UUID, callback);
+                });
+            });
+        }
+    }
+    /**
+     * Execute a cluster command
+     * @param clusterID ID of the cluster
+     * @param message Whatever message you want to send with the command
+     * @param receptive Whether you expect something to be returned to you from the command
+    */
+    async clusterCommand(clusterID, message, receptive) {
+        if (!message)
+            message = null;
+        if (!receptive)
+            receptive = false;
+        const UUID = "clusterCommand" + crypto_1.default.randomBytes(16).toString("hex");
+        if (process.send)
+            process.send({ op: "clusterCommand",
+                command: {
+                    clusterID,
+                    msg: message,
+                    UUID,
+                    receptive
+                }
+            });
+        console.log("here");
+        if (receptive) {
+            return new Promise((resolve, reject) => {
+                this.once(UUID, (r) => {
+                    if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+                        resolve(r.value);
+                    }
+                    else {
+                        if (r.value.err) {
+                            reject(r.value.err);
+                        }
+                        else {
+                            resolve(r.value);
+                        }
+                    }
+                });
+            });
+        }
+    }
+    /**
+     * Execute a cluster command on all clusters
+     * @param clusterID ID of the cluster
+     * @param message Whatever message you want to send with the command
+     * @param receptive Whether you expect something to be returned to you from the command. WIll return an object with each response mapped to the cluster's ID
+    */
+    async allClustersCommand(clusterID, message, receptive) {
+        if (!message)
+            message = null;
+        if (!receptive)
+            receptive = false;
+        const UUID = "allClusterCommand" + crypto_1.default.randomBytes(16).toString("hex");
+        if (process.send)
+            process.send({ op: "allClustersCommand",
+                command: {
+                    msg: message,
+                    UUID,
+                    receptive
+                }
+            });
+        if (receptive) {
+            return new Promise((resolve, reject) => {
+                this.on(UUID, (r) => {
+                    if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+                        resolve(r.value);
+                    }
+                    else {
+                        if (r.value.err) {
+                            reject(r.value.err);
+                        }
+                        else {
+                            resolve(r.value);
+                        }
+                    }
+                });
             });
         }
     }
@@ -242,13 +372,27 @@ class IPC extends events_1.EventEmitter {
             process.send({ op: "shutdownCluster", clusterID, hard: hard ? true : false });
     }
     /**
-     * Shuts down a cluster
+     * Shuts down a service
      * @param serviceName The name of the service
      * @param hard Whether to ignore the soft shutdown function
     */
     shutdownService(serviceName, hard) {
         if (process.send)
             process.send({ op: "shutdownService", serviceName, hard: hard ? true : false });
+    }
+    /**
+     * Create a service
+     * @param serviceName Unique ame of the service
+     * @param servicePath Absolute path to the service file
+     */
+    createService(serviceName, servicePath) {
+        // if path is not absolute
+        if (!path_1.default.isAbsolute(servicePath)) {
+            this.error("Service path must be absolute!");
+            return;
+        }
+        if (process.send)
+            process.send({ op: "createService", serviceName, servicePath });
     }
     /**
      * Shuts down everything and exits the master process
@@ -260,10 +404,42 @@ class IPC extends events_1.EventEmitter {
     }
     /**
      * Reshards all clusters
+     * @param options Change the resharding options
     */
-    reshard() {
+    reshard(options) {
         if (process.send)
-            process.send({ op: "reshard" });
+            process.send({ op: "reshard", options });
+    }
+    async clusterEval(clusterID, stringToEvaluate, receptive) {
+        if (!receptive)
+            receptive = false;
+        const UUID = "clusterEval" + crypto_1.default.randomBytes(16).toString("hex");
+        if (process.send)
+            process.send({ op: "clusterEval",
+                request: {
+                    clusterID,
+                    stringToEvaluate: stringToEvaluate,
+                    UUID,
+                    receptive
+                }
+            });
+        if (receptive) {
+            return new Promise((resolve, reject) => {
+                this.once(UUID, (r) => {
+                    if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+                        resolve(r.value);
+                    }
+                    else {
+                        if (r.value.err) {
+                            reject(r.value.err);
+                        }
+                        else {
+                            resolve(r.value);
+                        }
+                    }
+                });
+            });
+        }
     }
 }
 exports.IPC = IPC;

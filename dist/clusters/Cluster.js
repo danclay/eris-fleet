@@ -23,23 +23,22 @@ exports.Cluster = void 0;
 const cluster_1 = require("cluster");
 const util_1 = require("util");
 const CentralRequestHandler_1 = require("../util/CentralRequestHandler");
+const IPC_1 = require("../util/IPC");
 class Cluster {
     constructor(input) {
         this.erisClient = input.erisClient;
-        console.log = (str) => { if (process.send)
-            process.send({ op: "log", msg: str, source: "Cluster " + this.clusterID }); };
-        console.debug = (str) => { if (process.send)
-            process.send({ op: "debug", msg: str, source: "Cluster " + this.clusterID }); };
-        console.error = (str) => { if (process.send)
-            process.send({ op: "error", msg: str, source: "Cluster " + this.clusterID }); };
-        console.warn = (str) => { if (process.send)
-            process.send({ op: "warn", msg: str, source: "Cluster " + this.clusterID }); };
+        // add ipc
+        this.ipc = new IPC_1.IPC();
+        console.log = (str) => { this.ipc.log(str); };
+        console.debug = (str) => { this.ipc.debug(str); };
+        console.error = (str) => { this.ipc.error(str); };
+        console.warn = (str) => { this.ipc.warn(str); };
         //Spawns
         process.on("uncaughtException", (err) => {
-            console.error(util_1.inspect(err));
+            this.ipc.error(err);
         });
         process.on("unhandledRejection", (reason, promise) => {
-            console.error("Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason);
+            this.ipc.error("Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason);
         });
         if (process.send)
             process.send({ op: "launched" });
@@ -131,6 +130,65 @@ class Cluster {
                         }
                         break;
                     }
+                    case "command": {
+                        const noHandle = () => {
+                            const res = { err: `Cluster ${this.clusterID} cannot handle commands!` };
+                            if (process.send)
+                                process.send({ op: "return", value: {
+                                        id: message.command.UUID,
+                                        value: res
+                                    }, UUID: message.UUID });
+                            console.error("I can't handle commands!");
+                        };
+                        if (this.app) {
+                            if (this.app.handleCommand) {
+                                const res = await this.app.handleCommand(message.command.msg);
+                                if (message.command.receptive) {
+                                    if (process.send)
+                                        process.send({ op: "return", value: {
+                                                id: message.command.UUID,
+                                                value: res
+                                            }, UUID: message.UUID });
+                                }
+                            }
+                            else {
+                                noHandle();
+                            }
+                        }
+                        else {
+                            noHandle();
+                        }
+                        break;
+                    }
+                    case "eval": {
+                        const errorEncountered = (err) => {
+                            if (message.request.receptive) {
+                                if (process.send)
+                                    process.send({ op: "return", value: {
+                                            id: message.request.UUID,
+                                            value: { err }
+                                        }, UUID: message.UUID });
+                            }
+                        };
+                        if (this.app) {
+                            this.app.runEval(message.request.stringToEvaluate)
+                                .then((res) => {
+                                if (message.request.receptive) {
+                                    if (process.send)
+                                        process.send({ op: "return", value: {
+                                                id: message.request.UUID,
+                                                value: res
+                                            }, UUID: message.UUID });
+                                }
+                            }).catch((error) => {
+                                errorEncountered(error);
+                            });
+                        }
+                        else {
+                            errorEncountered("Cluster is not ready!");
+                        }
+                        break;
+                    }
                     case "return": {
                         if (this.app)
                             this.app.ipc.emit(message.id, message.value);
@@ -167,6 +225,7 @@ class Cluster {
                                     voice: this.bot.voiceConnections.size,
                                     largeGuilds: this.bot.guilds.filter(g => g.large).length,
                                     shardStats: shardStats,
+                                    shards: shardStats,
                                     ram: process.memoryUsage().rss / 1e6
                                 } });
                         break;
@@ -261,12 +320,10 @@ class Cluster {
                 console.log(`Shard ${id} has resumed!`);
         });
         bot.on("warn", (message, id) => {
-            if (process.send)
-                process.send({ op: "warn", msg: message, source: `Cluster ${this.clusterID}, Shard ${id}` });
+            this.ipc.warn(message, `Cluster ${this.clusterID}, Shard ${id}`);
         });
         bot.on("error", (error, id) => {
-            if (process.send)
-                process.send({ op: "error", msg: util_1.inspect(error), source: `Cluster ${this.clusterID}, Shard ${id}` });
+            this.ipc.error(error, `Cluster ${this.clusterID}, Shard ${id}`);
         });
         bot.on("ready", () => {
             if (this.whatToLog.includes("cluster_ready"))
@@ -283,7 +340,7 @@ class Cluster {
     async loadCode() {
         //let App = (await import(this.path)).default;
         //App = App.default ? App.default : App;
-        this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id });
+        this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id, ipc: this.ipc });
     }
 }
 exports.Cluster = Cluster;

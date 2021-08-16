@@ -1,22 +1,104 @@
+import { ReshardOptions } from "./../sharding/Admiral";
 import {EventEmitter} from "events";
 import * as Admiral from "../sharding/Admiral";
 import crypto from "crypto";
+import { errorToJSON } from "./ErrorHandler";
+import path from "path";
+import * as master from "cluster";
+import { inspect } from "util";
+
+export interface IpcHandledLog {
+	op: "log" | "error" | "warn" | "debug",
+	ipcLogObject: boolean,
+	msg: unknown,
+	source?: string,
+	valueTranslatedFrom?: "Error", 
+	valueTypeof: string,
+	timestamp: number
+}
 
 export class IPC extends EventEmitter {
-	private events: Map<string | number, Array<(msg: unknown) => void>>;
+	private events: Map<string | number, Array<(msg: any) => void>>;
+	private ipcEventListeners: Map<string | number, Array<(msg: any) => void>>;
 
 	public constructor() {
 		super();
 		this.events = new Map();
+		this.ipcEventListeners = new Map();
+
+		// register user event listener
+		this.ipcEventListeners.set("ipcEvent", [(msg) => {
+			const event = this.events.get(msg.event);
+			if (event) {
+				event.forEach(fn => {
+					fn(msg.msg);
+				});
+			}
+		}]);
 
 		process.on("message", msg => {
-			const event = this.events.get(msg.op);
+			const event = this.ipcEventListeners.get(msg.op);
 			if (event) {
 				event.forEach(fn => {
 					fn(msg);
 				});
 			}
 		});
+	}
+
+	private sendLog(type: "log" | "error" | "warn" | "debug", value: unknown, source?: string) {
+		let valueToSend = value;
+		let valueTranslatedFrom: string | undefined = undefined;
+
+		if (value instanceof Error) {
+			valueTranslatedFrom = "Error";
+			valueToSend = errorToJSON(value);
+		}
+		if (process.send) process.send({
+			op: type, 
+			ipcLogObject: true,
+			msg: valueToSend,
+			source,
+			valueTranslatedFrom, 
+			valueTypeof: typeof value,
+			timestamp: new Date().getTime()
+		});
+	}
+
+	/**
+	 * Sends a log to the Admiral
+	 * @param message Item to log
+	 * @param source Custom error source
+	 */
+	public log(message: unknown, source?: string): void {
+		this.sendLog("log", message, source);
+	}
+
+	/**
+	 * Sends an error log to the Admiral
+	 * @param message Item to log
+	 * @param source Custom error source
+	 */
+	public error(message: unknown, source?: string): void {
+		this.sendLog("error", message, source);
+	}
+
+	/**
+	 * Sends a warn log to the Admiral
+	 * @param message Item to log
+	 * @param source Custom error source
+	 */
+	public warn(message: unknown, source?: string): void {
+		this.sendLog("warn", message, source);
+	}
+
+	/**
+	 * Sends a debug log to the Admiral
+	 * @param message Item to log
+	 * @param source Custom error source
+	 */
+	public debug(message: unknown, source?: string): void {
+		this.sendLog("debug", message, source);
 	}
 
 	/** 
@@ -81,12 +163,9 @@ export class IPC extends EventEmitter {
 		if (process.send) process.send({op: "fetchUser", id});
 
 		return new Promise((resolve, reject) => {
-			const callback = (r: unknown) => {
-				this.removeListener(id, callback);
+			this.once(id, (r: any) => {
 				resolve(r);
-			};
-
-			this.on(id, callback);
+			});
 		});
 	}
 
@@ -99,12 +178,9 @@ export class IPC extends EventEmitter {
 		if (process.send) process.send({op: "fetchGuild", id});
 
 		return new Promise((resolve, reject) => {
-			const callback = (r: unknown) => {
-				this.removeListener(id, callback);
+			this.once(id, (r: any) => {
 				resolve(r);
-			};
-
-			this.on(id, callback);
+			});
 		});
 	}
 
@@ -117,12 +193,9 @@ export class IPC extends EventEmitter {
 		if (process.send) process.send({op: "fetchChannel", id});
 
 		return new Promise((resolve, reject) => {
-			const callback = (r: unknown) => {
-				this.removeListener(id, callback);
+			this.once(id, (r: any) => {
 				resolve(r);
-			};
-
-			this.on(id, callback);
+			});
 		});
 	}
 
@@ -137,13 +210,10 @@ export class IPC extends EventEmitter {
 		if (process.send) process.send({op: "fetchMember", id: UUID});
 
 		return new Promise((resolve, reject) => {
-			const callback = (r: any) => {
+			this.once(UUID, (r: any) => {
 				if (r) r.id = memberID;
-				this.removeListener(UUID, callback);
 				resolve(r);
-			};
-
-			this.on(UUID, callback);
+			});
 		});
 	}
 
@@ -156,7 +226,7 @@ export class IPC extends EventEmitter {
 	public async command(service: string, message?: unknown, receptive?: boolean): Promise<unknown> {
 		if (!message) message = null;
 		if (!receptive) receptive = false;
-		const UUID = JSON.stringify({rand: crypto.randomBytes(16).toString("hex"), service});
+		const UUID = "serviceCommand" + crypto.randomBytes(16).toString("hex");
 		if (process.send) process.send({op: "serviceCommand", 
 			command: {
 				service,
@@ -168,9 +238,7 @@ export class IPC extends EventEmitter {
 
 		if (receptive) {
 			return new Promise((resolve, reject) => {
-				const callback = (r: any) => {
-					this.removeListener(UUID, callback);
-
+				this.once(UUID, (r: any) => {
 					if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
 						resolve(r.value);
 					} else {
@@ -180,9 +248,78 @@ export class IPC extends EventEmitter {
 							resolve(r.value);
 						}
 					}
-				};
+				});
+			});
+		}
+	}
+
+	/**
+	 * Execute a cluster command
+	 * @param clusterID ID of the cluster
+	 * @param message Whatever message you want to send with the command
+	 * @param receptive Whether you expect something to be returned to you from the command
+	*/
+	public async clusterCommand(clusterID: string, message?: unknown, receptive?: boolean): Promise<unknown> {
+		if (!message) message = null;
+		if (!receptive) receptive = false;
+		const UUID = "clusterCommand" + crypto.randomBytes(16).toString("hex");
+		if (process.send) process.send({op: "clusterCommand", 
+			command: {
+				clusterID,
+				msg: message,
+				UUID,
+				receptive
+			}
+		});
+
+		if (receptive) {
+			return new Promise((resolve, reject) => {
+				this.once(UUID, (r: any) => {
+					if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+						resolve(r.value);
+					} else {
+						if (r.value.err) {
+							reject(r.value.err);
+						} else {
+							resolve(r.value);
+						}
+					}
+				});
+			});
+		}
+	}
 	
-				this.on(UUID, callback);
+	/**
+	 * Execute a cluster command on all clusters
+	 * @param clusterID ID of the cluster
+	 * @param message Whatever message you want to send with the command
+	 * @param receptive Whether you expect something to be returned to you from the command. WIll return an object with each response mapped to the cluster's ID
+	*/
+	public async allClustersCommand(clusterID: string, message?: unknown, receptive?: boolean): Promise<unknown> {
+		if (!message) message = null;
+		if (!receptive) receptive = false;
+		const UUID = "allClusterCommand" + crypto.randomBytes(16).toString("hex");
+		if (process.send) process.send({op: "allClustersCommand", 
+			command: {
+				msg: message,
+				UUID,
+				receptive
+			}
+		});
+
+		if (receptive) {
+			return new Promise((resolve, reject) => {
+				this.on(UUID, (r: any) => {
+					if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+						resolve(r.value);
+					} else {
+						if (r.value.err) {
+							reject(r.value.err);
+						} else {
+							resolve(r.value);
+						}
+					}
+				});
 			});
 		}
 	}
@@ -247,12 +384,27 @@ export class IPC extends EventEmitter {
 	}
 
 	/**
-	 * Shuts down a cluster
+	 * Shuts down a service
 	 * @param serviceName The name of the service
 	 * @param hard Whether to ignore the soft shutdown function
 	*/
 	public shutdownService(serviceName: string, hard?: boolean): void {
 		if (process.send) process.send({op: "shutdownService", serviceName, hard: hard ? true : false});
+	}
+
+	/** 
+	 * Create a service
+	 * @param serviceName Unique ame of the service
+	 * @param servicePath Absolute path to the service file
+	 */
+	public createService(serviceName: string, servicePath: string): void {
+		// if path is not absolute
+		if (!path.isAbsolute(servicePath)) {
+			this.error("Service path must be absolute!");
+			return;
+		}
+
+		if (process.send) process.send({op: "createService", serviceName, servicePath});
 	}
 
 	/**
@@ -265,8 +417,38 @@ export class IPC extends EventEmitter {
 
 	/**
 	 * Reshards all clusters
+	 * @param options Change the resharding options
 	*/
-	public reshard(): void {
-		if (process.send) process.send({op: "reshard"});
+	public reshard(options?: ReshardOptions): void {
+		if (process.send) process.send({op: "reshard", options});
+	}
+
+	public async clusterEval(clusterID: string, stringToEvaluate: string, receptive?: boolean): Promise<unknown> {
+		if (!receptive) receptive = false;
+		const UUID = "clusterEval" + crypto.randomBytes(16).toString("hex");
+		if (process.send) process.send({op: "clusterEval", 
+			request: {
+				clusterID,
+				stringToEvaluate: stringToEvaluate,
+				UUID,
+				receptive
+			}
+		});
+
+		if (receptive) {
+			return new Promise((resolve, reject) => {
+				this.once(UUID, (r: any) => {
+					if (r.value === undefined || r.value === null || r.value.constructor !== ({}).constructor) {
+						resolve(r.value);
+					} else {
+						if (r.value.err) {
+							reject(r.value.err);
+						} else {
+							resolve(r.value);
+						}
+					}
+				});
+			});
+		}
 	}
 }

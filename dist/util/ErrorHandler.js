@@ -1,15 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reconstructError = void 0;
+exports.errorToJSON = exports.reconstructError = void 0;
+const errorToJSON = (error) => {
+    return {
+        code: error.code,
+        errno: error.errno,
+        message: error.message,
+        name: error.name,
+        path: error.path,
+        stack: error.stack,
+        syscall: error.syscall
+    };
+};
+exports.errorToJSON = errorToJSON;
 const reconstructError = (data) => {
-    if (!(typeof data === "object") || data === null)
+    if (!(data instanceof Error))
         return data;
     const objData = data;
     const result = new Error();
-    result.message = objData.message;
-    result.stack = objData.stack;
-    result.name = objData.name;
-    result.code = objData.code;
+    Object.entries(objData).forEach(([key, value]) => {
+        result[key] = value;
+    });
     return result;
 };
 exports.reconstructError = reconstructError;

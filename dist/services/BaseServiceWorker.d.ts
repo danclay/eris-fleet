@@ -2,6 +2,7 @@ import { IPC } from "../util/IPC";
 export interface Setup {
     serviceName: string;
     workerID: number;
+    ipc: IPC;
 }
 export declare class BaseServiceWorker {
     /** ID of the worker */

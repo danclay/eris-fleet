@@ -1,6 +1,7 @@
 import {worker} from "cluster";
 import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
+import { IPC } from "../util/IPC";
 
 export class Service {
 	path!: string;
@@ -8,21 +9,23 @@ export class Service {
 	app?: BaseServiceWorker;
 	timeout!: number;
 	whatToLog!: string[];
+	ipc: IPC;
 
 	constructor() {
+		this.ipc = new IPC();
 
-		console.log = (str: unknown) => {if (process.send) process.send({op: "log", msg: str});};
-		console.debug = (str: unknown) => {if (process.send) process.send({op: "debug", msg: str});};
-		console.error = (str: unknown) => {if (process.send) process.send({op: "error", msg: str});};
-		console.warn = (str: unknown) => {if (process.send) process.send({op: "warn", msg: str});};
+		console.log = (str: unknown) => {this.ipc.log(str);};
+		console.debug = (str: unknown) => {this.ipc.debug(str);};
+		console.error = (str: unknown) => {this.ipc.error(str);};
+		console.warn = (str: unknown) => {this.ipc.warn(str);};
 
 		// Spawns
 		process.on("uncaughtException", (err: Error) => {
-			if (process.send) process.send({op: "error", msg: inspect(err)});
+			this.ipc.error(err);
 		});
 
 		process.on("unhandledRejection", (reason, promise) => {
-			if (process.send) process.send({op: "error", msg: "Unhandled Rejection at: " + inspect(promise) + " reason: " + reason});
+			this.ipc.error("Unhandled Rejection at: " + inspect(promise) + " reason: " + reason);
 		});
 
 		if (process.send) process.send({op: "launched"});
@@ -106,7 +109,7 @@ export class Service {
 		} else {
 			App = App.default ? App.default : App;
 		}
-		this.app = new App({serviceName: this.serviceName, workerID: worker.id});
+		this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
 
 		let ready = false;
 		if (this.app) this.app.readyPromise.then(() => {

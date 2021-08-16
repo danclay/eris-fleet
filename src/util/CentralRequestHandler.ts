@@ -56,7 +56,12 @@ export class CentralRequestHandler {
 				if (r.resolved) {
 					resolve(r.value);
 				} else {
-					reject(reconstructError(r.value));
+					const value = r.value as {convertedErrorObject: boolean, error: unknown};
+					if (value.convertedErrorObject) {
+						reject(reconstructError(value.error as NodeJS.ErrnoException));
+					} else {
+						reject(value.error);
+					}
 				}
 			};
 

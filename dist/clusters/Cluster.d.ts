@@ -1,5 +1,6 @@
 import * as Eris from "eris";
 import { BaseClusterWorker } from "./BaseClusterWorker";
+import { IPC } from "../util/IPC";
 interface ClusterInput {
     erisClient: typeof Eris.Client;
 }
@@ -19,6 +20,7 @@ export declare class Cluster {
     private token;
     app?: BaseClusterWorker;
     App: any;
+    ipc: IPC;
     shutdown?: boolean;
     private startingStatus?;
     constructor(input: ClusterInput);

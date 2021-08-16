@@ -33,6 +33,7 @@ For some more documentation check the [wiki on Github](https://github.com/dancla
 - Use a modified version of eris
 - Soft cluster and service restarts where the old worker is killed after the new one is ready
 - Graceful shutdowns
+- Central request handler
 
 ## Help
 
@@ -228,6 +229,59 @@ Here is a complete list of options you can pass to the Admiral through the Fleet
 | objectLogging | Sends logs in an object format shown below this table | Yes | false |
 | startingStatus | Status to set while the cluster is getting ready. Follows the format shown below this table. Note that if you want to clear it you will have to do it yourself in your bot.js file. | Yes |  |
 | customClient | Extended Eris client class (should extend Eris.Client) | Yes |  |
+| useCentralRequestHandler | If enabled, eris-fleet will send all requests to the Discord API to a single request handler instance in the master process. This helps to prevent 429 error responses from the API | Yes | false |
+
+### Admiral events
+
+The Admiral will emit the following events
+
+#### "ready"
+
+Emits when all clusters and services are ready whenever the queue is cleared
+
+#### "stats"
+
+Emits when stats are collected
+
+| Parameter | Description |
+|---|---|
+| stats | [Stats object](#Stats) |
+
+#### "log"
+
+Emits when something is logged
+
+| Parameter | Description |
+|---|---|
+| message | Message to log |
+
+#### "error"
+
+Emits when an error is logged
+
+| Parameter | Description |
+|---|---|
+| message | Message to log |
+
+#### "warn"
+
+Emits when a warning is logged
+
+| Parameter | Description |
+|---|---|
+| message | Message to log |
+
+#### "debug"
+
+Emits when a debug log is logged
+
+| Parameter | Description |
+|---|---|
+| message | Message to log |
+
+### Central Request Handler
+
+The central request handler forwards Eris requests to the master process where the request is sent to a single Eris request handler instance. This helps to prevent 429 errors from occuring when you have x number of clusters keeping track of ratelimiting separately. When a response is recieved, it is sent back to the cluster's Eris client.
 
 ### Formats
 
@@ -284,14 +338,14 @@ Clusters and services can use IPC to interact with other clusters, the Admiral, 
 
 | Name  | Example                                      | Description                                           |
 |-------|----------------------------------------------|-------------------------------------------------------|
-| log   | `process.send({op: "log", msg: "hello!"})`   | Logs an event your `index.js` file can process.       |
-| debug | `process.send({op: "debug", msg: "hello!"})` | Logs a debug event your `index.js` file can process.  |
-| error | `process.send({op: "error", msg: "uh oh!"})` | Logs an error event your `index.js` file can process. |
-| warn  | `process.send({op: "warn", msg: "stuff"})`   | Logs a warn event your `index.js` file can process.   |
+| log   | `process.send({op: "log", msg: "hello!"}) OR console.log("hello!")`   | Logs an event your `index.js` file can process.       |
+| debug | `process.send({op: "debug", msg: "hello!"}) OR console.debug("hello!")` | Logs a debug event your `index.js` file can process.  |
+| error | `process.send({op: "error", msg: "uh oh!"}) OR console.error("uh oh!")` | Logs an error event your `index.js` file can process. |
+| warn  | `process.send({op: "warn", msg: "stuff"}) OR console.warn("stuff")`   | Logs a warn event your `index.js` file can process.   |
 
 You can also add a custom source to the log if objectLogging is set to true in the options. Here is an example: `process.send({op: "log", msg: "hello!", source: "a cool place"})`
 
-If you notice your logs ending up as `{ }`, try doing the following to your error:
+If you notice your logs ending up as `{ }`, remember that IPC communicates with strings and thus objects are JSON serialized. You can try to convert error objects to and from JSON with your own function or convert it to a human-readable thing from the start:
 ```js
 const { inspect } = require('util'); // No need to install a package, this is included in node
 let yourError = Error; // Whatever error you need to log
@@ -387,11 +441,11 @@ Resharding attempts to recalculate the number of shards while keeping your bot r
 
 ### Register
 
-You can register certain events to a callback. This can recieve [broadcasts](#broadcast) and stats. The object sent in the callback is `{op: "the event's name", msg: "the message"}`. Here is an example of registering an event:
+You can register certain events to a callback. This can recieve [broadcasts](#broadcast) and stats. The object sent in the callback is the message broadcasted (this is a breaking change as it used to be `{op: "the event's name", msg: "the message"}`). Here is an example of registering an event:
 ```js
 this.ipc.register("stats", (message) => {
   // Do stuff
-  console.log(message.msg);
+  console.log(message);
 });
 ```
 You can register to a single event multiple times with multiple functions.
@@ -536,7 +590,7 @@ Stats are given in the following object format:
         voice: Number, // # of voice connections the cluster is in
         largeGuilds: Number, // # of "large" guilds the cluster is in
         ram: Number, // RAM the cluster's process is using
-        shardStats: Array<{ // Array of stats for the shards in the cluster (you can use the length property of this to get the shard count of the cluster)
+        shards: Array<{ // Array of stats for the shards in the cluster (you can use the length property of this to get the shard count of the cluster)
             latency: Number, // Latency of the shard
             id: Number, // ID of the shard
             ready: Boolean, // Whether the shard is ready

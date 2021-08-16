@@ -6,9 +6,26 @@ interface ServiceCreator {
     name: string;
     path: string;
 }
+export interface ObjectLog {
+    source?: string;
+    timestamp: number;
+    message: unknown;
+}
 export interface StartingStatus {
     status: "online" | "idle" | "dnd" | "offline";
     game?: Eris.ActivityPartial<Eris.BotActivityType>;
+}
+export interface ReshardOptions {
+    /** Guilds per shard */
+    guildsPerShard?: number;
+    /** First shard ID to use on this instance of eris-fleet */
+    firstShardID?: number;
+    /** Last shard ID to use on this instance of eris-fleet */
+    lastShardID?: number;
+    /** Number of shards */
+    shards?: number | "auto";
+    /** Number of clusters */
+    clusters?: number | "auto";
 }
 export interface Options {
     /** Absolute path to the js file */
@@ -25,7 +42,7 @@ export interface Options {
     clientOptions?: Eris.ClientOptions;
     /** How long to wait for shards to connect to discord */
     timeout?: number;
-    /** How long to wait for a service to connect */
+    /** How long to wait for a service to start */
     serviceTimeout?: number;
     /** How long between starting clusters */
     clusterTimeout?: number;
@@ -79,7 +96,11 @@ export interface ClusterStats {
     voice: number;
     largeGuilds: number;
     ram: number;
-    shardStats: ShardStats[] | [];
+    /**
+     * @deprecated Use "shards"
+     */
+    shardStats: ShardStats[];
+    shards: ShardStats[];
 }
 export interface ServiceStats {
     name: number;
@@ -98,7 +119,10 @@ export interface Stats {
     clusters: ClusterStats[];
     services: ServiceStats[];
 }
-/** The sharding manager */
+/**
+ * The sharding manager
+ * @public
+*/
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by  to worker by ID */
     clusters: Collection;
@@ -182,12 +206,20 @@ export declare class Admiral extends EventEmitter {
     */
     shutdownService(serviceName: string, hard: boolean): void;
     /**
+     * Create a service
+     * @param serviceName Unique ame of the service
+     * @param servicePath Absolute path to the service file
+     */
+    createService(serviceName: string, servicePath: string): void;
+    /**
      * Shuts down everything and exits the master process
      * @param hard Whether to ignore the soft shutdown function
     */
     totalShutdown(hard: boolean): void;
-    /** Reshard */
-    reshard(): void;
+    /** Reshard
+     * @param options Change the resharding options
+    */
+    reshard(options?: ReshardOptions): void;
     private startService;
     private startCluster;
     private calculateShards;
@@ -197,9 +229,11 @@ export declare class Admiral extends EventEmitter {
     private fetchInfo;
     private startStats;
     broadcast(op: string, msg: unknown): void;
-    error(message: any, source?: string): void;
-    debug(message: any, source?: string): void;
-    log(message: any, source?: string): void;
-    warn(message: any, source?: string): void;
+    private ipcLog;
+    private emitLog;
+    error(message: unknown, source?: string): void;
+    debug(message: unknown, source?: string): void;
+    log(message: unknown, source?: string): void;
+    warn(message: unknown, source?: string): void;
 }
 export {};

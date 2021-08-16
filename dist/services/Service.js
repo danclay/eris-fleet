@@ -22,24 +22,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Service = void 0;
 const cluster_1 = require("cluster");
 const util_1 = require("util");
+const IPC_1 = require("../util/IPC");
 class Service {
     constructor() {
-        console.log = (str) => { if (process.send)
-            process.send({ op: "log", msg: str }); };
-        console.debug = (str) => { if (process.send)
-            process.send({ op: "debug", msg: str }); };
-        console.error = (str) => { if (process.send)
-            process.send({ op: "error", msg: str }); };
-        console.warn = (str) => { if (process.send)
-            process.send({ op: "warn", msg: str }); };
+        this.ipc = new IPC_1.IPC();
+        console.log = (str) => { this.ipc.log(str); };
+        console.debug = (str) => { this.ipc.debug(str); };
+        console.error = (str) => { this.ipc.error(str); };
+        console.warn = (str) => { this.ipc.warn(str); };
         // Spawns
         process.on("uncaughtException", (err) => {
-            if (process.send)
-                process.send({ op: "error", msg: util_1.inspect(err) });
+            this.ipc.error(err);
         });
         process.on("unhandledRejection", (reason, promise) => {
-            if (process.send)
-                process.send({ op: "error", msg: "Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason });
+            this.ipc.error("Unhandled Rejection at: " + util_1.inspect(promise) + " reason: " + reason);
         });
         if (process.send)
             process.send({ op: "launched" });
@@ -130,7 +126,7 @@ class Service {
         else {
             App = App.default ? App.default : App;
         }
-        this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id });
+        this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id, ipc: this.ipc });
         let ready = false;
         if (this.app)
             this.app.readyPromise.then(() => {

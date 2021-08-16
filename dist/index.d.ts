@@ -6,4 +6,4 @@ export { Collection } from "./util/Collection";
 export { Setup as BaseClusterWorkerSetup } from "./clusters/BaseClusterWorker";
 /** @internal */
 export { Setup as BaseServiceWorkerSetup } from "./services/BaseServiceWorker";
-export { Options, Stats, ClusterStats, ShardStats, ServiceStats } from "./sharding/Admiral";
+export { Options, Stats, ClusterStats, ShardStats, ServiceStats, ObjectLog, StartingStatus, ReshardOptions } from "./sharding/Admiral";

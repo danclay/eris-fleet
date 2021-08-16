@@ -3,6 +3,7 @@ import {IPC} from "../util/IPC";
 export interface Setup {
 	serviceName: string;
 	workerID: number;
+	ipc: IPC;
 }
 
 export class BaseServiceWorker {
@@ -31,7 +32,7 @@ export class BaseServiceWorker {
 	public constructor(setup: Setup) {
 		this.serviceName = setup.serviceName;
 		this.workerID = setup.workerID;
-		this.ipc = new IPC();
+		this.ipc = setup.ipc;
 		this.readyPromise = new Promise((resolve, reject) => {
 			this.serviceReady = () => {
 				resolve(undefined);
