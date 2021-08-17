@@ -8,6 +8,10 @@ class BaseClusterWorker {
         this.workerID = setup.workerID;
         this.ipc = setup.ipc;
     }
+    /**
+     * Where evals are run from
+     * @internal
+     */
     runEval(stringToEvaluate) {
         return new Promise((res, rej) => {
             const run = async () => {

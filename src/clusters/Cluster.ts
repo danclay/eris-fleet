@@ -8,6 +8,7 @@ import { IPC } from "../util/IPC";
 
 interface ClusterInput {
 	erisClient: typeof Eris.Client;
+	fetchTimeout: number;
 }
 
 export class Cluster {
@@ -33,7 +34,7 @@ export class Cluster {
 	constructor(input: ClusterInput) {
 		this.erisClient = input.erisClient;
 		// add ipc
-		this.ipc = new IPC();
+		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
 		console.log = (str: unknown) => {this.ipc.log(str);};
 		console.debug = (str: unknown) => {this.ipc.debug(str);};
@@ -130,7 +131,8 @@ export class Cluster {
 						const res = {err: `Cluster ${this.clusterID} cannot handle commands!`};
 						if (process.send) process.send({op: "return", value: {
 							id: message.command.UUID,
-							value: res
+							value: res,
+							clusterID: this.clusterID
 						}, UUID: message.UUID});
 						console.error("I can't handle commands!");
 					};
@@ -140,7 +142,8 @@ export class Cluster {
 							if (message.command.receptive) {
 								if (process.send) process.send({op: "return", value: {
 									id: message.command.UUID,
-									value: res
+									value: res,
+									clusterID: this.clusterID
 								}, UUID: message.UUID});
 							}
 						} else {
@@ -157,7 +160,8 @@ export class Cluster {
 						if (message.request.receptive) {
 							if (process.send) process.send({op: "return", value: {
 								id: message.request.UUID,
-								value: {err}
+								value: {err},
+								clusterID: this.clusterID
 							}, UUID: message.UUID});
 						}
 					};
@@ -167,7 +171,8 @@ export class Cluster {
 								if (message.request.receptive) {
 									if (process.send) process.send({op: "return", value: {
 										id: message.request.UUID,
-										value: res
+										value: res,
+										clusterID: this.clusterID
 									}, UUID: message.UUID});
 								}
 							}).catch((error: unknown) => {
@@ -180,7 +185,7 @@ export class Cluster {
 					break;
 				}
 				case "return": {
-					if (this.app) this.app.ipc.emit(message.id, message.value);
+					if (this.app) this.ipc.emit(message.id, message.value);
 					break;
 				}
 				case "collectStats": {
@@ -188,10 +193,9 @@ export class Cluster {
 					const shardStats: { id: number; ready: boolean; latency: number; status: string; guilds: number; users: number;}[] = [];
 					const getShardUsers = (id: number) => {
 						let users = 0;
-						for(const [key, value] of Object.entries(this.bot.guildShardMap)) {
-							const guild = this.bot.guilds.get(key);
-							if (Number(value) == id && guild) users += guild.memberCount;
-						}
+						this.bot.guilds.forEach(guild => {
+							users += guild.memberCount;
+						});
 						return users;
 					};
 					this.bot.shards.forEach(shard => {
@@ -269,7 +273,7 @@ export class Cluster {
 
 		// central request handler
 		if (this.useCentralRequestHandler) {
-			bot.requestHandler = new CentralRequestHandler(App.ipc, {
+			bot.requestHandler = new CentralRequestHandler(this.ipc, {
 				timeout: bot.options.requestTimeout
 			});
 		}
@@ -329,6 +333,8 @@ export class Cluster {
 
 	
 	private async loadCode() {
+		if (this.app) return;
+		console.log("here");
 		//let App = (await import(this.path)).default;
 		//App = App.default ? App.default : App;
 		this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id, ipc: this.ipc});

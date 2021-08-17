@@ -1,5 +1,8 @@
 import { BaseServiceWorker } from "./BaseServiceWorker";
 import { IPC } from "../util/IPC";
+interface ServiceInput {
+    fetchTimeout: number;
+}
 export declare class Service {
     path: string;
     serviceName: string;
@@ -7,6 +10,7 @@ export declare class Service {
     timeout: number;
     whatToLog: string[];
     ipc: IPC;
-    constructor();
+    constructor(input: ServiceInput);
     private loadCode;
 }
+export {};

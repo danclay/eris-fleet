@@ -1,5 +1,4 @@
 /// <reference types="node" />
-import { ReshardOptions } from "./../sharding/Admiral";
 import { EventEmitter } from "events";
 import * as Admiral from "../sharding/Admiral";
 export interface IpcHandledLog {
@@ -11,81 +10,143 @@ export interface IpcHandledLog {
     valueTypeof: string;
     timestamp: number;
 }
+export interface Setup {
+    fetchTimeout: number;
+}
+/**
+ * Handles communication between clusters, services, and the admiral.
+ */
 export declare class IPC extends EventEmitter {
     private events;
     private ipcEventListeners;
-    constructor();
+    private fetchTimeout;
+    constructor(setup: Setup);
     private sendLog;
     /**
      * Sends a log to the Admiral
      * @param message Item to log
      * @param source Custom error source
+     * @example
+     * ```
+     * this.ipc.log("You have reached this line of code");
+     * ```
      */
     log(message: unknown, source?: string): void;
     /**
      * Sends an error log to the Admiral
      * @param message Item to log
      * @param source Custom error source
+     * @example
+     * ```
+     * this.ipc.error(new Error("big yikes"));
+     * ```
      */
     error(message: unknown, source?: string): void;
     /**
      * Sends a warn log to the Admiral
      * @param message Item to log
      * @param source Custom error source
+     * @example
+     * ```
+     * this.ipc.warn("uh oh!");
+     * ```
      */
     warn(message: unknown, source?: string): void;
     /**
      * Sends a debug log to the Admiral
      * @param message Item to log
      * @param source Custom error source
+     * @example
+     * ```
+     * this.ipc.debug("I'm here!");
+     * ```
      */
     debug(message: unknown, source?: string): void;
     /**
-     * Register for an event. This will recieve broadcasts and messages sent to this cluster
+     * Register for an event. This will recieve broadcasts and messages sent to this cluster.
+     * Events can be sent using {@link sendTo} and {@link broadcast}
      * @param event Name of the event
      * @param callback Function run when event is recieved
+     * @example
+     * ```
+     * this.ipc.register("hello!", (message) => {
+     * 	// Do stuff
+     * 	console.log(message);
+     * });
+     * ```
     */
     register(event: string, callback: (msg: unknown) => void): void;
     /**
      * Unregisters an event
      * @param event Name of the event
+     * @example
+     * ```
+     * this.ipc.unregister("stats");
+     * ```
     */
     unregister(event: string): void;
     /**
-     * Broadcast an event to all clusters and services
+     * Broadcast an event to all clusters and services.
+     * The event can be listened to with {@link register}
      * @param op Name of the event
      * @param message Message to send
+     * @example
+     * ```
+     * this.ipc.broadcast("hello clusters!", "Want to chat?");
+     * ```
     */
     broadcast(op: string, message?: unknown): void;
     /**
-     * Broadcast to the master process
+     * Broadcast to the master process.
+     * The event can be listened to using `Admiral.on("event", callback);`
      * @param op Name of the event
      * @param message Message to send
+     * @example
+     * ```
+     * this.ipc.admiralBroadcast("Hello", "I'm working!");
+     * ```
     */
     admiralBroadcast(op: string, message?: unknown): void;
     /**
-     * Send a message to a specific cluster
+     * Send a message to a specific cluster.
+     * The event can be listened to with {@link register}
      * @param cluster ID of the cluster
      * @param op Name of the event
      * @param message Message to send
+     * @example
+     * ```
+     * this.ipc.sendTo(1, "Hello cluster 1!", "Squad up?");
+     * ```
     */
     sendTo(cluster: number, op: string, message?: unknown): void;
     /**
      * Fetch a user from the Eris client on any cluster
      * @param id User ID
      * @returns The Eris user object converted to JSON
+     * @example
+     * ```
+     * await this.ipc.fetchUser('123456789');
+     * ```
     */
     fetchUser(id: string): Promise<any>;
     /**
      * Fetch a guild from the Eris client on any cluster
      * @param id Guild ID
      * @returns The Eris guild object converted to JSON
+     * @example
+     * ```
+     * await this.ipc.fetchGuild('123456789');
+     * ```
     */
     fetchGuild(id: string): Promise<any>;
     /**
      * Fetch a Channel from the Eris client on any cluster
      * @param id Channel ID
      * @returns The Eris channel object converted to JSON
+     * @example
+     * ```
+     * await this.ipc.fetchChannel('123456789');
+     * ```
     */
     fetchChannel(id: string): Promise<any>;
     /**
@@ -93,29 +154,63 @@ export declare class IPC extends EventEmitter {
      * @param guildID Guild ID
      * @param memberID the member's user ID
      * @returns The Eris member object converted to JSON
+     * @example
+     * ```
+     * await this.ipc.fetchMember('123456789', '987654321');
+     * ```
     */
     fetchMember(guildID: string, memberID: string): Promise<any>;
     /**
+     * @deprecated Use {@link serviceCommand}
+    */
+    command(service: string, message?: unknown, receptive?: boolean, returnTimeout?: number): Promise<any> | void;
+    /**
      * Execute a service command
      * @param service Name of the service
-     * @param message Whatever message you want to send with the command
-     * @param receptive Whether you expect something to be returned to you from the command
+     * @param message Whatever message you want to send with the command (defaults to `null`)
+     * @param receptive Whether you expect something to be returned to you from the command  (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @returns Promise with data if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.serviceCommand("ServiceName", "hello service!", true)
+     * .then((message) => console.log(message))
+     * .catch((error) => this.ipc.error(error));
+     * ```
     */
-    command(service: string, message?: unknown, receptive?: boolean): Promise<unknown>;
+    serviceCommand(service: string, message?: unknown, receptive?: boolean, returnTimeout?: number): Promise<any> | void;
     /**
      * Execute a cluster command
      * @param clusterID ID of the cluster
-     * @param message Whatever message you want to send with the command
-     * @param receptive Whether you expect something to be returned to you from the command
+     * @param message Whatever message you want to send with the command (defaults to `null`)
+     * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @returns Promise with data if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.clusterCommand(1, "hello cluster!", true)
+     * .then((message) => console.log(message))
+     * .catch((error) => this.ipc.error(error));
+     * ```
     */
-    clusterCommand(clusterID: string, message?: unknown, receptive?: boolean): Promise<unknown>;
+    clusterCommand(clusterID: string, message?: unknown, receptive?: boolean, returnTimeout?: number): Promise<any> | void;
     /**
      * Execute a cluster command on all clusters
-     * @param clusterID ID of the cluster
-     * @param message Whatever message you want to send with the command
-     * @param receptive Whether you expect something to be returned to you from the command. WIll return an object with each response mapped to the cluster's ID
+     * @param message Whatever message you want to send with the command (defaults to `null`)
+     * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @param callback Function which will be run everytime a new command return is recieved
+     * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.allClustersCommand("hello clusters!", true, undefined, (id, data) => {
+     * 	console.log(`I just recieved ${data} from ${id}!`);
+     * })
+     * .then((data) => this.ipc.log(`All my clusters responded and my data in a map. Here is the data from cluster 0: ${data.get(0)}`))
+     * .catch((error) => this.ipc.error(error));
+     * ```
     */
-    allClustersCommand(clusterID: string, message?: unknown, receptive?: boolean): Promise<unknown>;
+    allClustersCommand(message?: unknown, receptive?: boolean, returnTimeout?: number, callback?: (clusterID: number, data?: any) => void): Promise<Map<number, any>> | void;
     /**
      * @returns The latest stats
     */
@@ -140,6 +235,10 @@ export declare class IPC extends EventEmitter {
     /**
      * Restarts all services
      * @param hard Whether to ignore the soft shutdown function
+     * @defaultValue false
+     *
+     * @param test test
+     * @defaultValue 2
     */
     restartAllServices(hard?: boolean): void;
     /**
@@ -158,6 +257,11 @@ export declare class IPC extends EventEmitter {
      * Create a service
      * @param serviceName Unique ame of the service
      * @param servicePath Absolute path to the service file
+     * @example
+     * ```
+     * const path = require("path");
+     * this.ipc.createService("myService", path.join(__dirname, "./service.js"))
+     * ```
      */
     createService(serviceName: string, servicePath: string): void;
     /**
@@ -169,6 +273,58 @@ export declare class IPC extends EventEmitter {
      * Reshards all clusters
      * @param options Change the resharding options
     */
-    reshard(options?: ReshardOptions): void;
-    clusterEval(clusterID: string, stringToEvaluate: string, receptive?: boolean): Promise<unknown>;
+    reshard(options?: Admiral.ReshardOptions): void;
+    /**
+     * Sends an eval to the mentioned cluster.
+     * The eval occurs from a function within the BaseClusterWorker class.
+     * NOTE: Use evals sparingly as they are a major security risk
+     * @param clusterID ID of the cluster
+     * @param stringToEvaluate String to send to eval
+     * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @returns Promise with result if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.clusterEval(1, "return 'hey!'", true)
+     * .then((data) => this.ipc.log(data))
+     * .catch((error) => this.ipc.error(error));
+     * ```
+     */
+    clusterEval(clusterID: number, stringToEvaluate: string, receptive?: boolean, returnTimeout?: number): Promise<any> | void;
+    /**
+     * Sends an eval to all clusters.
+     * The eval occurs from a function within the BaseClusterWorker class.
+     * NOTE: Use evals sparingly as they are a major security risk
+     * @param stringToEvaluate String to send to eval
+     * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @param callback Function which will be run everytime a new command return is recieved
+     * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.allClustersCommand("return 'heyo!'", true, undefined, (id, data) => {
+     * 	console.log(`I just recieved ${data} from ${id}!`);
+     * })
+     * .then((data) => this.ipc.log(`All my clusters responded and my data in a map. Here is the data from cluster 0: ${data.get(0)}`))
+     * .catch((error) => this.ipc.error(error));
+     * ```
+    */
+    allClustersEval(stringToEvaluate: string, receptive?: boolean, returnTimeout?: number, callback?: (clusterID: number, data?: any) => void): Promise<Map<number, any>> | void;
+    /**
+     * Sends an eval to the mentioned service.
+     * The eval occurs from a function within the BaseServiceWorker class.
+     * NOTE: Use evals sparingly as they are a major security risk
+     * @param serviceName Name of the service
+     * @param stringToEvaluate String to send to eval
+     * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
+     * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
+     * @returns Promise with result if `receptive = true`
+     * @example
+     * ```
+     * this.ipc.serviceEval(1, "return 'hey!'", true)
+     * .then((data) => this.ipc.log(data))
+     * .catch((error) => this.ipc.error(error));
+     * ```
+     */
+    serviceEval(serviceName: string, stringToEvaluate: string, receptive?: boolean, returnTimeout?: number): Promise<any> | void;
 }

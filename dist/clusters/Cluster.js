@@ -28,7 +28,7 @@ class Cluster {
     constructor(input) {
         this.erisClient = input.erisClient;
         // add ipc
-        this.ipc = new IPC_1.IPC();
+        this.ipc = new IPC_1.IPC({ fetchTimeout: input.fetchTimeout });
         console.log = (str) => { this.ipc.log(str); };
         console.debug = (str) => { this.ipc.debug(str); };
         console.error = (str) => { this.ipc.error(str); };
@@ -136,7 +136,8 @@ class Cluster {
                             if (process.send)
                                 process.send({ op: "return", value: {
                                         id: message.command.UUID,
-                                        value: res
+                                        value: res,
+                                        clusterID: this.clusterID
                                     }, UUID: message.UUID });
                             console.error("I can't handle commands!");
                         };
@@ -147,7 +148,8 @@ class Cluster {
                                     if (process.send)
                                         process.send({ op: "return", value: {
                                                 id: message.command.UUID,
-                                                value: res
+                                                value: res,
+                                                clusterID: this.clusterID
                                             }, UUID: message.UUID });
                                 }
                             }
@@ -166,7 +168,8 @@ class Cluster {
                                 if (process.send)
                                     process.send({ op: "return", value: {
                                             id: message.request.UUID,
-                                            value: { err }
+                                            value: { err },
+                                            clusterID: this.clusterID
                                         }, UUID: message.UUID });
                             }
                         };
@@ -177,7 +180,8 @@ class Cluster {
                                     if (process.send)
                                         process.send({ op: "return", value: {
                                                 id: message.request.UUID,
-                                                value: res
+                                                value: res,
+                                                clusterID: this.clusterID
                                             }, UUID: message.UUID });
                                 }
                             }).catch((error) => {
@@ -191,7 +195,7 @@ class Cluster {
                     }
                     case "return": {
                         if (this.app)
-                            this.app.ipc.emit(message.id, message.value);
+                            this.ipc.emit(message.id, message.value);
                         break;
                     }
                     case "collectStats": {
@@ -200,11 +204,9 @@ class Cluster {
                         const shardStats = [];
                         const getShardUsers = (id) => {
                             let users = 0;
-                            for (const [key, value] of Object.entries(this.bot.guildShardMap)) {
-                                const guild = this.bot.guilds.get(key);
-                                if (Number(value) == id && guild)
-                                    users += guild.memberCount;
-                            }
+                            this.bot.guilds.forEach(guild => {
+                                users += guild.memberCount;
+                            });
                             return users;
                         };
                         this.bot.shards.forEach(shard => {
@@ -284,7 +286,7 @@ class Cluster {
         }
         // central request handler
         if (this.useCentralRequestHandler) {
-            bot.requestHandler = new CentralRequestHandler_1.CentralRequestHandler(App.ipc, {
+            bot.requestHandler = new CentralRequestHandler_1.CentralRequestHandler(this.ipc, {
                 timeout: bot.options.requestTimeout
             });
         }
@@ -338,6 +340,9 @@ class Cluster {
         bot.connect();
     }
     async loadCode() {
+        if (this.app)
+            return;
+        console.log("here");
         //let App = (await import(this.path)).default;
         //App = App.default ? App.default : App;
         this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id, ipc: this.ipc });

@@ -28,6 +28,7 @@ export interface StartingStatus {
 	game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
 
+/** Options for resharding */
 export interface ReshardOptions {
 	/** Guilds per shard */
 	guildsPerShard?: number;
@@ -41,28 +42,50 @@ export interface ReshardOptions {
 	clusters?: number | "auto";
 }
 
+/** Options for the sharding manager */
 export interface Options {
 	/** Absolute path to the js file */
 	path: string;
 	/** Bot token */
 	token: string;
-	/** Guilds per shard */
+	/** 
+	 * Guilds per shard
+	 * @defaultValue 1300
+	 */
 	guildsPerShard?: number;
-	/** Number of shards */
+	/** 
+	 * Number of shards
+	 * @defaultValue "auto"
+	 */
 	shards?: number | "auto";
-	/** Number of clusters */
+	/** 
+	 * Number of clusters
+	 * @defaultValue "auto"
+	 */
 	clusters?: number | "auto";
 	/** Options to pass to the Eris client constructor */
 	clientOptions?: Eris.ClientOptions;
-	/** How long to wait for shards to connect to discord */
+	/** 
+	 * How long to wait for shards to connect to discord
+	 * @deprecated Use `clientOptions.connectionTimeout`
+	 */
 	timeout?: number;
-	/** How long to wait for a service to start */
+	/** 
+	 * How long to wait for a service to start
+	 * @defaultValue 0
+	 */
 	serviceTimeout?: number;
-	/** How long between starting clusters */
+	/** 
+	 * How long between starting clusters
+	 * @defaultValue 5e3
+	 */
 	clusterTimeout?: number;
 	/** Node arguments to pass to the clusters */
 	nodeArgs?: string[];
-	/** How often to update the stats after all clusters are spawned (set to "disable" to disable automated stats) */
+	/** 
+	 * How often to update the stats after all clusters are spawned (set to "disable" to disable automated stats)
+	 * @defaultValue 60e3
+	 */
 	statsInterval?: number | "disable";
 	/** Services to start by name and path */
 	services?: ServiceCreator[];
@@ -70,7 +93,10 @@ export interface Options {
 	firstShardID?: number;
 	/** Last shard ID to use on this instance of eris-fleet */
 	lastShardID?: number;
-	/** Option to have less logging show up */
+	/** 
+	 * Option to have less logging show up
+	 * @defaultValue false
+	 */
 	lessLogging?: boolean;
 	/** Allows for more logging customization (overrides generic lessLogging option) */
 	whatToLog?: {
@@ -79,19 +105,37 @@ export interface Options {
 		/** Blacklist of what to log */
 		blacklist?: string[];
 	};
-	/** Amount of time to wait before doing a forced shutdown during shutdowns */
+	/** 
+	 * Amount of time to wait before doing a forced shutdown during shutdowns
+	 * @defaultValue 10e3
+	 */
 	killTimeout?: number;
-	/** Whether to split the source in to an Object */
+	/** 
+	 * Whether to split the source in to an Object
+	 * @defaultValue false
+	 */
 	objectLogging?: boolean;
 	/** Custom starting status */
 	startingStatus?: StartingStatus;
-	/** Whether to use faster start */
+	/** 
+	 * Whether to use faster start
+	 * @alpha
+	 * @defaultValue false
+	 */
 	fasterStart?: boolean;
-	/** How long to wait before giving up on a fetch */
+	/** 
+	 * How long to wait before giving up on a fetch (includes eval functions and commands)
+	 * @defaultValue 10e3
+	 */
 	fetchTimeout?: number;
 	/** Extended eris client class (should extend Eris.Client) */
 	customClient?: typeof Eris.Client;
-	/** Whether to use a central request handler (uses the eris request handler in the master process) */
+	/** 
+	 * Whether to use a central request handler.
+	 * The central request handler routes Eris requests to the Discord API through a single instance of the Eris RequestHandler.
+	 * This helps prevent 429 errors from the Discord API by using a single rate limiter pool
+	 * @defaultValue false
+	 */
 	useCentralRequestHandler?: boolean;
 }
 
@@ -138,14 +182,14 @@ export interface Stats {
 	services: ServiceStats[];
 }
 
-interface ClusterCollection {
+export interface ClusterCollection {
 	workerID: number;
 	firstShardID: number;
 	lastShardID: number;
 	clusterID: number;
 }
 
-interface ServiceCollection {
+export interface ServiceCollection {
 	serviceName: string;
 	workerID: number;
 	path: string;
@@ -167,7 +211,6 @@ interface WorkerCollection {
 
 /** 
  * The sharding manager
- * @public
 */
 export class Admiral extends EventEmitter {
 	/** Map of clusters by  to worker by ID */
@@ -461,6 +504,7 @@ export class Admiral extends EventEmitter {
 									value: {
 										value: {
 											err: `Service ${message.command.service} is unavailable.`,
+											serviceName: service.serviceName
 										},
 									},
 								});
@@ -482,6 +526,7 @@ export class Admiral extends EventEmitter {
 								value: {
 									value: {
 										err: `Service ${message.command.service} does not exist.`,
+										serviceName: service.serviceName
 									},
 								},
 							});
@@ -516,6 +561,7 @@ export class Admiral extends EventEmitter {
 									value: {
 										value: {
 											err: `Cluster ${message.command.clusterID} is unavailable.`,
+											clusterID: cluster.clusterID
 										},
 									},
 								});
@@ -528,11 +574,38 @@ export class Admiral extends EventEmitter {
 								value: {
 									value: {
 										err: `Cluster ${message.command.clusterID} does not exist.`,
+										clusterID: cluster.clusterID
 									},
 								},
 							});
 							this.error(`The cluster I requested (${message.command.clusterID}) does not exist.`, `Worker ${worker.id}`);
 						}
+
+						break;
+					}
+					case "allClustersCommand": {
+						this.clusters.forEach((c: ClusterCollection) => {
+							const clusterWorker = master.workers[c.workerID];
+							if (clusterWorker) {
+								process.nextTick(() => clusterWorker.send({
+									op: "command",
+									command: message.command,
+									UUID: worker.id
+								}));
+							} else {
+								worker.send({
+									op: "return",
+									id: message.command.UUID,
+									value: {
+										value: {
+											err: `Cluster ${message.command.clusterID} is unavailable.`,
+											clusterID: c.clusterID
+										},
+									},
+								});
+								this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
+							}
+						});
 
 						break;
 					}
@@ -549,28 +622,95 @@ export class Admiral extends EventEmitter {
 							} else {
 								worker.send({
 									op: "return",
-									id: message.command.UUID,
+									id: message.request.UUID,
 									value: {
 										value: {
-											err: `Cluster ${message.command.clusterID} is unavailable.`,
+											err: `Cluster ${message.request.clusterID} is unavailable.`,
+											clusterID: cluster.clusterID
 										},
 									},
 								});
-								this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
+								this.error(`The cluster I requested (${message.request.clusterID}) is unavailable.`, `Worker ${worker.id}`);
 							}
 						} else {
 							worker.send({
 								op: "return",
-								id: message.command.UUID,
+								id: message.request.UUID,
 								value: {
 									value: {
-										err: `Cluster ${message.command.clusterID} does not exist.`,
+										err: `Cluster ${message.request.clusterID} does not exist.`,
+										clusterID: cluster.clusterID
 									},
 								},
 							});
-							this.error(`The cluster I requested (${message.command.clusterID}) does not exist.`, `Worker ${worker.id}`);
+							this.error(`The cluster I requested (${message.request.clusterID}) does not exist.`, `Worker ${worker.id}`);
 						}
-						
+
+						break;
+					}
+					case "serviceEval": {
+						const service = this.services.get(message.request.serviceName);
+						if (service) {
+							const serviceWorker = master.workers[service.workerID];
+							if (serviceWorker) {
+								serviceWorker.send({
+									op: "eval",
+									request: message.request,
+									UUID: worker.id,
+								});
+							} else {
+								worker.send({
+									op: "return",
+									id: message.request.UUID,
+									value: {
+										value: {
+											err: `Service ${message.request.serviceName} is unavailable.`,
+											serviceName: service.serviceName
+										},
+									},
+								});
+								this.error(`The service I requested (${message.request.serviceName}) is unavailable.`, `Worker ${worker.id}`);
+							}
+						} else {
+							worker.send({
+								op: "return",
+								id: message.request.UUID,
+								value: {
+									value: {
+										err: `Service ${message.request.serviceName} does not exist.`,
+										serviceName: service.serviceName
+									},
+								},
+							});
+							this.error(`The service I requested (${message.request.serviceName}) does not exist.`, `Worker ${worker.id}`);
+						}
+
+						break;
+					}
+					case "allClustersEval": {
+						this.clusters.forEach((c: ClusterCollection) => {
+							const clusterWorker = master.workers[c.workerID];
+							if (clusterWorker) {
+								process.nextTick(() => clusterWorker.send({
+									op: "eval",
+									request: message.request,
+									UUID: worker.id
+								}));
+							} else {
+								worker.send({
+									op: "return",
+									id: message.request.UUID,
+									value: {
+										value: {
+											err: `Cluster ${message.request.clusterID} is unavailable.`,
+											clusterID: c.clusterID
+										},
+									},
+								});
+								this.error(`The cluster I requested (${message.request.clusterID}) is unavailable.`, `Worker ${worker.id}`);
+							}
+						});
+
 						break;
 					}
 					case "return": {
@@ -664,7 +804,7 @@ export class Admiral extends EventEmitter {
 					}
 					case "getStats": {
 						// Sends the latest stats upon request from the IPC
-						master.workers[worker.id]?.send({
+						worker.send({
 							op: "return",
 							id: "statsReturn",
 							value: this.stats,
@@ -731,6 +871,18 @@ export class Admiral extends EventEmitter {
 					}
 					case "admiralBroadcast": {
 						this.emit(message.event.op, message.event.msg);
+
+						break;
+					}
+					case "getAdmiralInfo": {
+						worker.send({
+							op: "return",
+							id: "admiralInfo",
+							value: {
+								clusters: Object.fromEntries(this.clusters),
+								services: Object.fromEntries(this.services)
+							}
+						});
 
 						break;
 					}
@@ -881,10 +1033,13 @@ export class Admiral extends EventEmitter {
 		} else if (master.isWorker) {
 			if (process.env.type === "cluster") {
 				new Cluster({
-					erisClient: this.erisClient
+					erisClient: this.erisClient,
+					fetchTimeout: this.fetchTimeout
 				});
 			} else if (process.env.type === "service") {
-				new Service();
+				new Service({
+					fetchTimeout: this.fetchTimeout
+				});
 			}
 		}
 	}
@@ -1028,11 +1183,6 @@ export class Admiral extends EventEmitter {
 			return;
 		}
 
-		// if is duplicate
-		if (this.services.get(serviceName)) {
-			this.error(`Service ${serviceName} already exists!`, "Admiral");
-			return;
-		}
 
 		this.startService([{name: serviceName, path: servicePath}], true);
 	}
@@ -1130,6 +1280,16 @@ export class Admiral extends EventEmitter {
 							if (newWorker) newWorker.send({op: "loadCode"});
 							i++;
 							if (i == oldClusters.size) {
+								// load code for new clusters
+								this.clusters.forEach((c: ClusterCollection) => {
+									if (!oldClusters.get(c.clusterID)) {
+										const newWorker = master.workers[c.workerID];
+										if (newWorker) newWorker.send({op: "loadCode"});
+										if (this.whatToLog.includes("resharding_transition")) {
+											this.log(`Loaded code for new cluster ${c.clusterID}`, "Admiral");
+										}
+									}
+								});
 								if (this.whatToLog.includes("resharding_transition_complete")) {
 									this.log("Transitioned all clusters to the new workers!", "Admiral");
 								}

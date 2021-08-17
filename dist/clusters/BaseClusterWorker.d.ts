@@ -13,18 +13,23 @@ export declare class BaseClusterWorker {
     clusterID: number;
     /** ID of the worker */
     workerID: number;
-    /** IPC functions */
     ipc: IPC;
     /**
-     * Graceful shotdown of the cluster. Have a function within your bot class called "shutdown" to use this.
+     * Graceful shutdown of the cluster. Have a function within your bot class called `shutdown` to use this.
+     * @see {@link https://github.com/danclay/eris-fleet#clusters} for an example
      * @param done Call this function when your shutdown function is complete.
     */
     shutdown?: (done: () => void) => void;
     /**
-     * Function to handle commands. Have a function called "handleCommand in your cluster class to use this."
+     * Function to handle commands. Have a function called `handleCommand` to your cluster class to handle commands.
+     * @see {@link https://github.com/danclay/eris-fleet#clusters} for an example
      * @param data Data sent in the command
     */
-    handleCommand?: (data: unknown) => unknown;
+    handleCommand?: (data: any) => any;
     constructor(setup: Setup);
+    /**
+     * Where evals are run from
+     * @internal
+     */
     runEval(stringToEvaluate: string): Promise<unknown>;
 }

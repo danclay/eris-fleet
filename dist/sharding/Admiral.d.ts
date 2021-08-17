@@ -15,6 +15,7 @@ export interface StartingStatus {
     status: "online" | "idle" | "dnd" | "offline";
     game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
+/** Options for resharding */
 export interface ReshardOptions {
     /** Guilds per shard */
     guildsPerShard?: number;
@@ -27,28 +28,50 @@ export interface ReshardOptions {
     /** Number of clusters */
     clusters?: number | "auto";
 }
+/** Options for the sharding manager */
 export interface Options {
     /** Absolute path to the js file */
     path: string;
     /** Bot token */
     token: string;
-    /** Guilds per shard */
+    /**
+     * Guilds per shard
+     * @defaultValue 1300
+     */
     guildsPerShard?: number;
-    /** Number of shards */
+    /**
+     * Number of shards
+     * @defaultValue "auto"
+     */
     shards?: number | "auto";
-    /** Number of clusters */
+    /**
+     * Number of clusters
+     * @defaultValue "auto"
+     */
     clusters?: number | "auto";
     /** Options to pass to the Eris client constructor */
     clientOptions?: Eris.ClientOptions;
-    /** How long to wait for shards to connect to discord */
+    /**
+     * How long to wait for shards to connect to discord
+     * @deprecated Use `clientOptions.connectionTimeout`
+     */
     timeout?: number;
-    /** How long to wait for a service to start */
+    /**
+     * How long to wait for a service to start
+     * @defaultValue 0
+     */
     serviceTimeout?: number;
-    /** How long between starting clusters */
+    /**
+     * How long between starting clusters
+     * @defaultValue 5e3
+     */
     clusterTimeout?: number;
     /** Node arguments to pass to the clusters */
     nodeArgs?: string[];
-    /** How often to update the stats after all clusters are spawned (set to "disable" to disable automated stats) */
+    /**
+     * How often to update the stats after all clusters are spawned (set to "disable" to disable automated stats)
+     * @defaultValue 60e3
+     */
     statsInterval?: number | "disable";
     /** Services to start by name and path */
     services?: ServiceCreator[];
@@ -56,7 +79,10 @@ export interface Options {
     firstShardID?: number;
     /** Last shard ID to use on this instance of eris-fleet */
     lastShardID?: number;
-    /** Option to have less logging show up */
+    /**
+     * Option to have less logging show up
+     * @defaultValue false
+     */
     lessLogging?: boolean;
     /** Allows for more logging customization (overrides generic lessLogging option) */
     whatToLog?: {
@@ -65,19 +91,37 @@ export interface Options {
         /** Blacklist of what to log */
         blacklist?: string[];
     };
-    /** Amount of time to wait before doing a forced shutdown during shutdowns */
+    /**
+     * Amount of time to wait before doing a forced shutdown during shutdowns
+     * @defaultValue 10e3
+     */
     killTimeout?: number;
-    /** Whether to split the source in to an Object */
+    /**
+     * Whether to split the source in to an Object
+     * @defaultValue false
+     */
     objectLogging?: boolean;
     /** Custom starting status */
     startingStatus?: StartingStatus;
-    /** Whether to use faster start */
+    /**
+     * Whether to use faster start
+     * @alpha
+     * @defaultValue false
+     */
     fasterStart?: boolean;
-    /** How long to wait before giving up on a fetch */
+    /**
+     * How long to wait before giving up on a fetch (includes eval functions and commands)
+     * @defaultValue 10e3
+     */
     fetchTimeout?: number;
     /** Extended eris client class (should extend Eris.Client) */
     customClient?: typeof Eris.Client;
-    /** Whether to use a central request handler (uses the eris request handler in the master process) */
+    /**
+     * Whether to use a central request handler.
+     * The central request handler routes Eris requests to the Discord API through a single instance of the Eris RequestHandler.
+     * This helps prevent 429 errors from the Discord API by using a single rate limiter pool
+     * @defaultValue false
+     */
     useCentralRequestHandler?: boolean;
 }
 export interface ShardStats {
@@ -119,9 +163,19 @@ export interface Stats {
     clusters: ClusterStats[];
     services: ServiceStats[];
 }
+export interface ClusterCollection {
+    workerID: number;
+    firstShardID: number;
+    lastShardID: number;
+    clusterID: number;
+}
+export interface ServiceCollection {
+    serviceName: string;
+    workerID: number;
+    path: string;
+}
 /**
  * The sharding manager
- * @public
 */
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by  to worker by ID */

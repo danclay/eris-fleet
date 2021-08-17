@@ -24,8 +24,8 @@ const cluster_1 = require("cluster");
 const util_1 = require("util");
 const IPC_1 = require("../util/IPC");
 class Service {
-    constructor() {
-        this.ipc = new IPC_1.IPC();
+    constructor(input) {
+        this.ipc = new IPC_1.IPC({ fetchTimeout: input.fetchTimeout });
         console.log = (str) => { this.ipc.log(str); };
         console.debug = (str) => { this.ipc.debug(str); };
         console.error = (str) => { this.ipc.error(str); };
@@ -61,7 +61,8 @@ class Service {
                             if (process.send)
                                 process.send({ op: "return", value: {
                                         id: message.command.UUID,
-                                        value: res
+                                        value: res,
+                                        serviceName: this.serviceName
                                     }, UUID: message.UUID });
                             console.error("I can't handle commands!");
                         };
@@ -72,7 +73,8 @@ class Service {
                                     if (process.send)
                                         process.send({ op: "return", value: {
                                                 id: message.command.UUID,
-                                                value: res
+                                                value: res,
+                                                serviceName: this.serviceName
                                             }, UUID: message.UUID });
                                 }
                             }
@@ -82,6 +84,37 @@ class Service {
                         }
                         else {
                             noHandle();
+                        }
+                        break;
+                    }
+                    case "eval": {
+                        const errorEncountered = (err) => {
+                            if (message.request.receptive) {
+                                if (process.send)
+                                    process.send({ op: "return", value: {
+                                            id: message.request.UUID,
+                                            value: { err },
+                                            serviceName: this.serviceName
+                                        }, UUID: message.UUID });
+                            }
+                        };
+                        if (this.app) {
+                            this.app.runEval(message.request.stringToEvaluate)
+                                .then((res) => {
+                                if (message.request.receptive) {
+                                    if (process.send)
+                                        process.send({ op: "return", value: {
+                                                id: message.request.UUID,
+                                                value: res,
+                                                serviceName: this.serviceName
+                                            }, UUID: message.UUID });
+                                }
+                            }).catch((error) => {
+                                errorEncountered(error);
+                            });
+                        }
+                        else {
+                            errorEncountered("Cluster is not ready!");
                         }
                         break;
                     }

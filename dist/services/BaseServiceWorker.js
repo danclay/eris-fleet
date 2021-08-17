@@ -15,6 +15,24 @@ class BaseServiceWorker {
             };
         });
     }
+    /**
+     * Where evals are run from
+     * @internal
+     */
+    runEval(stringToEvaluate) {
+        return new Promise((res, rej) => {
+            const run = async () => {
+                try {
+                    const result = await eval(stringToEvaluate);
+                    res(result);
+                }
+                catch (e) {
+                    rej(e);
+                }
+            };
+            run();
+        });
+    }
 }
 exports.BaseServiceWorker = BaseServiceWorker;
 //# sourceMappingURL=BaseServiceWorker.js.map

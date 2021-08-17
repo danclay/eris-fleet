@@ -3,6 +3,10 @@ import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
 import { IPC } from "../util/IPC";
 
+interface ServiceInput {
+	fetchTimeout: number;
+}
+
 export class Service {
 	path!: string;
 	serviceName!: string;
@@ -11,8 +15,8 @@ export class Service {
 	whatToLog!: string[];
 	ipc: IPC;
 
-	constructor() {
-		this.ipc = new IPC();
+	constructor(input: ServiceInput) {
+		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
 		console.log = (str: unknown) => {this.ipc.log(str);};
 		console.debug = (str: unknown) => {this.ipc.debug(str);};
@@ -42,7 +46,7 @@ export class Service {
 					break;
 				}
 				case "return": {
-					if (this.app) this.app.ipc.emit(message.id, message.value);
+					if (this.app) this.ipc.emit(message.id, message.value);
 					break;
 				}
 				case "command": {
@@ -50,7 +54,8 @@ export class Service {
 						const res = {err: `Service ${this.serviceName} cannot handle commands!`};
 						if (process.send) process.send({op: "return", value: {
 							id: message.command.UUID,
-							value: res
+							value: res,
+							serviceName: this.serviceName
 						}, UUID: message.UUID});
 						console.error("I can't handle commands!");
 					};
@@ -60,7 +65,8 @@ export class Service {
 							if (message.command.receptive) {
 								if (process.send) process.send({op: "return", value: {
 									id: message.command.UUID,
-									value: res
+									value: res,
+									serviceName: this.serviceName
 								}, UUID: message.UUID});
 							}
 						} else {
@@ -68,6 +74,35 @@ export class Service {
 						}
 					} else {
 						noHandle();
+					}
+
+					break;
+				}
+				case "eval": {
+					const errorEncountered = (err: unknown) => {
+						if (message.request.receptive) {
+							if (process.send) process.send({op: "return", value: {
+								id: message.request.UUID,
+								value: {err},
+								serviceName: this.serviceName
+							}, UUID: message.UUID});
+						}
+					};
+					if (this.app) {
+						this.app.runEval(message.request.stringToEvaluate)
+							.then((res: unknown) => {
+								if (message.request.receptive) {
+									if (process.send) process.send({op: "return", value: {
+										id: message.request.UUID,
+										value: res,
+										serviceName: this.serviceName
+									}, UUID: message.UUID});
+								}
+							}).catch((error: unknown) => {
+								errorEncountered(error);
+							});
+					} else {
+						errorEncountered("Cluster is not ready!");
 					}
 
 					break;

@@ -3,6 +3,7 @@ import { BaseClusterWorker } from "./BaseClusterWorker";
 import { IPC } from "../util/IPC";
 interface ClusterInput {
     erisClient: typeof Eris.Client;
+    fetchTimeout: number;
 }
 export declare class Cluster {
     private erisClient;
