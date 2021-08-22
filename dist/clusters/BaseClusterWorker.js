@@ -1,6 +1,37 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseClusterWorker = void 0;
+/**
+ * The base class for a cluster
+ * @example
+ * ```js
+ * const { BaseClusterWorker } = require('eris-fleet');
+ *
+ * module.exports = class BotWorker extends BaseClusterWorker {
+ * 	constructor(setup) {
+ * 		// Do not delete this super.
+ * 		super(setup);
+ *
+ * 		this.bot.on('messageCreate', this.handleMessage.bind(this));
+ *
+ * 		// Demonstration of the properties the cluster has (Keep reading for info on IPC):
+ * 		// ID of the worker
+ * 		console.log(this.workerID);
+ * 		// The ID of the cluster
+ * 		console.log(this.clusterID);
+ * 	}
+ * 	async handleMessage(msg) {
+ * 		if (msg.content === "!ping" && !msg.author.bot) {
+ * 			this.bot.createMessage(msg.channel.id, "Pong!");
+ * 		}
+ * 	}
+ * 	shutdown(done) {
+ * 		// Optional function to gracefully shutdown things if you need to.
+ * 		done(); // Use this function when you are done gracefully shutting down.
+ * 	}
+ * }
+ * ```
+ */
 class BaseClusterWorker {
     constructor(setup) {
         this.bot = setup.bot;

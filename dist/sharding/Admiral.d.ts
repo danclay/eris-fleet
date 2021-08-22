@@ -15,6 +15,8 @@ export interface StartingStatus {
     status: "online" | "idle" | "dnd" | "offline";
     game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
+/** Possible options to put in the logging options array */
+export declare type LoggingOptions = "gateway_shards" | "admiral_start" | "shards_spread" | "stats_update" | "all_clusters_launched" | "all_services_launched" | "cluster_launch" | "service_launch" | "cluster_start" | "service_start" | "service_ready" | "cluster_ready" | "code_loaded" | "shard_connect" | "shard_ready" | "shard_disconnect" | "shard_resume" | "service_restart" | "cluster_restart" | "service_shutdown" | "cluster_shutdown" | "total_shutdown" | "resharding_transition_complete" | "resharding_transition" | "resharding_worker_killed" | "concurrency_group_starting";
 /** Options for resharding */
 export interface ReshardOptions {
     /** Guilds per shard */
@@ -53,7 +55,8 @@ export interface Options {
     clientOptions?: Eris.ClientOptions;
     /**
      * How long to wait for shards to connect to discord
-     * @deprecated Use `clientOptions.connectionTimeout`
+     *
+     * @deprecated Use the `connectionTimeout` property of {@link Options.clientOptions}
      */
     timeout?: number;
     /**
@@ -84,33 +87,43 @@ export interface Options {
      * @defaultValue false
      */
     lessLogging?: boolean;
-    /** Allows for more logging customization (overrides generic lessLogging option) */
+    /**
+     * Allows for more logging customization (overrides generic lessLogging option)
+     *
+     * @see {@link LoggingOptions} See for available options
+     *
+     * @example
+     * ```js
+     * const options = {
+     * 	// Your other options
+     * 	whatToLog: {
+     * 		// This will only log when the admiral starts, when clusters are ready, and when services are ready.
+     * 		whitelist: ['admiral_start', 'cluster_ready', 'service_ready']
+     * 	}
+     * };
+     * ```
+     */
     whatToLog?: {
         /** Whitelist of what to log */
-        whitelist?: string[];
+        whitelist?: LoggingOptions[];
         /** Blacklist of what to log */
-        blacklist?: string[];
+        blacklist?: LoggingOptions[];
     };
     /**
-     * Amount of time to wait before doing a forced shutdown during shutdowns
+     * Amount of time to wait in ms before doing a forced shutdown during shutdowns
      * @defaultValue 10e3
      */
     killTimeout?: number;
     /**
      * Whether to split the source in to an Object
      * @defaultValue false
+     * @see {@link ObjectLog} See for the object which is given in the logging event if this option is enabled
      */
     objectLogging?: boolean;
     /** Custom starting status */
     startingStatus?: StartingStatus;
     /**
-     * Whether to use faster start
-     * @alpha
-     * @defaultValue false
-     */
-    fasterStart?: boolean;
-    /**
-     * How long to wait before giving up on a fetch (includes eval functions and commands)
+     * How long to wait in ms before giving up on a fetch (includes eval functions and commands)
      * @defaultValue 10e3
      */
     fetchTimeout?: number;
@@ -119,40 +132,88 @@ export interface Options {
     /**
      * Whether to use a central request handler.
      * The central request handler routes Eris requests to the Discord API through a single instance of the Eris RequestHandler.
-     * This helps prevent 429 errors from the Discord API by using a single rate limiter pool
+     * This helps prevent 429 errors from the Discord API by using a single rate limiter pool.
      * @defaultValue false
      */
     useCentralRequestHandler?: boolean;
+    /**
+     * Whether to load your cluster class as soon as possible or wait until Eris's ready event.
+     * If you use this, your bot file must listen for the Eris ready event before doing anything which requires all shards to be connected.
+     * @defaultValue false
+     */
+    loadCodeImmediately?: boolean;
+    /**
+     * Whether to override console.log, console.debug, console.warn, and console.error in clusters and services
+     * @defaultValue true
+     */
+    overrideConsole?: boolean;
+    /**
+     * Whether to start services together or not.
+     * @defaultValue false
+     */
+    startServicesTogether?: boolean;
+    /**
+     * Override the `max_concurrency` value sent from Discord (useful if using eris-fleet across machines).
+     * Set to 1 to disable concurrency.
+     * @beta
+     */
+    maxConcurrencyOverride?: number;
+    /**
+     * Whether to shutdown shutdown services and clusters together whenever possible
+     * @defaultValue false
+     */
+    shutdownTogether?: boolean;
 }
 export interface ShardStats {
     latency: number;
     id: number;
     ready: boolean;
-    status: "disconnected" | "connecting" | "handshaking" | "ready";
+    status: "disconnected" | "connecting" | "handshaking" | "ready" | "resuming";
     guilds: number;
+    /**
+     * @deprecated Use {@link ShardStats.members}
+     */
     users: number;
+    /** Total members of each server the shard serves */
+    members: number;
 }
 export interface ClusterStats {
     id: number;
     guilds: number;
+    /** Cached users */
     users: number;
+    /** Total members of each server the cluster serves */
+    members: number;
+    /** Uptime in ms */
     uptime: number;
+    /** The cluster's voice connections */
     voice: number;
     largeGuilds: number;
+    /** The cluster's memory usage in MB */
     ram: number;
     /**
-     * @deprecated Use "shards"
+     * @deprecated Use {@link clusterStats.shards}
      */
     shardStats: ShardStats[];
     shards: ShardStats[];
+    /** One-way IPC latency between the admiral and the cluster in ms */
+    ipcLatency: number;
 }
 export interface ServiceStats {
     name: number;
+    /** Uptime in ms */
+    uptime: number;
+    /** The service's memory usage in MB */
     ram: number;
+    /** One-way IPC latency between the admiral and the service in ms */
+    ipcLatency: number;
 }
 export interface Stats {
     guilds: number;
+    /** Total cached users */
     users: number;
+    /** Total members this instance of eris-fleet is serving */
+    members: number;
     clustersRam: number;
     servicesRam: number;
     masterRam: number;
@@ -175,7 +236,42 @@ export interface ServiceCollection {
     path: string;
 }
 /**
- * The sharding manager
+ * The sharding manager.
+ * @example
+ * ```js
+ * const { isMaster } = require('cluster');
+ * const { Fleet } = require('eris-fleet');
+ * const path = require('path');
+ * const { inspect } = require('util');
+ * require('dotenv').config();
+ *
+ * const options = {
+ * 	path: path.join(__dirname, "./bot.js"),
+ * 	token: process.env.token
+ * }
+ *
+ * const Admiral = new Fleet(options);
+ *
+ * if (isMaster) {
+ * 	// Code to only run for your master process
+ * 	Admiral.on('log', m => console.log(m));
+ * 	Admiral.on('debug', m => console.debug(m));
+ * 	Admiral.on('warn', m => console.warn(m));
+ * 	Admiral.on('error', m => console.error(inspect(m)));
+ *
+ * 	// Logs stats when they arrive
+ * 	Admiral.on('stats', m => console.log(m));
+ * }
+ * ```
+ *
+ * @fires Admiral#log Message to log. Supplies either a message or an {@link ObjectLog}.
+ * @fires Admiral#debug Debug message to log. Supplies either a message or an {@link ObjectLog}.
+ * @fires Admiral#warn Warning message to log. Supplies either a message or an {@link ObjectLog}.
+ * @fires Admiral#error Error to log. Supplies either a message or an {@link ObjectLog}.
+ * @fires Admiral#clusterReady Fires when a cluster is ready. Supplies {@link ClusterCollection | Cluster Object}.
+ * @fires Admiral#serviceReady Fires when a service is ready. Supplies {@link ServiceCollection | Service Object}.
+ * @fires Admiral#ready Fires when the queue is empty.
+ * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
 */
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by  to worker by ID */
@@ -213,11 +309,18 @@ export declare class Admiral extends EventEmitter {
     private launchingManager;
     private objectLogging;
     private startingStatus?;
-    private fasterStart;
     private resharding;
     private statsStarted;
     private fetches;
+    /** Map of cluster group number to the number of times that group's members have connected */
+    private connectedClusterGroups;
     private fetchTimeout;
+    private loadClusterCodeImmediately;
+    private overrideConsole;
+    private startServicesTogether;
+    private maxConcurrencyOverride?;
+    private maxConcurrency;
+    private shutdownTogether;
     /**
      * Creates the sharding manager
      * @param options Options to configure the sharding manager
@@ -277,6 +380,7 @@ export declare class Admiral extends EventEmitter {
     private startService;
     private startCluster;
     private calculateShards;
+    private chunkConcurrencyGroups;
     private chunk;
     private shutdownWorker;
     private restartWorker;

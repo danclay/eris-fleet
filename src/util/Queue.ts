@@ -2,7 +2,7 @@ import {EventEmitter} from "events";
 import {ClientOptions} from "eris";
 import * as Admiral from "../sharding/Admiral";
 
-interface ClusterConnectMessage {
+export interface ClusterConnectMessage {
 	clusterID: number;
 	clusterCount: number;
 	op: "connect" | string;
@@ -15,13 +15,15 @@ interface ClusterConnectMessage {
 	whatToLog: string[];
 	startingStatus?: Admiral.StartingStatus;
 	useCentralRequestHandler: boolean;
+	loadClusterCodeImmediately: boolean;
+	resharding: boolean;
 }
 
-interface ShutdownMessage {
+export interface ShutdownMessage {
 	op: "shutdown" | string;
 }
 
-interface ServiceConnectMessage {
+export interface ServiceConnectMessage {
 	serviceName: string;
 	path: string;
 	op: "connect" | string;
@@ -48,15 +50,23 @@ export class Queue extends EventEmitter {
 
 	public execute(first?: boolean, override?: string): void {
 		if (this.override && override !== this.override) return;
+		const prevItem = first ? undefined : this.queue[0];
 		if (!first) this.queue.splice(0, 1);
 		const item = this.queue[0];
 		if (!item) return;
-		this.emit("execute", item);
+		this.emit("execute", item, prevItem);
 	}
 
 	public item(item: QueueItem, override?: string): void {
 		if (this.override && override !== this.override) return;
 		this.queue.push(item);
 		if (this.queue.length == 1) this.execute(true, override);
+	}
+
+	public bunkItems(items: QueueItem[], override?: string): void {
+		if (this.override && override !== this.override) return;
+		const execute = this.queue.length === 0;
+		this.queue = this.queue.concat(items);
+		if (execute) this.execute(true, override);
 	}
 }

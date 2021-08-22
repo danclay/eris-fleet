@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>eris-fleet - v0.3.9</title>
-	<meta name="description" content="Documentation for eris-fleet - v0.3.9">
+	<title>eris-fleet - v0.3.9-dev</title>
+	<meta name="description" content="Documentation for eris-fleet - v0.3.9-dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 	<script async src="assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">eris-fleet - v0.3.9</a>
+					<a href="index.html" class="title">eris-fleet - v0.3.9-dev</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -50,7 +50,7 @@
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<h1>eris-fleet - v0.3.9</h1>
+			<h1>eris-fleet - v0.3.9-dev</h1>
 		</div>
 	</div>
 </header>
@@ -68,6 +68,7 @@
 								<li class="tsd-kind-class"><a href="classes/baseserviceworker.html" class="tsd-kind-icon">Base<wbr>Service<wbr>Worker</a></li>
 								<li class="tsd-kind-class"><a href="classes/collection.html" class="tsd-kind-icon">Collection</a></li>
 								<li class="tsd-kind-class"><a href="classes/fleet.html" class="tsd-kind-icon">Fleet</a></li>
+								<li class="tsd-kind-class"><a href="classes/ipc.html" class="tsd-kind-icon">IPC</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -75,13 +76,42 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-interface"><a href="interfaces/baseclusterworkersetup.html" class="tsd-kind-icon">Base<wbr>Cluster<wbr>Worker<wbr>Setup</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/baseserviceworkersetup.html" class="tsd-kind-icon">Base<wbr>Service<wbr>Worker<wbr>Setup</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/clustercollection.html" class="tsd-kind-icon">Cluster<wbr>Collection</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/clusterstats.html" class="tsd-kind-icon">Cluster<wbr>Stats</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/objectlog.html" class="tsd-kind-icon">Object<wbr>Log</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/options.html" class="tsd-kind-icon">Options</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/reshardoptions.html" class="tsd-kind-icon">Reshard<wbr>Options</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/servicecollection.html" class="tsd-kind-icon">Service<wbr>Collection</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/servicestats.html" class="tsd-kind-icon">Service<wbr>Stats</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/shardstats.html" class="tsd-kind-icon">Shard<wbr>Stats</a></li>
+								<li class="tsd-kind-interface"><a href="interfaces/startingstatus.html" class="tsd-kind-icon">Starting<wbr>Status</a></li>
 								<li class="tsd-kind-interface"><a href="interfaces/stats.html" class="tsd-kind-icon">Stats</a></li>
 							</ul>
 						</section>
+						<section class="tsd-index-section ">
+							<h3>Type aliases</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-type-alias"><a href="modules.html#loggingoptions" class="tsd-kind-icon">Logging<wbr>Options</a></li>
+							</ul>
+						</section>
+					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Type aliases</h2>
+				<section class="tsd-panel tsd-member tsd-kind-type-alias">
+					<a name="loggingoptions" class="tsd-anchor"></a>
+					<h3>Logging<wbr>Options</h3>
+					<div class="tsd-signature tsd-kind-icon">Logging<wbr>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;gateway_shards&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;admiral_start&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;shards_spread&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;stats_update&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;all_clusters_launched&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;all_services_launched&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;cluster_launch&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;service_launch&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;cluster_start&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;service_start&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;service_ready&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;cluster_ready&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;code_loaded&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;shard_connect&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;shard_ready&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;shard_disconnect&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;shard_resume&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;service_restart&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;cluster_restart&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;service_shutdown&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;cluster_shutdown&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;total_shutdown&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;resharding_transition_complete&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;resharding_transition&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;resharding_worker_killed&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;concurrency_group_starting&quot;</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/sharding/Admiral.ts#L32">src/sharding/Admiral.ts:32</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Possible options to put in the logging options array</p>
+						</div>
 					</div>
 				</section>
 			</section>
@@ -108,6 +138,9 @@
 					<li class=" tsd-kind-class">
 						<a href="classes/fleet.html" class="tsd-kind-icon">Fleet</a>
 					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/ipc.html" class="tsd-kind-icon">IPC</a>
+					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/baseclusterworkersetup.html" class="tsd-kind-icon">Base<wbr>Cluster<wbr>Worker<wbr>Setup</a>
 					</li>
@@ -115,10 +148,22 @@
 						<a href="interfaces/baseserviceworkersetup.html" class="tsd-kind-icon">Base<wbr>Service<wbr>Worker<wbr>Setup</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/clustercollection.html" class="tsd-kind-icon">Cluster<wbr>Collection</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/clusterstats.html" class="tsd-kind-icon">Cluster<wbr>Stats</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/objectlog.html" class="tsd-kind-icon">Object<wbr>Log</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/options.html" class="tsd-kind-icon">Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/reshardoptions.html" class="tsd-kind-icon">Reshard<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/servicecollection.html" class="tsd-kind-icon">Service<wbr>Collection</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/servicestats.html" class="tsd-kind-icon">Service<wbr>Stats</a>
@@ -127,7 +172,13 @@
 						<a href="interfaces/shardstats.html" class="tsd-kind-icon">Shard<wbr>Stats</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/startingstatus.html" class="tsd-kind-icon">Starting<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/stats.html" class="tsd-kind-icon">Stats</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#loggingoptions" class="tsd-kind-icon">Logging<wbr>Options</a>
 					</li>
 				</ul>
 			</nav>

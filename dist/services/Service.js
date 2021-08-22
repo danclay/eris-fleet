@@ -26,10 +26,12 @@ const IPC_1 = require("../util/IPC");
 class Service {
     constructor(input) {
         this.ipc = new IPC_1.IPC({ fetchTimeout: input.fetchTimeout });
-        console.log = (str) => { this.ipc.log(str); };
-        console.debug = (str) => { this.ipc.debug(str); };
-        console.error = (str) => { this.ipc.error(str); };
-        console.warn = (str) => { this.ipc.warn(str); };
+        if (input.overrideConsole) {
+            console.log = (str) => { this.ipc.log(str); };
+            console.debug = (str) => { this.ipc.debug(str); };
+            console.error = (str) => { this.ipc.error(str); };
+            console.warn = (str) => { this.ipc.warn(str); };
+        }
         // Spawns
         process.on("uncaughtException", (err) => {
             this.ipc.error(err);
@@ -52,7 +54,7 @@ class Service {
                     }
                     case "return": {
                         if (this.app)
-                            this.app.ipc.emit(message.id, message.value);
+                            this.ipc.emit(message.id, message.value);
                         break;
                     }
                     case "command": {
@@ -64,7 +66,7 @@ class Service {
                                         value: res,
                                         serviceName: this.serviceName
                                     }, UUID: message.UUID });
-                            console.error("I can't handle commands!");
+                            this.ipc.error("I can't handle commands!");
                         };
                         if (this.app) {
                             if (this.app.handleCommand) {
@@ -141,7 +143,9 @@ class Service {
                     case "collectStats": {
                         if (process.send)
                             process.send({ op: "collectStats", stats: {
-                                    ram: process.memoryUsage().rss / 1e6
+                                    uptime: this.connectedTimestamp ? new Date().getTime() - this.connectedTimestamp : 0,
+                                    ram: process.memoryUsage().rss / 1e6,
+                                    ipcLatency: new Date().getTime()
                                 } });
                         break;
                     }
@@ -150,8 +154,10 @@ class Service {
         });
     }
     async loadCode() {
+        if (this.app)
+            return;
         if (this.whatToLog.includes("service_start"))
-            console.log(`Starting service ${this.serviceName}`);
+            this.ipc.log(`Starting service ${this.serviceName}`);
         let App = (await Promise.resolve().then(() => __importStar(require(this.path))));
         if (App.ServiceWorker) {
             App = App.ServiceWorker;
@@ -164,19 +170,20 @@ class Service {
         if (this.app)
             this.app.readyPromise.then(() => {
                 if (this.whatToLog.includes("service_ready"))
-                    console.log(`Service ${this.serviceName} is ready!`);
+                    this.ipc.log(`Service ${this.serviceName} is ready!`);
                 if (process.send)
                     process.send({ op: "connected" });
                 ready = true;
+                this.connectedTimestamp = new Date().getTime();
             }).catch((err) => {
-                console.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
+                this.ipc.error(`Service ${this.serviceName} had an error starting: ${util_1.inspect(err)}`);
                 process.kill(0);
             });
         // Timeout
         if (this.timeout !== 0) {
             setTimeout(() => {
                 if (!ready) {
-                    console.error(`Service ${this.serviceName} took too long to start.`);
+                    this.ipc.error(`Service ${this.serviceName} took too long to start.`);
                     process.kill(0);
                 }
             }, this.timeout);

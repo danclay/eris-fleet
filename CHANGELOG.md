@@ -2,6 +2,29 @@
 
 This may skip some little bug fixes.
 
+## 0.3.9-dev
+
+- Added a central request handler. Disabled by default and may be enabled with the `useCentralRequestHandler` option being set to true.
+- Added ability to change resharding parameters
+- Improved logging
+- Renamed key for shards array to "shards" from "shardStats" in stats (old name still works)
+- Allows for the creation of services after the initial launch of the sharding manager
+- Added cluster commands
+- Added ability to send all clusters a command
+- Added cluster eval
+- Added ability to send all clusters an eval
+- Added services eval
+- Added timeout for all command and eval functions
+- Added concurrency
+- Added option to allow services to start simultaneously
+- Added option to load code immediately
+- Added option to disable the default function of replacing the console methods in workers
+- Added some new stuff to stats (ipc latency and members)
+
+### Breaking changes:
+
+- When using `ipc.register`, the message is now the actual message, not an object with the message as "msg"
+
 ## 0.3.9
 - Added support for extended eris class
 
@@ -26,7 +49,6 @@ Fixed [issue 60](https://github.com/danclay/eris-fleet/issues/60) where Discord 
 - Fetch now returns null if there is no value found
 - Fetch now only checks clusters which are connected and will get the data from clusters when they launch unless the timeout has passed
 - Now uses eslint to make code look sharp
-
 
 ## 0.2.3
 - Fixed issue where logging "prefix" would not show up during a soft restart

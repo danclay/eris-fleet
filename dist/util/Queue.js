@@ -10,18 +10,27 @@ class Queue extends events_1.EventEmitter {
     execute(first, override) {
         if (this.override && override !== this.override)
             return;
+        const prevItem = first ? undefined : this.queue[0];
         if (!first)
             this.queue.splice(0, 1);
         const item = this.queue[0];
         if (!item)
             return;
-        this.emit("execute", item);
+        this.emit("execute", item, prevItem);
     }
     item(item, override) {
         if (this.override && override !== this.override)
             return;
         this.queue.push(item);
         if (this.queue.length == 1)
+            this.execute(true, override);
+    }
+    bunkItems(items, override) {
+        if (this.override && override !== this.override)
+            return;
+        const execute = this.queue.length === 0;
+        this.queue = this.queue.concat(items);
+        if (execute)
             this.execute(true, override);
     }
 }

@@ -2,7 +2,7 @@
 import { EventEmitter } from "events";
 import { ClientOptions } from "eris";
 import * as Admiral from "../sharding/Admiral";
-interface ClusterConnectMessage {
+export interface ClusterConnectMessage {
     clusterID: number;
     clusterCount: number;
     op: "connect" | string;
@@ -15,11 +15,13 @@ interface ClusterConnectMessage {
     whatToLog: string[];
     startingStatus?: Admiral.StartingStatus;
     useCentralRequestHandler: boolean;
+    loadClusterCodeImmediately: boolean;
+    resharding: boolean;
 }
-interface ShutdownMessage {
+export interface ShutdownMessage {
     op: "shutdown" | string;
 }
-interface ServiceConnectMessage {
+export interface ServiceConnectMessage {
     serviceName: string;
     path: string;
     op: "connect" | string;
@@ -39,5 +41,5 @@ export declare class Queue extends EventEmitter {
     constructor();
     execute(first?: boolean, override?: string): void;
     item(item: QueueItem, override?: string): void;
+    bunkItems(items: QueueItem[], override?: string): void;
 }
-export {};

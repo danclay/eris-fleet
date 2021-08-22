@@ -2,9 +2,11 @@ import {worker} from "cluster";
 import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
 import { IPC } from "../util/IPC";
+import { LoggingOptions } from "../sharding/Admiral";
 
 interface ServiceInput {
 	fetchTimeout: number;
+	overrideConsole: boolean;
 }
 
 export class Service {
@@ -12,16 +14,19 @@ export class Service {
 	serviceName!: string;
 	app?: BaseServiceWorker;
 	timeout!: number;
-	whatToLog!: string[];
+	whatToLog!: LoggingOptions[];
 	ipc: IPC;
+	connectedTimestamp?: number;
 
 	constructor(input: ServiceInput) {
 		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
-		console.log = (str: unknown) => {this.ipc.log(str);};
-		console.debug = (str: unknown) => {this.ipc.debug(str);};
-		console.error = (str: unknown) => {this.ipc.error(str);};
-		console.warn = (str: unknown) => {this.ipc.warn(str);};
+		if (input.overrideConsole) {
+			console.log = (str: unknown) => {this.ipc.log(str);};
+			console.debug = (str: unknown) => {this.ipc.debug(str);};
+			console.error = (str: unknown) => {this.ipc.error(str);};
+			console.warn = (str: unknown) => {this.ipc.warn(str);};
+		}
 
 		// Spawns
 		process.on("uncaughtException", (err: Error) => {
@@ -57,7 +62,7 @@ export class Service {
 							value: res,
 							serviceName: this.serviceName
 						}, UUID: message.UUID});
-						console.error("I can't handle commands!");
+						this.ipc.error("I can't handle commands!");
 					};
 					if (this.app) {
 						if (this.app.handleCommand) {
@@ -125,7 +130,9 @@ export class Service {
 				}
 				case "collectStats": {
 					if (process.send) process.send({op: "collectStats", stats: {
-						ram: process.memoryUsage().rss / 1e6
+						uptime: this.connectedTimestamp ? new Date().getTime() - this.connectedTimestamp : 0,
+						ram: process.memoryUsage().rss / 1e6,
+						ipcLatency: new Date().getTime()
 					}});
 
 					break;
@@ -136,7 +143,8 @@ export class Service {
 	}
  
 	private async loadCode() {
-		if (this.whatToLog.includes("service_start")) console.log(`Starting service ${this.serviceName}`);
+		if (this.app) return;
+		if (this.whatToLog.includes("service_start")) this.ipc.log(`Starting service ${this.serviceName}`);
 
 		let App = (await import(this.path));
 		if (App.ServiceWorker) {
@@ -148,11 +156,12 @@ export class Service {
 
 		let ready = false;
 		if (this.app) this.app.readyPromise.then(() => {
-			if (this.whatToLog.includes("service_ready")) console.log(`Service ${this.serviceName} is ready!`);
+			if (this.whatToLog.includes("service_ready")) this.ipc.log(`Service ${this.serviceName} is ready!`);
 			if (process.send) process.send({op: "connected"});
 			ready = true;
+			this.connectedTimestamp = new Date().getTime();
 		}).catch((err: unknown) => {
-			console.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
+			this.ipc.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
 			process.kill(0);
 		});
 
@@ -160,7 +169,7 @@ export class Service {
 		if (this.timeout !== 0) {
 			setTimeout(() => {
 				if (!ready) {
-					console.error(`Service ${this.serviceName} took too long to start.`);
+					this.ipc.error(`Service ${this.serviceName} took too long to start.`);
 					process.kill(0);
 				}
 			}, this.timeout);

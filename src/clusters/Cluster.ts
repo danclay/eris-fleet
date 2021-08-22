@@ -9,6 +9,7 @@ import { IPC } from "../util/IPC";
 interface ClusterInput {
 	erisClient: typeof Eris.Client;
 	fetchTimeout: number;
+	overrideConsole: boolean;
 }
 
 export class Cluster {
@@ -21,7 +22,7 @@ export class Cluster {
 	shardCount!: number;
 	shards!: number;
 	clientOptions!: Eris.ClientOptions;
-	whatToLog!: string[];
+	whatToLog!: Admiral.LoggingOptions[];
 	useCentralRequestHandler!: boolean;
 	bot!: Eris.Client;
 	private token!: string;
@@ -30,16 +31,20 @@ export class Cluster {
 	ipc: IPC;
 	shutdown?: boolean;
 	private startingStatus?: Admiral.StartingStatus;
+	private loadClusterCodeImmediately!: boolean;
+	private resharding!: boolean;
 
 	constructor(input: ClusterInput) {
 		this.erisClient = input.erisClient;
 		// add ipc
 		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
-		console.log = (str: unknown) => {this.ipc.log(str);};
-		console.debug = (str: unknown) => {this.ipc.debug(str);};
-		console.error = (str: unknown) => {this.ipc.error(str);};
-		console.warn = (str: unknown) => {this.ipc.warn(str);};
+		if (input.overrideConsole) {
+			console.log = (str: unknown) => {this.ipc.log(str);};
+			console.debug = (str: unknown) => {this.ipc.debug(str);};
+			console.error = (str: unknown) => {this.ipc.error(str);};
+			console.warn = (str: unknown) => {this.ipc.warn(str);};
+		}
 
 		//Spawns
 		process.on("uncaughtException", (err: Error) => {
@@ -67,6 +72,8 @@ export class Cluster {
 					this.token = message.token;
 					this.whatToLog = message.whatToLog;
 					this.useCentralRequestHandler = message.useCentralRequestHandler;
+					this.loadClusterCodeImmediately = message.loadClusterCodeImmediately;
+					this.resharding = message.resharding;
 					if (message.startingStatus) this.startingStatus = message.startingStatus;
 
 					if (this.shards < 0) return;
@@ -134,7 +141,7 @@ export class Cluster {
 							value: res,
 							clusterID: this.clusterID
 						}, UUID: message.UUID});
-						console.error("I can't handle commands!");
+						this.ipc.error("I can't handle commands!");
 					};
 					if (this.app) {
 						if (this.app.handleCommand) {
@@ -190,33 +197,41 @@ export class Cluster {
 				}
 				case "collectStats": {
 					if (!this.bot) return;
-					const shardStats: { id: number; ready: boolean; latency: number; status: string; guilds: number; users: number;}[] = [];
+					const shardStats: Admiral.ShardStats[] = [];
 					const getShardUsers = (id: number) => {
 						let users = 0;
+						this.bot.guildShardMap;
 						this.bot.guilds.forEach(guild => {
+							if (this.bot.guildShardMap[guild.id] !== id) return;
 							users += guild.memberCount;
 						});
 						return users;
 					};
+					let totalMembers = 0;
 					this.bot.shards.forEach(shard => {
+						const shardUsers = getShardUsers(shard.id);
+						totalMembers += shardUsers;
 						shardStats.push({
 							id: shard.id,
 							ready: shard.ready,
 							latency: shard.latency,
 							status: shard.status,
 							guilds: Object.values(this.bot.guildShardMap).filter(e => e == shard.id).length,
-							users: getShardUsers(shard.id)
+							users: shardUsers,
+							members: shardUsers
 						});
 					});
 					if (process.send) process.send({op: "collectStats", stats: {
 						guilds: this.bot.guilds.size,
 						users: this.bot.users.size,
+						members: totalMembers,
 						uptime: this.bot.uptime,
 						voice: this.bot.voiceConnections.size,
 						largeGuilds: this.bot.guilds.filter(g => g.large).length,
 						shardStats: shardStats,
 						shards: shardStats,
-						ram: process.memoryUsage().rss / 1e6
+						ram: process.memoryUsage().rss / 1e6,
+						ipcLatency: new Date().getTime()
 					}});
 
 					break;
@@ -252,7 +267,7 @@ export class Cluster {
 	}
 
 	private async connect() {
-		if (this.whatToLog.includes("cluster_start")) console.log(`Connecting with ${this.shards} shard(s)`);
+		if (this.whatToLog.includes("cluster_start")) this.ipc.log(`Connecting with ${this.shards} shard(s)`);
 
 		const options = Object.assign(this.clientOptions, {autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount});
 
@@ -270,6 +285,7 @@ export class Cluster {
 				App = App.default ? App.default : App;
 			}
 		}
+		this.App = App;
 
 		// central request handler
 		if (this.useCentralRequestHandler) {
@@ -290,12 +306,15 @@ export class Cluster {
 			}
 		};
 
+		// load code if immediate code loading is enabled
+		if (this.loadClusterCodeImmediately && !this.resharding) this.loadCode();
+
 		bot.on("connect", (id: number) => {
-			if (this.whatToLog.includes("shard_connect")) console.log(`Shard ${id} connected!`);
+			if (this.whatToLog.includes("shard_connect")) this.ipc.log(`Shard ${id} connected!`);
 		});
 
 		bot.on("shardDisconnect", (err: Error, id: number) => {
-			if (!this.shutdown) if (this.whatToLog.includes("shard_disconnect")) console.log(`Shard ${id} disconnected with error: ${inspect(err)}`);
+			if (!this.shutdown) if (this.whatToLog.includes("shard_disconnect")) this.ipc.log(`Shard ${id} disconnected with error: ${inspect(err)}`);
 		});
 
 		bot.once("shardReady", () => {
@@ -303,11 +322,11 @@ export class Cluster {
 		});
 
 		bot.on("shardReady", (id: number) => {
-			if (this.whatToLog.includes("shard_ready")) console.log(`Shard ${id} is ready!`);
+			if (this.whatToLog.includes("shard_ready")) this.ipc.log(`Shard ${id} is ready!`);
 		});
 
 		bot.on("shardResume", (id: number) => {
-			if (this.whatToLog.includes("shard_resume")) console.log(`Shard ${id} has resumed!`);
+			if (this.whatToLog.includes("shard_resume")) this.ipc.log(`Shard ${id} has resumed!`);
 		});
 
 		bot.on("warn", (message: string, id?: number) => {
@@ -319,11 +338,10 @@ export class Cluster {
 		});
 
 		bot.on("ready", () => {
-			if (this.whatToLog.includes("cluster_ready")) console.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
+			if (this.whatToLog.includes("cluster_ready")) this.ipc.log(`Shards ${this.firstShardID} - ${this.lastShardID} are ready!`);
 		});
 
 		bot.once("ready", () => {
-			this.App = App;
 			if (process.send) process.send({op: "connected"});
 		});
 
@@ -334,9 +352,9 @@ export class Cluster {
 	
 	private async loadCode() {
 		if (this.app) return;
-		console.log("here");
 		//let App = (await import(this.path)).default;
 		//App = App.default ? App.default : App;
 		this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id, ipc: this.ipc});
+		if (this.whatToLog.includes("code_loaded")) this.ipc.log("Cluster code loaded");
 	}
 }

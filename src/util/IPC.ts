@@ -76,7 +76,7 @@ export class IPC extends EventEmitter {
 	 * @param message Item to log
 	 * @param source Custom error source
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.log("You have reached this line of code");
 	 * ```
 	 */
@@ -89,7 +89,7 @@ export class IPC extends EventEmitter {
 	 * @param message Item to log
 	 * @param source Custom error source
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.error(new Error("big yikes"));
 	 * ```
 	 */
@@ -102,7 +102,7 @@ export class IPC extends EventEmitter {
 	 * @param message Item to log
 	 * @param source Custom error source
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.warn("uh oh!");
 	 * ```
 	 */
@@ -115,7 +115,7 @@ export class IPC extends EventEmitter {
 	 * @param message Item to log
 	 * @param source Custom error source
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.debug("I'm here!");
 	 * ```
 	 */
@@ -129,7 +129,7 @@ export class IPC extends EventEmitter {
 	 * @param event Name of the event
 	 * @param callback Function run when event is recieved
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.register("hello!", (message) => {
 	 * 	// Do stuff
 	 * 	console.log(message);
@@ -149,7 +149,7 @@ export class IPC extends EventEmitter {
 	 * Unregisters an event
 	 * @param event Name of the event
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.unregister("stats");
 	 * ```
 	*/
@@ -163,7 +163,7 @@ export class IPC extends EventEmitter {
 	 * @param op Name of the event
 	 * @param message Message to send
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.broadcast("hello clusters!", "Want to chat?");
 	 * ```
 	*/
@@ -178,7 +178,7 @@ export class IPC extends EventEmitter {
 	 * @param op Name of the event
 	 * @param message Message to send
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.admiralBroadcast("Hello", "I'm working!");
 	 * ```
 	*/
@@ -194,7 +194,7 @@ export class IPC extends EventEmitter {
 	 * @param op Name of the event
 	 * @param message Message to send
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.sendTo(1, "Hello cluster 1!", "Squad up?");
 	 * ```
 	*/
@@ -208,7 +208,7 @@ export class IPC extends EventEmitter {
 	 * @param id User ID
 	 * @returns The Eris user object converted to JSON
 	 * @example
-	 * ```
+	 * ```js
 	 * await this.ipc.fetchUser('123456789');
 	 * ```
 	*/
@@ -227,7 +227,7 @@ export class IPC extends EventEmitter {
 	 * @param id Guild ID
 	 * @returns The Eris guild object converted to JSON
 	 * @example
-	 * ```
+	 * ```js
 	 * await this.ipc.fetchGuild('123456789');
 	 * ```
 	*/
@@ -246,7 +246,7 @@ export class IPC extends EventEmitter {
 	 * @param id Channel ID
 	 * @returns The Eris channel object converted to JSON
 	 * @example
-	 * ```
+	 * ```js
 	 * await this.ipc.fetchChannel('123456789');
 	 * ```
 	*/
@@ -266,7 +266,7 @@ export class IPC extends EventEmitter {
 	 * @param memberID the member's user ID
 	 * @returns The Eris member object converted to JSON
 	 * @example
-	 * ```
+	 * ```js
 	 * await this.ipc.fetchMember('123456789', '987654321');
 	 * ```
 	*/
@@ -283,7 +283,7 @@ export class IPC extends EventEmitter {
 	}
 
 	/**
-	 * @deprecated Use {@link serviceCommand}
+	 * @deprecated Use {@link IPC.serviceCommand}
 	*/
 	public command(service: string, message?: unknown, receptive?: boolean, returnTimeout?: number): Promise<any> | void {
 		return this.serviceCommand(service, message, receptive, returnTimeout);
@@ -297,7 +297,7 @@ export class IPC extends EventEmitter {
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
 	 * @returns Promise with data if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.serviceCommand("ServiceName", "hello service!", true)
 	 * .then((message) => console.log(message))
 	 * .catch((error) => this.ipc.error(error));
@@ -351,7 +351,7 @@ export class IPC extends EventEmitter {
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
 	 * @returns Promise with data if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.clusterCommand(1, "hello cluster!", true)
 	 * .then((message) => console.log(message))
 	 * .catch((error) => this.ipc.error(error));
@@ -399,13 +399,14 @@ export class IPC extends EventEmitter {
 	
 	/**
 	 * Execute a cluster command on all clusters
+	 * 
 	 * @param message Whatever message you want to send with the command (defaults to `null`)
 	 * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
 	 * @param callback Function which will be run everytime a new command return is recieved
 	 * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.allClustersCommand("hello clusters!", true, undefined, (id, data) => {
 	 * 	console.log(`I just recieved ${data} from ${id}!`);
 	 * })
@@ -550,7 +551,7 @@ export class IPC extends EventEmitter {
 	 * @param serviceName Unique ame of the service
 	 * @param servicePath Absolute path to the service file
 	 * @example
-	 * ```
+	 * ```js
 	 * const path = require("path");
 	 * this.ipc.createService("myService", path.join(__dirname, "./service.js"))
 	 * ```
@@ -592,7 +593,7 @@ export class IPC extends EventEmitter {
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
 	 * @returns Promise with result if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.clusterEval(1, "return 'hey!'", true)
 	 * .then((data) => this.ipc.log(data))
 	 * .catch((error) => this.ipc.error(error));
@@ -647,7 +648,7 @@ export class IPC extends EventEmitter {
 	 * @param callback Function which will be run everytime a new command return is recieved
 	 * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.allClustersCommand("return 'heyo!'", true, undefined, (id, data) => {
 	 * 	console.log(`I just recieved ${data} from ${id}!`);
 	 * })
@@ -724,7 +725,7 @@ export class IPC extends EventEmitter {
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
 	 * @returns Promise with result if `receptive = true`
 	 * @example
-	 * ```
+	 * ```js
 	 * this.ipc.serviceEval(1, "return 'hey!'", true)
 	 * .then((data) => this.ipc.log(data))
 	 * .catch((error) => this.ipc.error(error));

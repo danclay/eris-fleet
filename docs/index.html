@@ -3,8 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>eris-fleet - v0.3.9</title>
-	<meta name="description" content="Documentation for eris-fleet - v0.3.9">
+	<title>eris-fleet - v0.3.9-dev</title>
+	<meta name="description" content="Documentation for eris-fleet - v0.3.9-dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
 	<script async src="assets/js/search.js" id="search-script"></script>
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">eris-fleet - v0.3.9</a>
+					<a href="index.html" class="title">eris-fleet - v0.3.9-dev</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -50,7 +50,7 @@
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<h1>eris-fleet - v0.3.9</h1>
+			<h1>eris-fleet - v0.3.9-dev</h1>
 		</div>
 	</div>
 </header>
@@ -78,7 +78,7 @@
 					<h1>About</h1>
 				</a>
 				<p>A spin-off of <a href="https://github.com/discordware/eris-sharder">eris-sharder</a> and <a href="https://github.com/brussell98/megane">megane</a> with services and configurable logging.</p>
-				<p>For some more documentation check the <a href="https://github.com/danclay/eris-fleet/wiki">wiki on Github</a> and the <a href="https://github.com/danclay/eris-fleet/blob/master/README.md">README on GitHub</a>.</p>
+				<p>For some more documentation check the <a href="https://danclay.github.io/eris-fleet/">docs</a> and the <a href="https://github.com/danclay/eris-fleet/blob/master/README.md">README on GitHub</a>.</p>
 				<a href="#highlighted-features" id="highlighted-features" style="color: inherit; text-decoration: none;">
 					<h2>Highlighted Features:</h2>
 				</a>
@@ -91,9 +91,11 @@
 					<li>Services (non-eris workers)</li>
 					<li>IPC to communicate between clusters, other clusters, and services</li>
 					<li>Detailed stats collection</li>
-					<li>Use a modified version of eris</li>
+					<li>Use a modified version of Eris</li>
 					<li>Soft cluster and service restarts where the old worker is killed after the new one is ready</li>
 					<li>Graceful shutdowns</li>
+					<li>Central request handler</li>
+					<li>Concurrency support</li>
 				</ul>
 				<a href="#help" id="help" style="color: inherit; text-decoration: none;">
 					<h2>Help</h2>
@@ -148,7 +150,7 @@
 					<li>Your file which will create the fleet. This will be called &quot;index.js&quot; for now.</li>
 					<li>Your file containing your bot code. This will be called &quot;bot.js&quot; for now. This file will extend <code>BaseClusterWorker</code></li>
 				</ol>
-				<p>In the example below, the variable <code>options</code> is passed to the admiral. <a href="#admiral">Read below</a> for what options you can pass.</p>
+				<p>In the example below, the variable <code>options</code> is passed to the admiral. <a href="https://danclay.github.io/eris-fleet/interfaces/options.html">Read the docs</a> for what options you can pass.</p>
 				<p>Here is an example of <code>index.js</code>:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">isMaster</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;cluster&#039;</span><span style="color: #000000">);</span>
 <span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">Fleet</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;eris-fleet&#039;</span><span style="color: #000000">);</span>
@@ -175,8 +177,8 @@
 <span style="color: #000000">    </span><span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">on</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;stats&#039;</span><span style="color: #000000">, </span><span style="color: #001080">m</span><span style="color: #000000"> </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">m</span><span style="color: #000000">));</span>
 <span style="color: #000000">}</span>
 </code></pre>
-				<p>This creates a new Admiral that will manage <code>bot.js</code> running in other processes.</p>
-				<p>The following is an example of <code>bot.js</code>. <a href="#ipc">Read below</a> for what you can access and do with clusters.</p>
+				<p>This creates a new Admiral that will manage <code>bot.js</code> running in other processes. <a href="https://danclay.github.io/eris-fleet/classes/baseclusterworker.html">More details</a></p>
+				<p>The following is an example of <code>bot.js</code>. <a href="https://danclay.github.io/eris-fleet/classes/ipc.html">Read the IPC docs</a> for what you can access and do with clusters.</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">BaseClusterWorker</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;eris-fleet&#039;</span><span style="color: #000000">);</span>
 
 <span style="color: #267F99">module</span><span style="color: #000000">.</span><span style="color: #267F99">exports</span><span style="color: #000000"> = </span><span style="color: #0000FF">class</span><span style="color: #000000"> </span><span style="color: #267F99">BotWorker</span><span style="color: #000000"> </span><span style="color: #0000FF">extends</span><span style="color: #000000"> </span><span style="color: #267F99">BaseClusterWorker</span><span style="color: #000000"> {</span>
@@ -208,7 +210,8 @@
 				<a href="#services" id="services" style="color: inherit; text-decoration: none;">
 					<h2>Services</h2>
 				</a>
-				<p>You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! <a href="#ipc">Read below</a> for what you can access and do with services. <strong>Note that services always start before the clusters. Clusters will only start after all the services have started.</strong> To add a service, add the following to the options you pass to the fleet:</p>
+				<p>You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! <a href="https://danclay.github.io/eris-fleet/classes/ipc.html">Read the IPC docs</a> for what you can access and do with services. <strong>Note that services always start before the clusters. Clusters will only start after all the services have started.</strong> <a href="https://danclay.github.io/eris-fleet/classes/baseserviceworker.html">More details</a></p>
+				<p>To add a service, add the following to the options you pass to the fleet:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">options</span><span style="color: #000000"> = {</span>
 <span style="color: #000000">    </span><span style="color: #008000">// Your other options...</span>
 <span style="color: #000000">    </span><span style="color: #001080">services:</span><span style="color: #000000"> [{</span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">, </span><span style="color: #001080">path:</span><span style="color: #000000"> </span><span style="color: #001080">path</span><span style="color: #000000">.</span><span style="color: #795E26">join</span><span style="color: #000000">(</span><span style="color: #001080">__dirname</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;./service.js&quot;</span><span style="color: #000000">)}]</span>
@@ -276,66 +279,30 @@
 				<a href="#admiral" id="admiral" style="color: inherit; text-decoration: none;">
 					<h2>Admiral</h2>
 				</a>
-				<p>Here is a complete list of options you can pass to the Admiral through the Fleet constructor.
-					| Property | Description | Optional? | Default Value |
-					|---|---|---|---|
-					| path | Absolute path to your bot file | No |  |
-					| token | Token for your bot | No |  |
-					| guildsPerShard | How many guild per shard | Yes | 1300 |
-					| shards | How many shards you want (overrides guildsPerShard) | Yes | &#39;auto&#39; |
-					| clusters | How many clusters you want to spawn  (this is overridden if there are more chunks than clusters specified) | Yes | # of CPU Cores |
-					| clientOptions | Options to pass to the Eris client | Yes |  |
-					| timeout | How long to wait for shards to connect to Discord (in ms) | Yes | 30000 |
-					| serviceTimeout | How long to wait for services to tell the admiral they are ready for use (in ms) | Yes | infinite |
-					| clusterTimeout | How long to wait between connecting clusters to Discord (in ms) | Yes | 5000 |
-					| nodeArgs | Node arguments to pass to clusters | Yes |  |
-					| statsInterval | How often to update the stats (in ms) after all clusters are connected. To disable stats, set to &#39;disable&#39; | Yes | 60000 |
-					| services | Services to register. The format of the services array is shown below this table. Your services will start in the order of this array. | Yes |  |
-					| firstShardID | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes | 0 |
-					| lastShardID | The ID of the first shard to use for this fleet. Use this if you have multiple fleets running on separate machines (really, really big bots) | Yes | Total count of shards - 1 |
-					| lessLogging | Reduces the number of logs the Admiral sends (boolean) | Yes | false |
-					| whatToLog | Choose what to log (see details below) | Yes |  |
-					| whatToLog.whitelist | Whitelist for lessLogging | Yes |  |
-					| whatToLog.blacklist | Blacklist for lessLogging | Yes |  |
-					| killTimeout | Timeout before killing the proccess during shutdown (in ms) | Yes | 10000 |
-					| fetchTimeout | Timeout before giving up on a value fetch (in ms) | Yes | infinite |
-					| objectLogging | Sends logs in an object format shown below this table | Yes | false |
-					| startingStatus | Status to set while the cluster is getting ready. Follows the format shown below this table. Note that if you want to clear it you will have to do it yourself in your bot.js file. | Yes |  |
-				| customClient | Extended Eris client class (should extend Eris.Client) | Yes |  |</p>
+				<a href="#admiral-options" id="admiral-options" style="color: inherit; text-decoration: none;">
+					<h3>Admiral options</h3>
+				</a>
+				<p>Visit <a href="https://danclay.github.io/eris-fleet/interfaces/options.html">the docs</a> for a complete list of options.</p>
+				<a href="#admiral-events" id="admiral-events" style="color: inherit; text-decoration: none;">
+					<h3>Admiral events</h3>
+				</a>
+				<p>Visit <a href="https://danclay.github.io/eris-fleet/classes/fleet.html">the docs</a> for a complete list of events.</p>
+				<a href="#central-request-handler" id="central-request-handler" style="color: inherit; text-decoration: none;">
+					<h3>Central Request Handler</h3>
+				</a>
+				<p>The central request handler forwards Eris requests to the master process where the request is sent to a single Eris request handler instance. This helps to prevent 429 errors from occuring when you have x number of clusters keeping track of ratelimiting separately. When a response is recieved, it is sent back to the cluster&#39;s Eris client.</p>
+				<a href="#concurrency" id="concurrency" style="color: inherit; text-decoration: none;">
+					<h3>Concurrency</h3>
+				</a>
+				<p>Eris-fleet supports concurrency by starting clusters at the same time based on your bot&#39;s <code>max_concurrency</code> value. The clusters are started together in groups. The <code>max_concurrency</code> value can be overridden with <a href="https://danclay.github.io/eris-fleet/interfaces/options.html#maxconcurrencyoverride">options.maxConcurrencyOverride</a></p>
 				<a href="#formats" id="formats" style="color: inherit; text-decoration: none;">
 					<h3>Formats</h3>
 				</a>
-				<p>Here are the formats mentioned in the table above.</p>
-				<a href="#services-1" id="services-1" style="color: inherit; text-decoration: none;">
-					<h4>services</h4>
-				</a>
-				<pre><code class="language-ts"><span style="color: #267F99">Array</span><span style="color: #000000">&lt;{name: </span><span style="color: #A31515">&quot;name of your service&quot;</span><span style="color: #000000">, path: </span><span style="color: #A31515">&quot;absolute path to your service&quot;</span><span style="color: #000000">}&gt;</span>
-</code></pre>
-				<a href="#objectlogging" id="objectlogging" style="color: inherit; text-decoration: none;">
-					<h4>objectLogging</h4>
-				</a>
-				<pre><code class="language-ts"><span style="color: #000000">{</span>
-<span style="color: #000000">    source: </span><span style="color: #267F99">String</span><span style="color: #000000">, </span>
-<span style="color: #000000">    message: </span><span style="color: #267F99">String</span><span style="color: #000000">, </span>
-<span style="color: #000000">    timestamp: </span><span style="color: #267F99">Number</span>
-<span style="color: #000000">}</span>
-</code></pre>
-				<a href="#startingstatus" id="startingstatus" style="color: inherit; text-decoration: none;">
-					<h4>startingStatus</h4>
-				</a>
-				<pre><code class="language-ts"><span style="color: #000000">{</span>
-<span style="color: #000000">    status: </span><span style="color: #A31515">&quot;online&quot;</span><span style="color: #000000"> | </span><span style="color: #A31515">&quot;idle&quot;</span><span style="color: #000000"> | </span><span style="color: #A31515">&quot;dnd&quot;</span><span style="color: #000000"> | </span><span style="color: #A31515">&quot;invisible&quot;</span><span style="color: #000000">, </span>
-<span style="color: #000000">    </span><span style="color: #001080">game</span><span style="color: #000000">?: {</span>
-<span style="color: #000000">        </span><span style="color: #001080">name:</span><span style="color: #000000"> </span><span style="color: #267F99">String</span><span style="color: #000000">,</span>
-<span style="color: #000000">        type?</span><span style="color: #001080">:</span><span style="color: #000000"> </span><span style="color: #098658">0</span><span style="color: #000000"> | </span><span style="color: #098658">1</span><span style="color: #000000"> | </span><span style="color: #098658">2</span><span style="color: #000000"> | </span><span style="color: #098658">3</span><span style="color: #000000">, </span>
-<span style="color: #000000">        url?</span><span style="color: #001080">:</span><span style="color: #000000"> </span><span style="color: #267F99">String</span>
-<span style="color: #000000">    }</span>
-<span style="color: #000000">}</span>
-</code></pre>
+				<p>Visit <a href="https://danclay.github.io/eris-fleet/modules.html">the docs</a> to view the Typescript interfaces.</p>
 				<a href="#choose-what-to-log" id="choose-what-to-log" style="color: inherit; text-decoration: none;">
 					<h3>Choose what to log</h3>
 				</a>
-				<p>You can choose what to log by using the <code>whatToLog</code> property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are <code>[&#39;gateway_shards&#39;, &#39;admiral_start&#39;, &#39;shards_spread&#39;, &#39;stats_update&#39;, &#39;all_clusters_launched&#39;, &#39;all_services_launched&#39;, &#39;cluster_launch&#39;, &#39;service_launch&#39;, &#39;cluster_start&#39;, &#39;service_start&#39;, &#39;service_ready&#39;, &#39;cluster_ready&#39;, &#39;shard_connect&#39;, &#39;shard_ready&#39;, &#39;shard_disconnect&#39;, &#39;shard_resume&#39;, &#39;service_restart&#39;, &#39;cluster_restart&#39;, &#39;service_shutdown&#39;, &#39;cluster_shutdown&#39;, &#39;total_shutdown&#39;, &#39;resharding_transition_complete&#39;, &#39;resharding_transition&#39;, &#39;resharding_worker_killed&#39;]</code>. Here is an example of choosing what to log:</p>
+				<p>You can choose what to log by using the <code>whatToLog</code> property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are shown <a href="https://danclay.github.io/eris-fleet/modules.html#loggingoptions">on the docs</a>. Here is an example of choosing what to log:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">options</span><span style="color: #000000"> = {</span>
 <span style="color: #000000">    </span><span style="color: #008000">// Your other options</span>
 <span style="color: #000000">    </span><span style="color: #001080">whatToLog:</span><span style="color: #000000"> {</span>
@@ -348,277 +315,15 @@
 				<a href="#ipc" id="ipc" style="color: inherit; text-decoration: none;">
 					<h2>IPC</h2>
 				</a>
-				<p>Clusters and services can use IPC to interact with other clusters, the Admiral, and services. Here are all the IPC uses:</p>
-				<a href="#logging" id="logging" style="color: inherit; text-decoration: none;">
-					<h3>Logging</h3>
-				</a>
-				<table>
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Example</th>
-							<th>Description</th>
-						</tr>
-					</thead>
-					<tbody><tr>
-							<td>log</td>
-							<td><code>process.send({op: &quot;log&quot;, msg: &quot;hello!&quot;})</code></td>
-							<td>Logs an event your <code>index.js</code> file can process.</td>
-						</tr>
-						<tr>
-							<td>debug</td>
-							<td><code>process.send({op: &quot;debug&quot;, msg: &quot;hello!&quot;})</code></td>
-							<td>Logs a debug event your <code>index.js</code> file can process.</td>
-						</tr>
-						<tr>
-							<td>error</td>
-							<td><code>process.send({op: &quot;error&quot;, msg: &quot;uh oh!&quot;})</code></td>
-							<td>Logs an error event your <code>index.js</code> file can process.</td>
-						</tr>
-						<tr>
-							<td>warn</td>
-							<td><code>process.send({op: &quot;warn&quot;, msg: &quot;stuff&quot;})</code></td>
-							<td>Logs a warn event your <code>index.js</code> file can process.</td>
-						</tr>
-				</tbody></table>
-				<p>You can also add a custom source to the log if objectLogging is set to true in the options. Here is an example: <code>process.send({op: &quot;log&quot;, msg: &quot;hello!&quot;, source: &quot;a cool place&quot;})</code></p>
-				<p>If you notice your logs ending up as <code>{ }</code>, try doing the following to your error:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">inspect</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;util&#039;</span><span style="color: #000000">); </span><span style="color: #008000">// No need to install a package, this is included in node</span>
-<span style="color: #0000FF">let</span><span style="color: #000000"> </span><span style="color: #001080">yourError</span><span style="color: #000000"> = </span><span style="color: #267F99">Error</span><span style="color: #000000">; </span><span style="color: #008000">// Whatever error you need to log</span>
-<span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">error</span><span style="color: #000000">(</span><span style="color: #795E26">inspect</span><span style="color: #000000">(</span><span style="color: #001080">yourError</span><span style="color: #000000">)); </span><span style="color: #008000">// Logs the error</span>
-</code></pre>
-				<a href="#restart-clusters" id="restart-clusters" style="color: inherit; text-decoration: none;">
-					<h3>Restart clusters</h3>
-				</a>
-				<p>To restart clusters, you can do the following in your bot.js file. 0 is a placeholder for the ID of the cluster you wish to restart.</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
-</code></pre>
-				<p>The above code will restart the cluster while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. If you want to kill the worker immediately, use <code>this.ipc.restartCluster(0, true)</code>. The second argument is whether you want to preform a hard restart. This is false by default. </p>
-				<p>You can also restart all the clusters. You can do this by using</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllClusters</span><span style="color: #000000">();</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllClusters</span><span style="color: #000000">();</span>
-</code></pre>
-				<p><strong>This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.</strong> If you want to preform a hard restart, use <code>this.ipc.restartAllClusters(true)</code>.</p>
-				<a href="#shutdown-clusters" id="shutdown-clusters" style="color: inherit; text-decoration: none;">
-					<h3>Shutdown clusters</h3>
-				</a>
-				<p>You can shutdown clusters. Use the following to shutdown clusters:</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownCluster</span><span style="color: #000000">(</span><span style="color: #098658">0</span><span style="color: #000000">);</span>
-</code></pre>
-				<p>The above code will shutdown the cluster gracefully. If you would like to kill the worker immediately, use <code>this.ipc.shutdownCluster(0, true)</code>.
-				<strong>You cannot restart a cluster after shutting it down.</strong> A future update may allow this.</p>
-				<a href="#restart-services" id="restart-services" style="color: inherit; text-decoration: none;">
-					<h3>Restart services</h3>
-				</a>
-				<p>To restart services, you can do the following in your bot.js file. &quot;myService&quot; is a placeholder for the name of the service you wish to restart.</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p>The above code will restart the service while avoiding downtime, meaning it will only kill the original worker after the new worker is ready. All commands will be sent to the original worker until the new worker is ready. If you want to kill the worker immediately, use <code>this.ipc.restartService(&quot;myService&quot;, true)</code>. The second argument is whether you want to preform a hard restart. This is false by default. </p>
-				<p>You can also restart all the clusters. You can do this by using </p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllServices</span><span style="color: #000000">();</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">restartAllServices</span><span style="color: #000000">();</span>
-</code></pre>
-				<p>If you want to preform a hard restart, use <code>this.ipc.restartAllClusters(true)</code>.</p>
-				<a href="#shutdown-services" id="shutdown-services" style="color: inherit; text-decoration: none;">
-					<h3>Shutdown services</h3>
-				</a>
-				<p>You can shutdown services. Use the following to shutdown services:</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">shutdownService</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;myService&quot;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p>The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use <code>this.ipc.shutdownService(&quot;myService&quot;, true)</code>.
-				<strong>You cannot restart a service after shutting it down.</strong> A future update may allow this.</p>
-				<a href="#total-shutdown" id="total-shutdown" style="color: inherit; text-decoration: none;">
-					<h3>Total shutdown</h3>
-				</a>
-				<p>You can totally shutdown your fleet using the following:</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">totalShutdown</span><span style="color: #000000">();</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">totalShutdown</span><span style="color: #000000">();</span>
-</code></pre>
-				<p>The above code will shutdown the service gracefully. If you would like to kill the worker immediately, use <code>this.ipc.totalShutdown(true)</code>.
-				<strong>A total shutdown exits all processes, including the master process.</strong></p>
-				<a href="#resharding" id="resharding" style="color: inherit; text-decoration: none;">
-					<h3>Resharding</h3>
-				</a>
-				<p>You can order a resharding with the following:</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
-</code></pre>
-				<p>Resharding attempts to recalculate the number of shards while keeping your bot running. This is done by keeping the old workers running until the new ones are ready. Your code will only load on the new workers once they are all ready for the transition. <strong>This may take up lots of resources since you will have double the workers running on your machine until the transition is complete.</strong></p>
-				<a href="#register" id="register" style="color: inherit; text-decoration: none;">
-					<h3>Register</h3>
-				</a>
-				<p>You can register certain events to a callback. This can recieve <a href="#broadcast">broadcasts</a> and stats. The object sent in the callback is <code>{op: &quot;the event&#39;s name&quot;, msg: &quot;the message&quot;}</code>. Here is an example of registering an event:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">register</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;stats&quot;</span><span style="color: #000000">, (</span><span style="color: #001080">message</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">  </span><span style="color: #008000">// Do stuff</span>
-<span style="color: #000000">  </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">message</span><span style="color: #000000">.</span><span style="color: #001080">msg</span><span style="color: #000000">);</span>
-<span style="color: #000000">});</span>
-</code></pre>
-				<p>You can register to a single event multiple times with multiple functions.</p>
-				<a href="#unregister" id="unregister" style="color: inherit; text-decoration: none;">
-					<h3>Unregister</h3>
-				</a>
-				<p>You can unregister events you registered above. <strong>Note: This will delete all registrations to a single event.</strong></p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">unregister</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;stats&quot;</span><span style="color: #000000">);</span>
-</code></pre>
-				<a href="#broadcast-to-all-workers" id="broadcast-to-all-workers" style="color: inherit; text-decoration: none;">
-					<h3>Broadcast to all workers</h3>
-				</a>
-				<p>You can broadcast events that other clusters can recieve by <a href="#register">registering</a> with the event. The first argument is the name of the event you are broadcasting (this should match the name of the event other clusters are registered to). The second argument is optional and is the the message you want to send. Note that the cluster sending this will also recieve the broadcast since this broadcasts to <strong>all</strong> clusters.</p>
-				<pre><code class="language-js"><span style="color: #008000">// from a cluster/service</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;hello clusters!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Want to chat?&quot;</span><span style="color: #000000">);</span>
-<span style="color: #008000">// or from the master process</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;hello clusters!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Want to chat?&quot;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p><strong>The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.</strong></p>
-				<a href="#send-to-a-specific-cluster" id="send-to-a-specific-cluster" style="color: inherit; text-decoration: none;">
-					<h3>Send to a specific cluster</h3>
-				</a>
-				<p>You can send a message from one cluster to another specific cluster based on the cluster ID. The first argument is the ID of the cluster to send the message to. The second argument is the name of the event the other cluster should be registered to. The third argument is optional and is the message to send.</p>
-				<pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">sendTo</span><span style="color: #000000">(</span><span style="color: #098658">1</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Hello cluster 1!&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;Squad up?&quot;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p><strong>The following event namespaces are occupied by eris-fleet: connect, fetchUser, fetchChannel, fetchGuild, fetchMember, return, collectStats, shutdown, loadCode, command, stats. Issues may occur if you broadcast these events.</strong></p>
-				<a href="#send-an-event-to-the-master-process" id="send-an-event-to-the-master-process" style="color: inherit; text-decoration: none;">
-					<h3>Send an event to the master process</h3>
-				</a>
-				<p>You can send a message through Admiral to your index.js file. The arguments are the same as broadcasting to workers. Here are examples:</p>
-				<pre><code class="language-js"><span style="color: #008000">// Sending the event</span>
-<span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">admiralBroadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Hello&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;I&#039;m working!&quot;</span><span style="color: #000000">);</span>
-
-<span style="color: #008000">// Receiving the event in your index.js file</span>
-<span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">on</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Hello&quot;</span><span style="color: #000000">, (</span><span style="color: #001080">r</span><span style="color: #000000">) </span><span style="color: #0000FF">=&gt;</span><span style="color: #000000"> {</span>
-<span style="color: #000000">    </span><span style="color: #001080">console</span><span style="color: #000000">.</span><span style="color: #795E26">log</span><span style="color: #000000">(</span><span style="color: #001080">r</span><span style="color: #000000">);</span>
-<span style="color: #000000">});</span>
-</code></pre>
-				<a href="#fetch-a-user" id="fetch-a-user" style="color: inherit; text-decoration: none;">
-					<h3>Fetch a user</h3>
-				</a>
-				<p>Fetches a user from another cluster. Not much to explain here. The only argument used should be the ID of the user. Be sure to <code>await</code> this or use <code>.then()</code>.</p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">fetchUser</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;123456789&#039;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p><strong>This will return null if no value can be found or if it takes too long (See fetchTimout in options)</strong></p>
-				<a href="#fetch-a-guild" id="fetch-a-guild" style="color: inherit; text-decoration: none;">
-					<h3>Fetch a guild</h3>
-				</a>
-				<p>Fetches a guild from another cluster. The only argument used should be the ID of the guild. Be sure to <code>await</code> this or use <code>.then()</code>.</p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">fetchGuild</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;123456789&#039;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p><strong>This will return null if no value can be found or if it takes too long (See fetchTimout in options)</strong></p>
-				<a href="#fetch-a-channel" id="fetch-a-channel" style="color: inherit; text-decoration: none;">
-					<h3>Fetch a channel</h3>
-				</a>
-				<p>Fetches a channel from another cluster. The only argument used should be the ID of the channel. Be sure to <code>await</code> this or use <code>.then()</code>.</p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">fetchChannel</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;123456789&#039;</span><span style="color: #000000">);</span>
-</code></pre>
-				<p><strong>This will return null if no value can be found or if it takes too long (See fetchTimout in options)</strong></p>
-				<a href="#fetch-a-member" id="fetch-a-member" style="color: inherit; text-decoration: none;">
-					<h3>Fetch a member</h3>
-				</a>
-				<p>Fetches a member from another cluster. The first argument should be the ID of the guild. The second argument should the be ID of the member. Be sure to <code>await</code> this or use <code>.then()</code>.</p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">fetchMember</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;123456789&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;987654321&#039;</span><span style="color: #000000">); </span>
-</code></pre>
-				<p><strong>This will return null if no value can be found or if it takes too long (See fetchTimout in options)</strong></p>
-				<a href="#send-a-command-to-a-service" id="send-a-command-to-a-service" style="color: inherit; text-decoration: none;">
-					<h3>Send a command to a service</h3>
-				</a>
-				<p>Send a command to a service. The arguments are as follows:
-					| Argument  | Description                    | Optional? | Default |
-					|-----------|--------------------------------|-----------|---------|
-					| 1st       | Name of the service            | No        |         |
-					| 2nd       | Message to send to the command | Yes       | null    |
-				| 3rd       | If you want a response or not  | Yes       | false   |</p>
-				<p>Be sure to use <code>await</code> or <code>.then()</code>, especially if you expect a response.</p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">command</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;ServiceName&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;hello service!&quot;</span><span style="color: #000000">, </span><span style="color: #0000FF">true</span><span style="color: #000000">); </span>
-</code></pre>
-				<p>You can catch errors with service commands with <code>.catch()</code>.</p>
-				<a href="#get-the-latest-stats" id="get-the-latest-stats" style="color: inherit; text-decoration: none;">
-					<h3>Get the latest stats</h3>
-				</a>
-				<p>Gets the latest stats. This is an alternative to <a href="#register">registering</a> the &quot;stats&quot; event. Be sure to use <code>await</code> or <code>.then()</code></p>
-				<pre><code class="language-js"><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">getStats</span><span style="color: #000000">();</span>
-</code></pre>
-				<a href="#do-stuff-from-your-master-process" id="do-stuff-from-your-master-process" style="color: inherit; text-decoration: none;">
-					<h2>Do stuff from your master process</h2>
-				</a>
-				<p>You can do a few things from your master process. Here are some examples:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">isMaster</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;cluster&#039;</span><span style="color: #000000">);</span>
-<span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">Fleet</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;eris-fleet&#039;</span><span style="color: #000000">);</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">options</span><span style="color: #000000"> = {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// your options</span>
-<span style="color: #000000">};</span>
-
-<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">Admiral</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Fleet</span><span style="color: #000000">(</span><span style="color: #001080">options</span><span style="color: #000000">);</span>
-
-<span style="color: #AF00DB">if</span><span style="color: #000000"> (</span><span style="color: #001080">isMaster</span><span style="color: #000000">) {</span>
-<span style="color: #000000">    </span><span style="color: #008000">// Broadcasts a message</span>
-<span style="color: #000000">    </span><span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">broadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;the operation&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;an optional message&quot;</span><span style="color: #000000">);</span>
-<span style="color: #000000">    </span><span style="color: #008000">// Reshards</span>
-<span style="color: #000000">    </span><span style="color: #001080">Admiral</span><span style="color: #000000">.</span><span style="color: #795E26">reshard</span><span style="color: #000000">();</span>
-<span style="color: #000000">    </span><span style="color: #008000">// NOTE: More options listed in the IPC section of this document</span>
-<span style="color: #000000">}</span>
-
-</code></pre>
+				<p>Clusters and services can use IPC to interact with other clusters, the Admiral, and services. Visit <a href="https://danclay.github.io/eris-fleet/classes/ipc.html">the IPC docs</a> to view available methods.</p>
 				<a href="#stats" id="stats" style="color: inherit; text-decoration: none;">
 					<h2>Stats</h2>
 				</a>
-				<p>Stats are given in the following object format:</p>
-				<pre><code class="language-js"><span style="color: #000000">{</span>
-<span style="color: #000000">    guilds: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of guilds the bot is in</span>
-<span style="color: #000000">    users: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of users the bot has cached</span>
-<span style="color: #000000">    clustersRam: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// Total RAM used by all clusters in MB</span>
-<span style="color: #000000">    servicesRam: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// Total RAM used by all services in MB</span>
-<span style="color: #000000">    masterRam: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// Total RAM used by the master process in MB</span>
-<span style="color: #000000">    totalRam: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// The real total rss.</span>
-<span style="color: #000000">    voice: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of voice connection the bot is in</span>
-<span style="color: #000000">    largeGuilds: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of &quot;large&quot; guilds the bot is in</span>
-<span style="color: #000000">    shardCount: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of shards</span>
-<span style="color: #000000">    clusters: </span><span style="color: #267F99">Array</span><span style="color: #000000">&lt;{ </span><span style="color: #008000">// Array of stats for clusters (you can use the length property of this to get the cluster count)</span>
-<span style="color: #000000">        id: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// ID of the cluster</span>
-<span style="color: #000000">        guilds: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of guilds the cluster is in</span>
-<span style="color: #000000">        users: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of users the cluster has cached</span>
-<span style="color: #000000">        uptime: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// Uptime of the cluster</span>
-<span style="color: #000000">        voice: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of voice connections the cluster is in</span>
-<span style="color: #000000">        largeGuilds: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of &quot;large&quot; guilds the cluster is in</span>
-<span style="color: #000000">        ram: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// RAM the cluster&#039;s process is using</span>
-<span style="color: #000000">        shardStats: </span><span style="color: #267F99">Array</span><span style="color: #000000">&lt;{ </span><span style="color: #008000">// Array of stats for the shards in the cluster (you can use the length property of this to get the shard count of the cluster)</span>
-<span style="color: #000000">            latency: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// Latency of the shard</span>
-<span style="color: #000000">            id: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// ID of the shard</span>
-<span style="color: #000000">            ready: </span><span style="color: #267F99">Boolean</span><span style="color: #000000">, </span><span style="color: #008000">// Whether the shard is ready</span>
-<span style="color: #000000">            status: </span><span style="color: #A31515">&#039;disconnected&#039;</span><span style="color: #000000"> | </span><span style="color: #A31515">&#039;connecting&#039;</span><span style="color: #000000"> | </span><span style="color: #A31515">&#039;handshaking&#039;</span><span style="color: #000000"> | </span><span style="color: #A31515">&#039;ready&#039;</span><span style="color: #000000">, </span><span style="color: #008000">// The status of the shard,</span>
-<span style="color: #000000">            guilds: </span><span style="color: #267F99">Number</span><span style="color: #000000">, </span><span style="color: #008000">// # of guilds the shard services</span>
-<span style="color: #000000">            users: </span><span style="color: #267F99">Number</span><span style="color: #000000"> </span><span style="color: #008000">// # of members the shard services</span>
-<span style="color: #000000">        }&gt;</span>
-<span style="color: #000000">    }&gt;,</span>
-<span style="color: #000000">    services: </span><span style="color: #267F99">Array</span><span style="color: #000000">&lt;{</span>
-<span style="color: #000000">        </span><span style="color: #001080">name</span><span style="color: #000000">: </span><span style="color: #267F99">String</span><span style="color: #000000">, </span><span style="color: #008000">// Name of the service</span>
-<span style="color: #000000">        </span><span style="color: #001080">ram</span><span style="color: #000000">: </span><span style="color: #267F99">Number</span><span style="color: #000000"> </span><span style="color: #008000">// RAM the service&#039;s process is using</span>
-<span style="color: #000000">    }&gt; </span><span style="color: #008000">// Array of stats for services</span>
-<span style="color: #000000">}</span>
-</code></pre>
+				<p>Stats are given in <a href="https://danclay.github.io/eris-fleet/interfaces/stats.html">this</a> format.</p>
 				<a href="#using-a-specific-version-of-eris-or-a-modified-version-of-eris" id="using-a-specific-version-of-eris-or-a-modified-version-of-eris" style="color: inherit; text-decoration: none;">
-					<h2>Using a specific version of eris or a modified version of eris</h2>
+					<h2>Using a specific version of Eris or a modified version of Eris</h2>
 				</a>
-				<p>You can use an extended Eris client by passing it to the options (see the options section).</p>
+				<p>You can use an extended Eris client by passing it to the Options. (see the <a href="https://danclay.github.io/eris-fleet/interfaces/options.html#customclient">options.customClient</a> section).</p>
 				<p>Eris-fleet is able to use packages such as eris-additions if you desire. To do so, modify your bot file to match the following template:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">BaseClusterWorker</span><span style="color: #000000"> } = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;eris-fleet&#039;</span><span style="color: #000000">);</span>
 
@@ -659,6 +364,9 @@
 					<li class=" tsd-kind-class">
 						<a href="classes/fleet.html" class="tsd-kind-icon">Fleet</a>
 					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/ipc.html" class="tsd-kind-icon">IPC</a>
+					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/baseclusterworkersetup.html" class="tsd-kind-icon">Base<wbr>Cluster<wbr>Worker<wbr>Setup</a>
 					</li>
@@ -666,10 +374,22 @@
 						<a href="interfaces/baseserviceworkersetup.html" class="tsd-kind-icon">Base<wbr>Service<wbr>Worker<wbr>Setup</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/clustercollection.html" class="tsd-kind-icon">Cluster<wbr>Collection</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/clusterstats.html" class="tsd-kind-icon">Cluster<wbr>Stats</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/objectlog.html" class="tsd-kind-icon">Object<wbr>Log</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/options.html" class="tsd-kind-icon">Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/reshardoptions.html" class="tsd-kind-icon">Reshard<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/servicecollection.html" class="tsd-kind-icon">Service<wbr>Collection</a>
 					</li>
 					<li class=" tsd-kind-interface">
 						<a href="interfaces/servicestats.html" class="tsd-kind-icon">Service<wbr>Stats</a>
@@ -678,7 +398,13 @@
 						<a href="interfaces/shardstats.html" class="tsd-kind-icon">Shard<wbr>Stats</a>
 					</li>
 					<li class=" tsd-kind-interface">
+						<a href="interfaces/startingstatus.html" class="tsd-kind-icon">Starting<wbr>Status</a>
+					</li>
+					<li class=" tsd-kind-interface">
 						<a href="interfaces/stats.html" class="tsd-kind-icon">Stats</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="modules.html#loggingoptions" class="tsd-kind-icon">Logging<wbr>Options</a>
 					</li>
 				</ul>
 			</nav>
