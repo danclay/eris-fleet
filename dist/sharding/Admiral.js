@@ -248,12 +248,15 @@ class Admiral extends events_1.EventEmitter {
                             const launchedWorker = this.launchingWorkers.get(worker.id);
                             if (launchedWorker) {
                                 if (launchedWorker.cluster) {
-                                    this.clusters.set(launchedWorker.cluster.clusterID, {
-                                        workerID: worker.id,
-                                        clusterID: launchedWorker.cluster.clusterID,
-                                        firstShardID: launchedWorker.cluster.firstShardID,
-                                        lastShardID: launchedWorker.cluster.lastShardID,
-                                    });
+                                    // don't change cluster map if it hasn't restarted yet
+                                    if (!this.softKills.get(worker.id)) {
+                                        this.clusters.set(launchedWorker.cluster.clusterID, {
+                                            workerID: worker.id,
+                                            clusterID: launchedWorker.cluster.clusterID,
+                                            firstShardID: launchedWorker.cluster.firstShardID,
+                                            lastShardID: launchedWorker.cluster.lastShardID,
+                                        });
+                                    }
                                     this.fetches.forEach((fetch) => {
                                         process.nextTick(() => worker.send(fetch));
                                     });
@@ -261,11 +264,13 @@ class Admiral extends events_1.EventEmitter {
                                     this.emit("clusterReady", launchedWorker.cluster);
                                 }
                                 else if (launchedWorker.service) {
-                                    this.services.set(launchedWorker.service.serviceName, {
-                                        workerID: worker.id,
-                                        serviceName: launchedWorker.service.serviceName,
-                                        path: launchedWorker.service.path,
-                                    });
+                                    if (!this.softKills.get(worker.id)) {
+                                        this.services.set(launchedWorker.service.serviceName, {
+                                            workerID: worker.id,
+                                            serviceName: launchedWorker.service.serviceName,
+                                            path: launchedWorker.service.path,
+                                        });
+                                    }
                                     // Emit a service is ready
                                     this.emit("serviceReady", launchedWorker.service);
                                 }
@@ -959,8 +964,10 @@ class Admiral extends events_1.EventEmitter {
     */
     restartAllClusters(hard) {
         const queueItems = [];
+        let completed = 0;
         this.clusters.forEach((cluster) => {
             process.nextTick(() => {
+                completed++;
                 const workerID = this.clusters.find((c) => c.clusterID == cluster.clusterID).workerID;
                 const worker = master.workers[workerID];
                 if (worker) {
@@ -968,9 +975,12 @@ class Admiral extends events_1.EventEmitter {
                     if (restartItem)
                         queueItems.push(restartItem);
                 }
+                // run
+                if (completed >= this.clusters.size) {
+                    this.queue.bunkItems(queueItems);
+                }
             });
         });
-        this.queue.bunkItems(queueItems);
     }
     /**
      * Restarts a specific service
@@ -994,8 +1004,10 @@ class Admiral extends events_1.EventEmitter {
     */
     restartAllServices(hard) {
         const queueItems = [];
+        let completed = 0;
         this.services.forEach((service) => {
             process.nextTick(() => {
+                completed++;
                 const workerID = this.services.find((s) => s.serviceName == service.serviceName).workerID;
                 const worker = master.workers[workerID];
                 if (worker) {
@@ -1003,9 +1015,12 @@ class Admiral extends events_1.EventEmitter {
                     if (restartItem)
                         queueItems.push(restartItem);
                 }
+                // run
+                if (completed >= this.services.size) {
+                    this.queue.bunkItems(queueItems);
+                }
             });
         });
-        this.queue.bunkItems(queueItems);
     }
     /**
      * Shuts down a cluster
@@ -1094,6 +1109,18 @@ class Admiral extends events_1.EventEmitter {
                 }
             };
             const queueItems = [];
+            let completedVal = 0;
+            const checkCompleted = () => {
+                completedVal++;
+                if (completedVal >= this.clusters.size + this.services.size + this.launchingWorkers.size) {
+                    if (this.shutdownTogether) {
+                        this.queue.bunkItems(queueItems);
+                    }
+                    else {
+                        queueItems.forEach(qi => this.queue.item(qi));
+                    }
+                }
+            };
             this.clusters.forEach((cluster) => {
                 total++;
                 process.nextTick(() => {
@@ -1101,6 +1128,7 @@ class Admiral extends events_1.EventEmitter {
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
+                        checkCompleted();
                     }
                 });
             });
@@ -1111,6 +1139,7 @@ class Admiral extends events_1.EventEmitter {
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
+                        checkCompleted();
                     }
                 });
             });
@@ -1121,15 +1150,10 @@ class Admiral extends events_1.EventEmitter {
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
+                        checkCompleted();
                     }
                 });
             });
-            if (this.shutdownTogether) {
-                this.queue.bunkItems(queueItems);
-            }
-            else {
-                queueItems.forEach(qi => this.queue.item(qi));
-            }
         }
     }
     /** Reshard
@@ -1497,6 +1521,14 @@ class Admiral extends events_1.EventEmitter {
                 NODE_ENV: process.env.NODE_ENV,
                 type: "cluster",
             });
+            this.launchingWorkers.set(newWorker.id, {
+                cluster: {
+                    firstShardID: cluster.firstShardID,
+                    lastShardID: cluster.lastShardID,
+                    clusterID: cluster.clusterID,
+                    workerID: newWorker.id,
+                }
+            });
             if (soft) {
                 // Preform soft restart
                 this.pauseStats = true;
@@ -1563,6 +1595,13 @@ class Admiral extends events_1.EventEmitter {
             const newWorker = master.fork({
                 NODE_ENV: process.env.NODE_ENV,
                 type: "service",
+            });
+            this.launchingWorkers.set(newWorker.id, {
+                service: {
+                    path: service.path,
+                    serviceName: service.serviceName,
+                    workerID: newWorker.id,
+                }
             });
             if (soft) {
                 // Preform soft restart
