@@ -205,6 +205,7 @@ class Admiral extends events_1.EventEmitter {
                 shardCount: 0,
                 clusters: [],
                 services: [],
+                timestamp: new Date().getTime()
             };
         }
         if (this.clusterCount === "auto")
@@ -633,6 +634,7 @@ class Admiral extends events_1.EventEmitter {
                                 };
                                 this.stats = Object.assign(this.prelimStats, {
                                     clusters: this.prelimStats.clusters.sort(compare),
+                                    timestamp: new Date().getTime()
                                 });
                                 this.emit("stats", this.stats);
                                 if (this.whatToLog.includes("stats_update")) {
@@ -1114,10 +1116,10 @@ class Admiral extends events_1.EventEmitter {
                 completedVal++;
                 if (completedVal >= this.clusters.size + this.services.size + this.launchingWorkers.size) {
                     if (this.shutdownTogether) {
-                        this.queue.bunkItems(queueItems);
+                        this.queue.bunkItems(queueItems, "shutdownWorker");
                     }
                     else {
-                        queueItems.forEach(qi => this.queue.item(qi));
+                        queueItems.forEach(qi => this.queue.item(qi, "shutdownWorker"));
                     }
                 }
             };
@@ -1352,13 +1354,13 @@ class Admiral extends events_1.EventEmitter {
     }
     async calculateShards() {
         let shards = this.shardCount;
+        const gateway = await this.eris.getBotGateway();
+        if (!this.maxConcurrencyOverride)
+            this.maxConcurrency = gateway.session_start_limit.max_concurrency;
+        if (this.whatToLog.includes("gateway_shards")) {
+            this.log(`Gateway recommends ${gateway.shards} shards. Using ${this.maxConcurrency} max concurrency.`, "Admiral");
+        }
         if (shards === "auto") {
-            const gateway = await this.eris.getBotGateway();
-            if (!this.maxConcurrencyOverride)
-                this.maxConcurrency = gateway.session_start_limit.max_concurrency;
-            if (this.whatToLog.includes("gateway_shards")) {
-                this.log(`Gateway recommends ${gateway.shards} shards. Using ${this.maxConcurrency} max concurrency.`, "Admiral");
-            }
             shards = Number(gateway.shards);
             if (shards === 1) {
                 return Promise.resolve(shards);
@@ -1710,6 +1712,7 @@ class Admiral extends events_1.EventEmitter {
                     shardCount: 0,
                     clusters: [],
                     services: [],
+                    timestamp: 0
                 };
                 this.statsWorkersCounted = 0;
                 this.clusters.forEach((c) => {

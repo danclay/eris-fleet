@@ -223,6 +223,8 @@ export interface Stats {
     shardCount: number;
     clusters: ClusterStats[];
     services: ServiceStats[];
+    /** Timestamp of when the stats were collected */
+    timestamp: number;
 }
 export interface ClusterCollection {
     workerID: number;
