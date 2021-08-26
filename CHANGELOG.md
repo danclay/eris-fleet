@@ -19,7 +19,8 @@ This may skip some little bug fixes.
 - Added option to allow services to start simultaneously
 - Added option to load code immediately
 - Added option to disable the default function of replacing the console methods in workers
-- Added some new stuff to stats (ipc latency, members, and timestamp for when stats were collected)
+- Added some new stuff to stats (ipc latency, request handler latencyRef, members, and timestamp for when stats were collected)
+- Ability to force eris-fleet to collect fresh stats
 
 ### Breaking changes:
 

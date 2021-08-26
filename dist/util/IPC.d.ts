@@ -75,16 +75,17 @@ export declare class IPC extends EventEmitter {
      * });
      * ```
     */
-    register(event: string, callback: (msg: unknown) => void): void;
+    register(event: string, callback: (msg: any) => void): void;
     /**
      * Unregisters an event
      * @param event Name of the event
+     * @param callback Function which was listening. Leave empty if you want to delete all listeners registered to this event name.
      * @example
      * ```js
      * this.ipc.unregister("stats");
      * ```
     */
-    unregister(event: string): void;
+    unregister(event: string, callback?: (msg: any) => void): void;
     /**
      * Broadcast an event to all clusters and services.
      * The event can be listened to with {@link register}
@@ -217,6 +218,11 @@ export declare class IPC extends EventEmitter {
     */
     getStats(): Promise<Admiral.Stats>;
     /**
+     * Force eris-fleet to fetch fresh stats
+     * @returns Promise with stats
+     */
+    collectStats(): Promise<Admiral.Stats>;
+    /**
      * Restarts a specific cluster
      * @param clusterID ID of the cluster to restart
      * @param hard Whether to ignore the soft shutdown function
@@ -236,10 +242,6 @@ export declare class IPC extends EventEmitter {
     /**
      * Restarts all services
      * @param hard Whether to ignore the soft shutdown function
-     * @defaultValue false
-     *
-     * @param test test
-     * @defaultValue 2
     */
     restartAllServices(hard?: boolean): void;
     /**

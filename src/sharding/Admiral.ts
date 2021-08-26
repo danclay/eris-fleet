@@ -240,6 +240,8 @@ export interface ClusterStats {
 	shards: ShardStats[];
 	/** One-way IPC latency between the admiral and the cluster in ms */
 	ipcLatency: number;
+	/** Latency for the request handler if not using the central request handler */
+	requestHandlerLatencyRef?: Eris.LatencyRef;
 }
 
 export interface ServiceStats {
@@ -269,6 +271,8 @@ export interface Stats {
 	services: ServiceStats[];
 	/** Timestamp of when the stats were collected */
 	timestamp: number;
+	/** Latency for the request handler if using the central request handler */
+	centralRequestHandlerLatencyRef?: Eris.LatencyRef;
 }
 
 export interface ClusterCollection {
@@ -362,11 +366,13 @@ export class Admiral extends EventEmitter {
 	/** Services to create */
 	private servicesToCreate?: ServiceCreator[];
 	private queue: Queue;
-	private eris: Eris.Client;
+	/** Eris client used to get the gateway information and to send requests when using the central request handler */
+	public eris: Eris.Client;
 	private prelimStats?: Stats;
 	private statsWorkersCounted?: number;
 	private chunks?: number[][];
 	private pauseStats!: boolean;
+	private collectingStats!: boolean;
 	private whatToLog: LoggingOptions[];
 	private softKills: Map<
 		number,
@@ -526,7 +532,8 @@ export class Admiral extends EventEmitter {
 				shardCount: 0,
 				clusters: [],
 				services: [],
-				timestamp: new Date().getTime()
+				timestamp: new Date().getTime(),
+				centralRequestHandlerLatencyRef: undefined
 			};
 		}
 
@@ -965,6 +972,7 @@ export class Admiral extends EventEmitter {
 									clusters: this.prelimStats!.clusters.sort(compare),
 									timestamp: new Date().getTime()
 								});
+								this.collectingStats = false;
 								this.emit("stats", this.stats);
 								if (this.whatToLog.includes("stats_update")) {
 									this.log("Stats updated.", "Admiral");
@@ -988,6 +996,18 @@ export class Admiral extends EventEmitter {
 							value: this.stats,
 						});
 
+						break;
+					}
+					case "executeStats": {
+						this.collectStats()
+							.then(stats => {
+								worker.send({
+									op: "return",
+									id: "statsReturn",
+									value: stats,
+								});
+							});
+							
 						break;
 					}
 					case "broadcast": {
@@ -1396,7 +1416,7 @@ export class Admiral extends EventEmitter {
 	}
 
 	/**
-	 * Shuts down a cluster
+	 * Shuts down a service
 	 * @param serviceName The name of the service
 	 * @param hard Whether to ignore the soft shutdown function
 	*/
@@ -1421,6 +1441,11 @@ export class Admiral extends EventEmitter {
 	 * Create a service
 	 * @param serviceName Unique ame of the service
 	 * @param servicePath Absolute path to the service file
+	 * @example
+	 * ```js
+	 * const path = require("path");
+	 * admiral.createService("myService", path.join(__dirname, "./service.js"))
+	 * ```
 	 */
 	public createService(serviceName: string, servicePath: string): void {
 		// if path is not absolute
@@ -1517,7 +1542,8 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	/** Reshard 
+	/**
+	 * Reshards all clusters
 	 * @param options Change the resharding options
 	*/
 	public reshard(options?: ReshardOptions): void {
@@ -1581,6 +1607,41 @@ export class Admiral extends EventEmitter {
 		} else {
 			this.error("Already resharding!", "Admiral");
 		}
+	}
+
+	/**
+	 * Broadcast an event to all clusters and services. 
+	 * The event can be listened to with {@link register}
+	 * @param op Name of the event
+	 * @param message Message to send
+	 * @example
+	 * ```js
+	 * admiral.broadcast("hello clusters!", "Want to chat?");
+	 * ```
+	*/
+	public broadcast(op: string, msg: unknown): void {
+		if (!msg) msg = null;
+		this.clusters.forEach((c: ClusterCollection) => {
+			const worker = master.workers[c.workerID];
+			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
+		});
+		this.services.forEach((s: ServiceCollection) => {
+			const worker = master.workers[s.workerID];
+			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
+		});
+	}
+
+	/**
+	 * Force eris-fleet to fetch fresh stats
+	 * @returns Promise with stats
+	 */
+	public collectStats(): Promise<Stats> {
+		this.executeStats();
+		return new Promise((res, rej) => {
+			this.once("stats", (stats: Stats) => {
+				res(stats);
+			});
+		});
 	}
 
 	private async startService(servicesToStart?: ServiceCreator[], onlyServices?: boolean) {
@@ -2076,60 +2137,52 @@ export class Admiral extends EventEmitter {
 		}, this.fetchTimeout);
 	}
 
+	private executeStats() {
+		if (this.collectingStats || this.pauseStats) return;
+		this.collectingStats = true;
+		this.prelimStats = {
+			guilds: 0,
+			users: 0,
+			members: 0,
+			clustersRam: 0,
+			servicesRam: 0,
+			masterRam: 0,
+			totalRam: 0,
+			voice: 0,
+			largeGuilds: 0,
+			shardCount: 0,
+			clusters: [],
+			services: [],
+			timestamp: 0,
+			centralRequestHandlerLatencyRef: this.useCentralRequestHandler ? this.eris.requestHandler.latencyRef : undefined
+		};
+		this.statsWorkersCounted = 0;
+		this.clusters.forEach((c: ClusterCollection) => {
+			process.nextTick(() => {
+				const worker = master.workers[c.workerID];
+				if (worker) worker.send({ op: "collectStats" });
+			});
+		});
+		this.services.forEach((s: ServiceCollection) => {
+			process.nextTick(() => {
+				const worker = master.workers[s.workerID];
+				if (worker) worker.send({ op: "collectStats" });
+			});
+		});
+	}
+
 	private startStats() {
+		this.collectingStats = false;
 		this.pauseStats = false;
 		this.statsStarted = true;
 		if (this.statsInterval !== "disable") {
-			const execute = () => {
-				this.prelimStats = {
-					guilds: 0,
-					users: 0,
-					members: 0,
-					clustersRam: 0,
-					servicesRam: 0,
-					masterRam: 0,
-					totalRam: 0,
-					voice: 0,
-					largeGuilds: 0,
-					shardCount: 0,
-					clusters: [],
-					services: [],
-					timestamp: 0
-				};
-				this.statsWorkersCounted = 0;
-				this.clusters.forEach((c: ClusterCollection) => {
-					process.nextTick(() => {
-						const worker = master.workers[c.workerID];
-						if (worker) worker.send({ op: "collectStats" });
-					});
-				});
-				this.services.forEach((s: ServiceCollection) => {
-					process.nextTick(() => {
-						const worker = master.workers[s.workerID];
-						if (worker) worker.send({ op: "collectStats" });
-					});
-				});
-			};
-
 			setInterval(() => {
-				if (!this.pauseStats) execute();
+				this.executeStats();
 			}, this.statsInterval);
 
 			// First execution
-			execute();
+			this.executeStats();
 		}
-	}
-
-	public broadcast(op: string, msg: unknown): void {
-		if (!msg) msg = null;
-		this.clusters.forEach((c: ClusterCollection) => {
-			const worker = master.workers[c.workerID];
-			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
-		});
-		this.services.forEach((s: ServiceCollection) => {
-			const worker = master.workers[s.workerID];
-			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
-		});
 	}
 
 	private ipcLog(type: "log" | "error" | "warn" | "debug", message: unknown, worker: master.Worker) {

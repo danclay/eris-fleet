@@ -136,7 +136,7 @@ export class IPC extends EventEmitter {
 	 * });
 	 * ```
 	*/
-	public register(event: string, callback: (msg: unknown) => void): void {
+	public register(event: string, callback: (msg: any) => void): void {
 		const existingEvent = this.events.get(event);
 		if (existingEvent) {
 			this.events.set(event, existingEvent.concat([callback]));
@@ -148,13 +148,25 @@ export class IPC extends EventEmitter {
 	/** 
 	 * Unregisters an event
 	 * @param event Name of the event
+	 * @param callback Function which was listening. Leave empty if you want to delete all listeners registered to this event name.
 	 * @example
 	 * ```js
 	 * this.ipc.unregister("stats");
 	 * ```
 	*/
-	public unregister(event:string): void {
-		this.events.delete(event);
+	public unregister(event: string, callback?: (msg: any) => void): void {
+		const eventListeners = this.events.get(event);
+		if (!callback || !eventListeners) {
+			this.events.delete(event);
+			return;
+		}
+		if (eventListeners.length <= 1) {
+			this.events.delete(event);
+			return;
+		}
+		const listenerIndex = eventListeners.findIndex((func) => func === callback);
+		if (!listenerIndex && listenerIndex !== 0) return;
+		eventListeners.splice(listenerIndex, 1);
 	}
 
 	/**
@@ -489,6 +501,21 @@ export class IPC extends EventEmitter {
 			this.once("statsReturn", callback);
 		});
 	}
+	
+	/**
+	 * Force eris-fleet to fetch fresh stats
+	 * @returns Promise with stats
+	 */
+	public async collectStats(): Promise<Admiral.Stats> {
+		if (process.send) process.send({op: "executeStats"});
+		
+		return new Promise((resolve, reject) => {
+			const callback = (r: Admiral.Stats) => {
+				resolve(r);
+			};
+			this.once("statsReturn", callback);
+		});
+	}
 
 	/**
 	 * Restarts a specific cluster
@@ -519,10 +546,6 @@ export class IPC extends EventEmitter {
 	/**
 	 * Restarts all services
 	 * @param hard Whether to ignore the soft shutdown function
-	 * @defaultValue false
-	 * 
-	 * @param test test
-	 * @defaultValue 2
 	*/
 	public restartAllServices(hard?: boolean): void {
 		if (process.send) process.send({op: "restartAllServices", hard: hard ? true : false});

@@ -126,13 +126,26 @@ class IPC extends events_1.EventEmitter {
     /**
      * Unregisters an event
      * @param event Name of the event
+     * @param callback Function which was listening. Leave empty if you want to delete all listeners registered to this event name.
      * @example
      * ```js
      * this.ipc.unregister("stats");
      * ```
     */
-    unregister(event) {
-        this.events.delete(event);
+    unregister(event, callback) {
+        const eventListeners = this.events.get(event);
+        if (!callback || !eventListeners) {
+            this.events.delete(event);
+            return;
+        }
+        if (eventListeners.length <= 1) {
+            this.events.delete(event);
+            return;
+        }
+        const listenerIndex = eventListeners.findIndex((func) => func === callback);
+        if (!listenerIndex && listenerIndex !== 0)
+            return;
+        eventListeners.splice(listenerIndex, 1);
     }
     /**
      * Broadcast an event to all clusters and services.
@@ -469,6 +482,20 @@ class IPC extends events_1.EventEmitter {
         });
     }
     /**
+     * Force eris-fleet to fetch fresh stats
+     * @returns Promise with stats
+     */
+    async collectStats() {
+        if (process.send)
+            process.send({ op: "executeStats" });
+        return new Promise((resolve, reject) => {
+            const callback = (r) => {
+                resolve(r);
+            };
+            this.once("statsReturn", callback);
+        });
+    }
+    /**
      * Restarts a specific cluster
      * @param clusterID ID of the cluster to restart
      * @param hard Whether to ignore the soft shutdown function
@@ -497,10 +524,6 @@ class IPC extends events_1.EventEmitter {
     /**
      * Restarts all services
      * @param hard Whether to ignore the soft shutdown function
-     * @defaultValue false
-     *
-     * @param test test
-     * @defaultValue 2
     */
     restartAllServices(hard) {
         if (process.send)

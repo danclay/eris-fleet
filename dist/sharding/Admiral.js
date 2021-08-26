@@ -205,7 +205,8 @@ class Admiral extends events_1.EventEmitter {
                 shardCount: 0,
                 clusters: [],
                 services: [],
-                timestamp: new Date().getTime()
+                timestamp: new Date().getTime(),
+                centralRequestHandlerLatencyRef: undefined
             };
         }
         if (this.clusterCount === "auto")
@@ -636,6 +637,7 @@ class Admiral extends events_1.EventEmitter {
                                     clusters: this.prelimStats.clusters.sort(compare),
                                     timestamp: new Date().getTime()
                                 });
+                                this.collectingStats = false;
                                 this.emit("stats", this.stats);
                                 if (this.whatToLog.includes("stats_update")) {
                                     this.log("Stats updated.", "Admiral");
@@ -655,6 +657,17 @@ class Admiral extends events_1.EventEmitter {
                                 op: "return",
                                 id: "statsReturn",
                                 value: this.stats,
+                            });
+                            break;
+                        }
+                        case "executeStats": {
+                            this.collectStats()
+                                .then(stats => {
+                                worker.send({
+                                    op: "return",
+                                    id: "statsReturn",
+                                    value: stats,
+                                });
                             });
                             break;
                         }
@@ -1040,7 +1053,7 @@ class Admiral extends events_1.EventEmitter {
         }
     }
     /**
-     * Shuts down a cluster
+     * Shuts down a service
      * @param serviceName The name of the service
      * @param hard Whether to ignore the soft shutdown function
     */
@@ -1062,6 +1075,11 @@ class Admiral extends events_1.EventEmitter {
      * Create a service
      * @param serviceName Unique ame of the service
      * @param servicePath Absolute path to the service file
+     * @example
+     * ```js
+     * const path = require("path");
+     * admiral.createService("myService", path.join(__dirname, "./service.js"))
+     * ```
      */
     createService(serviceName, servicePath) {
         // if path is not absolute
@@ -1158,7 +1176,8 @@ class Admiral extends events_1.EventEmitter {
             });
         }
     }
-    /** Reshard
+    /**
+     * Reshards all clusters
      * @param options Change the resharding options
     */
     reshard(options) {
@@ -1229,6 +1248,42 @@ class Admiral extends events_1.EventEmitter {
         else {
             this.error("Already resharding!", "Admiral");
         }
+    }
+    /**
+     * Broadcast an event to all clusters and services.
+     * The event can be listened to with {@link register}
+     * @param op Name of the event
+     * @param message Message to send
+     * @example
+     * ```js
+     * admiral.broadcast("hello clusters!", "Want to chat?");
+     * ```
+    */
+    broadcast(op, msg) {
+        if (!msg)
+            msg = null;
+        this.clusters.forEach((c) => {
+            const worker = master.workers[c.workerID];
+            if (worker)
+                process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
+        });
+        this.services.forEach((s) => {
+            const worker = master.workers[s.workerID];
+            if (worker)
+                process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
+        });
+    }
+    /**
+     * Force eris-fleet to fetch fresh stats
+     * @returns Promise with stats
+     */
+    collectStats() {
+        this.executeStats();
+        return new Promise((res, rej) => {
+            this.once("stats", (stats) => {
+                res(stats);
+            });
+        });
     }
     async startService(servicesToStart, onlyServices) {
         if (!servicesToStart)
@@ -1694,63 +1749,53 @@ class Admiral extends events_1.EventEmitter {
             }
         }, this.fetchTimeout);
     }
+    executeStats() {
+        if (this.collectingStats || this.pauseStats)
+            return;
+        this.collectingStats = true;
+        this.prelimStats = {
+            guilds: 0,
+            users: 0,
+            members: 0,
+            clustersRam: 0,
+            servicesRam: 0,
+            masterRam: 0,
+            totalRam: 0,
+            voice: 0,
+            largeGuilds: 0,
+            shardCount: 0,
+            clusters: [],
+            services: [],
+            timestamp: 0,
+            centralRequestHandlerLatencyRef: this.useCentralRequestHandler ? this.eris.requestHandler.latencyRef : undefined
+        };
+        this.statsWorkersCounted = 0;
+        this.clusters.forEach((c) => {
+            process.nextTick(() => {
+                const worker = master.workers[c.workerID];
+                if (worker)
+                    worker.send({ op: "collectStats" });
+            });
+        });
+        this.services.forEach((s) => {
+            process.nextTick(() => {
+                const worker = master.workers[s.workerID];
+                if (worker)
+                    worker.send({ op: "collectStats" });
+            });
+        });
+    }
     startStats() {
+        this.collectingStats = false;
         this.pauseStats = false;
         this.statsStarted = true;
         if (this.statsInterval !== "disable") {
-            const execute = () => {
-                this.prelimStats = {
-                    guilds: 0,
-                    users: 0,
-                    members: 0,
-                    clustersRam: 0,
-                    servicesRam: 0,
-                    masterRam: 0,
-                    totalRam: 0,
-                    voice: 0,
-                    largeGuilds: 0,
-                    shardCount: 0,
-                    clusters: [],
-                    services: [],
-                    timestamp: 0
-                };
-                this.statsWorkersCounted = 0;
-                this.clusters.forEach((c) => {
-                    process.nextTick(() => {
-                        const worker = master.workers[c.workerID];
-                        if (worker)
-                            worker.send({ op: "collectStats" });
-                    });
-                });
-                this.services.forEach((s) => {
-                    process.nextTick(() => {
-                        const worker = master.workers[s.workerID];
-                        if (worker)
-                            worker.send({ op: "collectStats" });
-                    });
-                });
-            };
             setInterval(() => {
-                if (!this.pauseStats)
-                    execute();
+                this.executeStats();
             }, this.statsInterval);
             // First execution
-            execute();
+            this.executeStats();
         }
-    }
-    broadcast(op, msg) {
-        if (!msg)
-            msg = null;
-        this.clusters.forEach((c) => {
-            const worker = master.workers[c.workerID];
-            if (worker)
-                process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
-        });
-        this.services.forEach((s) => {
-            const worker = master.workers[s.workerID];
-            if (worker)
-                process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
-        });
     }
     ipcLog(type, message, worker) {
         // convert log if convered

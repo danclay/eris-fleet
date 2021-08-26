@@ -241,7 +241,8 @@ class Cluster {
                                     shardStats: shardStats,
                                     shards: shardStats,
                                     ram: process.memoryUsage().rss / 1e6,
-                                    ipcLatency: new Date().getTime()
+                                    ipcLatency: new Date().getTime(),
+                                    requestHandlerLatencyRef: this.useCentralRequestHandler ? undefined : this.bot.requestHandler.latencyRef
                                 } });
                         break;
                     }

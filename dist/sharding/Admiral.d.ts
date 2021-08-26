@@ -198,6 +198,8 @@ export interface ClusterStats {
     shards: ShardStats[];
     /** One-way IPC latency between the admiral and the cluster in ms */
     ipcLatency: number;
+    /** Latency for the request handler if not using the central request handler */
+    requestHandlerLatencyRef?: Eris.LatencyRef;
 }
 export interface ServiceStats {
     name: number;
@@ -225,6 +227,8 @@ export interface Stats {
     services: ServiceStats[];
     /** Timestamp of when the stats were collected */
     timestamp: number;
+    /** Latency for the request handler if using the central request handler */
+    centralRequestHandlerLatencyRef?: Eris.LatencyRef;
 }
 export interface ClusterCollection {
     workerID: number;
@@ -301,11 +305,13 @@ export declare class Admiral extends EventEmitter {
     /** Services to create */
     private servicesToCreate?;
     private queue;
-    private eris;
+    /** Eris client used to get the gateway information and to send requests when using the central request handler */
+    eris: Eris.Client;
     private prelimStats?;
     private statsWorkersCounted?;
     private chunks?;
     private pauseStats;
+    private collectingStats;
     private whatToLog;
     private softKills;
     private launchingManager;
@@ -359,7 +365,7 @@ export declare class Admiral extends EventEmitter {
     */
     shutdownCluster(clusterID: number, hard: boolean): void;
     /**
-     * Shuts down a cluster
+     * Shuts down a service
      * @param serviceName The name of the service
      * @param hard Whether to ignore the soft shutdown function
     */
@@ -368,6 +374,11 @@ export declare class Admiral extends EventEmitter {
      * Create a service
      * @param serviceName Unique ame of the service
      * @param servicePath Absolute path to the service file
+     * @example
+     * ```js
+     * const path = require("path");
+     * admiral.createService("myService", path.join(__dirname, "./service.js"))
+     * ```
      */
     createService(serviceName: string, servicePath: string): void;
     /**
@@ -375,10 +386,27 @@ export declare class Admiral extends EventEmitter {
      * @param hard Whether to ignore the soft shutdown function
     */
     totalShutdown(hard: boolean): void;
-    /** Reshard
+    /**
+     * Reshards all clusters
      * @param options Change the resharding options
     */
     reshard(options?: ReshardOptions): void;
+    /**
+     * Broadcast an event to all clusters and services.
+     * The event can be listened to with {@link register}
+     * @param op Name of the event
+     * @param message Message to send
+     * @example
+     * ```js
+     * admiral.broadcast("hello clusters!", "Want to chat?");
+     * ```
+    */
+    broadcast(op: string, msg: unknown): void;
+    /**
+     * Force eris-fleet to fetch fresh stats
+     * @returns Promise with stats
+     */
+    collectStats(): Promise<Stats>;
     private startService;
     private startCluster;
     private calculateShards;
@@ -387,8 +415,8 @@ export declare class Admiral extends EventEmitter {
     private shutdownWorker;
     private restartWorker;
     private fetchInfo;
+    private executeStats;
     private startStats;
-    broadcast(op: string, msg: unknown): void;
     private ipcLog;
     private emitLog;
     error(message: unknown, source?: string): void;
