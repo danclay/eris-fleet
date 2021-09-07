@@ -580,33 +580,31 @@ export class Admiral extends EventEmitter {
 							this.error(new Error("launchedWorker is undefined"));
 							return;
 						}
-						if (launchedWorker) {
-							if (launchedWorker.cluster) {
-								// don't change cluster map if it hasn't restarted yet
-								if (!this.softKills.get(worker.id)) {
-									this.clusters.set(launchedWorker.cluster.clusterID, {
-										workerID: worker.id,
-										clusterID: launchedWorker.cluster.clusterID,
-										firstShardID: launchedWorker.cluster.firstShardID,
-										lastShardID: launchedWorker.cluster.lastShardID,
-									});
-								}
-								this.fetches.forEach((fetch) => {
-									process.nextTick(() => worker.send(fetch));
+						if (launchedWorker.cluster) {
+							// don't change cluster map if it hasn't restarted yet
+							if (!this.softKills.get(worker.id)) {
+								this.clusters.set(launchedWorker.cluster.clusterID, {
+									workerID: worker.id,
+									clusterID: launchedWorker.cluster.clusterID,
+									firstShardID: launchedWorker.cluster.firstShardID,
+									lastShardID: launchedWorker.cluster.lastShardID,
 								});
-								// Emit a cluster is ready
-								this.emit("clusterReady", launchedWorker.cluster);
-							} else if (launchedWorker.service) {
-								if (!this.softKills.get(worker.id)) {
-									this.services.set(launchedWorker.service.serviceName, {
-										workerID: worker.id,
-										serviceName: launchedWorker.service.serviceName,
-										path: launchedWorker.service.path,
-									});
-								}
-								// Emit a service is ready
-								this.emit("serviceReady", launchedWorker.service);
 							}
+							this.fetches.forEach((fetch) => {
+								process.nextTick(() => worker.send(fetch));
+							});
+							// Emit a cluster is ready
+							this.emit("clusterReady", launchedWorker.cluster);
+						} else if (launchedWorker.service) {
+							if (!this.softKills.get(worker.id)) {
+								this.services.set(launchedWorker.service.serviceName, {
+									workerID: worker.id,
+									serviceName: launchedWorker.service.serviceName,
+									path: launchedWorker.service.path,
+								});
+							}
+							// Emit a service is ready
+							this.emit("serviceReady", launchedWorker.service);
 						}
 						this.launchingWorkers.delete(worker.id);
 						if (!this.resharding && !this.softKills.get(worker.id)) {
@@ -1540,8 +1538,8 @@ export class Admiral extends EventEmitter {
 				if (options.guildsPerShard) this.guildsPerShard = options.guildsPerShard;
 				if (options.firstShardID) this.firstShardID = options.firstShardID;
 				if (options.lastShardID) this.lastShardID = options.lastShardID;
-				if (options.shards) this.shardCount = options.shards || "auto";
-				if (options.clusters) this.clusterCount = options.clusters || "auto";
+				if (options.shards) this.shardCount = options.shards;
+				if (options.clusters) this.clusterCount = options.clusters;
 			}
 			this.launch();
 			this.once("ready", () => {
@@ -1725,7 +1723,7 @@ export class Admiral extends EventEmitter {
 		});
 		// Connects shards
 		const queueItems: QueueItem[] = [];
-		for (const i in [...Array(this.clusterCount).keys()]) {
+		for (const i of Array(this.clusterCount).keys()) {
 			const ID = Number(i);
 
 			const cluster = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID == ID)!.cluster!;
