@@ -1,6 +1,5 @@
 import { IPC } from "./IPC";
 import crypto from "crypto";
-import { inspect } from "util";
 import { reconstructError } from "./ErrorHandler";
 import Eris from "eris";
 

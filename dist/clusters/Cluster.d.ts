@@ -22,7 +22,7 @@ export declare class Cluster {
     bot: Eris.Client;
     private token;
     app?: BaseClusterWorker;
-    App: any;
+    App: typeof BaseClusterWorker;
     ipc: IPC;
     shutdown?: boolean;
     private startingStatus?;

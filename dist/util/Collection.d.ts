@@ -1,5 +1,5 @@
 /** Collection-ish */
-export declare class Collection extends Map {
+export declare class Collection<KeyType, ValueType> extends Map<KeyType, ValueType> {
     constructor();
-    find(func: (item: any) => boolean): any;
+    find(func: (item: ValueType) => boolean): ValueType | undefined;
 }

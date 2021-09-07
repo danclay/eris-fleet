@@ -227,7 +227,7 @@ export class IPC extends EventEmitter {
 	public fetchUser(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchUser", id});
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			this.once(id, (r: any) => {
 				resolve(r);
 			});
@@ -246,7 +246,7 @@ export class IPC extends EventEmitter {
 	public fetchGuild(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchGuild", id});
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			this.once(id, (r: any) => {
 				resolve(r);
 			});
@@ -265,7 +265,7 @@ export class IPC extends EventEmitter {
 	public fetchChannel(id: string): Promise<any> {
 		if (process.send) process.send({op: "fetchChannel", id});
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			this.once(id, (r: any) => {
 				resolve(r);
 			});
@@ -286,7 +286,7 @@ export class IPC extends EventEmitter {
 		const UUID = JSON.stringify({guildID, memberID});
 		if (process.send) process.send({op: "fetchMember", id: UUID});
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			this.once(UUID, (r: any) => {
 				if (r) r.id = memberID;
 				resolve(r);
@@ -444,7 +444,7 @@ export class IPC extends EventEmitter {
 		if (receptive) {
 			return new Promise((resolve, reject) => {
 				// wait for cluster info first
-				new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void, rej) => {
+				new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void) => {
 					if (process.send) process.send({op: "getAdmiralInfo"});
 					this.once("admiralInfo", data => {
 						res(data.clusters as Record<number, Admiral.ClusterCollection>);
@@ -492,7 +492,7 @@ export class IPC extends EventEmitter {
 	public async getStats(): Promise<Admiral.Stats> {
 		if (process.send) process.send({op: "getStats"});
 
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			const callback = (r: Admiral.Stats) => {
 				//this.removeListener("statsReturn", callback);
 				resolve(r);
@@ -509,7 +509,7 @@ export class IPC extends EventEmitter {
 	public async collectStats(): Promise<Admiral.Stats> {
 		if (process.send) process.send({op: "executeStats"});
 		
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			const callback = (r: Admiral.Stats) => {
 				resolve(r);
 			};
@@ -696,7 +696,7 @@ export class IPC extends EventEmitter {
 		if (receptive) {
 			return new Promise((resolve, reject) => {
 				// wait for cluster info first
-				new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void, rej) => {
+				new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void) => {
 					if (process.send) process.send({op: "getAdmiralInfo"});
 					this.once("admiralInfo", data => {
 						res(data.clusters as Record<number, Admiral.ClusterCollection>);

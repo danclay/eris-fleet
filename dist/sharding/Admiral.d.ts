@@ -280,10 +280,10 @@ export interface ServiceCollection {
  * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
 */
 export declare class Admiral extends EventEmitter {
-    /** Map of clusters by  to worker by ID */
-    clusters: Collection;
-    /** Map of services by name to worker ID */
-    services: Collection;
+    /** Map of clusters by ID */
+    clusters: Collection<number, ClusterCollection>;
+    /** Map of services by name */
+    services: Collection<string, ServiceCollection>;
     /** Maps of workers currently launching by ID */
     private launchingWorkers;
     private path;

@@ -27,7 +27,7 @@ export class Cluster {
 	bot!: Eris.Client;
 	private token!: string;
 	app?: BaseClusterWorker;
-	App!: any;
+	App!: typeof BaseClusterWorker;
 	ipc: IPC;
 	shutdown?: boolean;
 	private startingStatus?: Admiral.StartingStatus;
@@ -145,7 +145,7 @@ export class Cluster {
 					};
 					if (this.app) {
 						if (this.app.handleCommand) {
-							const res = await this.app.handleCommand(message.command.msg);
+							const res = await this.app.handleCommand(message.command.msg as never);
 							if (message.command.receptive) {
 								if (process.send) process.send({op: "return", value: {
 									id: message.command.UUID,
