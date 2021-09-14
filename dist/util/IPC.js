@@ -8,6 +8,7 @@ const events_1 = require("events");
 const crypto_1 = __importDefault(require("crypto"));
 const ErrorHandler_1 = require("./ErrorHandler");
 const path_1 = __importDefault(require("path"));
+const Collection_1 = require("../util/Collection");
 /**
  * Handles communication between clusters, services, and the admiral.
  */
@@ -470,7 +471,7 @@ class IPC extends events_1.EventEmitter {
     /**
      * @returns The latest stats
     */
-    async getStats() {
+    getStats() {
         if (process.send)
             process.send({ op: "getStats" });
         return new Promise((resolve) => {
@@ -482,10 +483,27 @@ class IPC extends events_1.EventEmitter {
         });
     }
     /**
+     * @returns Collection of clusters and collection of services
+     */
+    getWorkers() {
+        if (process.send)
+            process.send({ op: "getWorkers" });
+        return new Promise((resolve) => {
+            const callback = (r) => {
+                const parsed = {
+                    clusters: new Collection_1.Collection(r.clusters.value),
+                    services: new Collection_1.Collection(r.services.value)
+                };
+                resolve(parsed);
+            };
+            this.once("workersReturn", callback);
+        });
+    }
+    /**
      * Force eris-fleet to fetch fresh stats
      * @returns Promise with stats
      */
-    async collectStats() {
+    collectStats() {
         if (process.send)
             process.send({ op: "executeStats" });
         return new Promise((resolve) => {

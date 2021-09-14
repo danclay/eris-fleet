@@ -984,6 +984,24 @@ export class Admiral extends EventEmitter {
 
 						break;
 					}
+					case "getWorkers": {
+						// sends worker information
+						worker.send({
+							op: "return",
+							id: "workersReturn",
+							value: {
+								clusters: {
+									dataType: "Map",
+									value: Array.from(this.clusters.entries())
+								},
+								services: {
+									dataType: "Map",
+									value: Array.from(this.services.entries())
+								}
+							}
+						});
+						break;
+					}
 					case "executeStats": {
 						this.collectStats()
 							.then(stats => {

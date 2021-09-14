@@ -3,6 +3,7 @@ import * as Admiral from "../sharding/Admiral";
 import crypto from "crypto";
 import { errorToJSON } from "./ErrorHandler";
 import path from "path";
+import { Collection } from "../util/Collection";
 
 export interface IpcHandledLog {
 	op: "log" | "error" | "warn" | "debug",
@@ -489,7 +490,7 @@ export class IPC extends EventEmitter {
 	/**
 	 * @returns The latest stats
 	*/
-	public async getStats(): Promise<Admiral.Stats> {
+	public getStats(): Promise<Admiral.Stats> {
 		if (process.send) process.send({op: "getStats"});
 
 		return new Promise((resolve) => {
@@ -501,12 +502,31 @@ export class IPC extends EventEmitter {
 			this.once("statsReturn", callback);
 		});
 	}
+
+	/**
+	 * @returns Collection of clusters and collection of services
+	 */
+	public getWorkers(): Promise<{clusters: Collection<number, Admiral.ClusterCollection>, services: Collection<string, Admiral.ServiceCollection>}> {
+		if (process.send) process.send({op: "getWorkers"});
+
+		return new Promise((resolve) => {
+			const callback = (r: {clusters: {dataType: "Map", value: never}, services: {dataType: "Map", value: never}}) => {
+				const parsed = {
+					clusters: new Collection<number, Admiral.ClusterCollection>(r.clusters.value),
+					services: new Collection<string, Admiral.ServiceCollection>(r.services.value)
+				};
+				resolve(parsed);
+			};
+
+			this.once("workersReturn", callback);
+		});
+	}
 	
 	/**
 	 * Force eris-fleet to fetch fresh stats
 	 * @returns Promise with stats
 	 */
-	public async collectStats(): Promise<Admiral.Stats> {
+	public collectStats(): Promise<Admiral.Stats> {
 		if (process.send) process.send({op: "executeStats"});
 		
 		return new Promise((resolve) => {

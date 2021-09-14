@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
 import * as Admiral from "../sharding/Admiral";
+import { Collection } from "../util/Collection";
 export interface IpcHandledLog {
     op: "log" | "error" | "warn" | "debug";
     ipcLogObject: boolean;
@@ -217,6 +218,13 @@ export declare class IPC extends EventEmitter {
      * @returns The latest stats
     */
     getStats(): Promise<Admiral.Stats>;
+    /**
+     * @returns Collection of clusters and collection of services
+     */
+    getWorkers(): Promise<{
+        clusters: Collection<number, Admiral.ClusterCollection>;
+        services: Collection<string, Admiral.ServiceCollection>;
+    }>;
     /**
      * Force eris-fleet to fetch fresh stats
      * @returns Promise with stats
