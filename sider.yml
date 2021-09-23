@@ -11,13 +11,13 @@ linter:
 #     root_dir: project/
 #     dependencies:
 #       - my-eslint-plugin@2
-#     npm_install: false
+      npm_install: true
 #     target:
 #       - src/
 #       - lib/
 #     ext: [.js, .jsx]
-#     config: config/.eslintrc.js
-#     ignore-path: config/.eslintignore
+      config: .eslintrc.json
+      ignore-path: .eslintignore
 #     ignore-pattern: "vendor/**"
 #     no-ignore: true
 #     global: ["require", "exports:true"]
@@ -27,8 +27,8 @@ linter:
 #   misspell:
 #     root_dir: project/
 #     target: [src/, test/]
-#     exclude: ["**/*.min.*"]
-#     locale: UK
+      exclude: ["dist", "node_modules"]
+      locale: US
 #     ignore: [center, behavior]
 
 #   # ShellCheck example. See https://help.sider.review/tools/shellscript/shellcheck
