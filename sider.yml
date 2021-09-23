@@ -26,8 +26,8 @@ linter:
 #   # Misspell example. See https://help.sider.review/tools/others/misspell
     misspell:
 #     root_dir: project/
-#     target: [src/, test/]
-      exclude: ["dist", "node_modules"]
+      target: [src/, test/, README.md, CHANGELOG.md, CONTRIBUTING.md, .github/]
+#     exclude: [dist, node_modules]
       locale: US
 #     ignore: [center, behavior]
 
