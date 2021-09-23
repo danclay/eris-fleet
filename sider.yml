@@ -24,7 +24,7 @@ linter:
 #     quiet: true
 
 #   # Misspell example. See https://help.sider.review/tools/others/misspell
-#   misspell:
+    misspell:
 #     root_dir: project/
 #     target: [src/, test/]
       exclude: ["dist", "node_modules"]
@@ -32,7 +32,7 @@ linter:
 #     ignore: [center, behavior]
 
 #   # ShellCheck example. See https://help.sider.review/tools/shellscript/shellcheck
-    shellcheck:
+#   shellcheck:
 #     root_dir: project/
 #     target:
 #       - "**/*.{sh,bash}"
