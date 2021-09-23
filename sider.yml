@@ -7,7 +7,7 @@
 linter:
 
 #   # ESLint example. See https://help.sider.review/tools/javascript/eslint
-#   eslint:
+    eslint:
 #     root_dir: project/
 #     dependencies:
 #       - my-eslint-plugin@2
@@ -32,7 +32,7 @@ linter:
 #     ignore: [center, behavior]
 
 #   # ShellCheck example. See https://help.sider.review/tools/shellscript/shellcheck
-#   shellcheck:
+    shellcheck:
 #     root_dir: project/
 #     target:
 #       - "**/*.{sh,bash}"
