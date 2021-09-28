@@ -2,6 +2,8 @@
 const { BaseClusterWorker } = require('../../dist/index');
 const {inspect} = require("util");
 
+const config = process.env.CI_CONFIG ? JSON.parse(process.env.CI_CONFIG) : undefined;
+
 module.exports = class BotWorker extends BaseClusterWorker {
     constructor(setup) {
         // Do not delete this super.
@@ -9,7 +11,7 @@ module.exports = class BotWorker extends BaseClusterWorker {
 
         this.ipc.register("test1", () => {
             console.log("Sending message");
-            this.bot.createMessage(process.env.channelID, "test1");
+            this.bot.createMessage(config ? config.channelID : process.env.channelID, "test1");
             this.bot.once('messageCreate', this.handleMessage.bind(this));
         });
 

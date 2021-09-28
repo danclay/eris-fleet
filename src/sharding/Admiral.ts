@@ -1382,7 +1382,7 @@ export class Admiral extends EventEmitter {
 		const clusterObj = this.clusters.get(clusterID) as ClusterCollection;
 		if (!clusterObj) return;
 		const workerID = clusterObj.workerID;
-		const worker = master.workers[workerID];
+		const worker = master.workers![workerID];
 		if (worker) {
 			const restartItem = this.restartWorker(worker, true, hard ? false : true);
 			if (restartItem) this.queue.item(restartItem);

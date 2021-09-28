@@ -6,9 +6,11 @@ const { inspect } = require('util');
 
 require('dotenv').config();
 
+const config = process.env.CI_CONFIG ? JSON.parse(process.env.CI_CONFIG) : undefined;
+
 const options = {
     path: path.join(__dirname, "./bot.js"),
-    token: process.env.token,
+    token: config ? config.token : process.env.token,
     startingStatus: {
         status: "dnd",
         game: {

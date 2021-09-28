@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+    - development
+name: Build Dev
+jobs:
+  build:
+    name: Build dev package
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: yarn install
+    - run: yarn build
+    - name: Add to branch
+      run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git add dist/ -f
+          git commit -m "${{ github.event.head_commit.message }}"
+          git push origin master:dev -f
