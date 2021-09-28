@@ -11,5 +11,5 @@ jobs:
     - run: yarn install --frozen-lockfile
     - run: yarn build
     - run: yarn test
-          env:
-            CI_CONFIG: ${{ secrets.CI_CONFIG }}
+      env:
+        CI_CONFIG: ${{ secrets.CI_CONFIG }}
