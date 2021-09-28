@@ -238,7 +238,7 @@ export interface ClusterStats {
 	/** The cluster's memory usage in MB */
 	ram: number;
 	/**
-	 * @deprecated Use {@link clusterStats.shards}
+	 * @deprecated Use {@link ClusterStats.shards}
 	 */
 	shardStats: ShardStats[];
 	shards: ShardStats[];
