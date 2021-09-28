@@ -7,7 +7,7 @@ This may skip some little bug fixes.
 - Added a central request handler. Disabled by default and may be enabled with the `useCentralRequestHandler` option being set to true.
 - Added ability to change resharding parameters
 - Improved logging
-- Renamed key for shards array to "shards" from "shardStats" in stats (old name still works)
+- Renamed key for shards array to `shards` from `shardStats` in stats (old name still works)
 - Allows for the creation of services after the initial launch of the sharding manager
 - Added cluster commands
 - Added ability to send all clusters a command
@@ -22,6 +22,9 @@ This may skip some little bug fixes.
 - Added some new stuff to stats (ipc latency, request handler latencyRef, members, and timestamp for when stats were collected)
 - Ability to force eris-fleet to collect fresh stats
 - Ability to get worker collections
+- Added IPC class to Admiral
+- Renamed `ipc.admiralBroadcast` to `ipc.sendToAdmiral`
+- Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` if no member is found.
 
 ### Breaking changes:
 

@@ -9,6 +9,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const ErrorHandler_1 = require("./ErrorHandler");
 const path_1 = __importDefault(require("path"));
 const Collection_1 = require("../util/Collection");
+const cluster_1 = require("cluster");
 /**
  * Handles communication between clusters, services, and the admiral.
  */
@@ -18,6 +19,7 @@ class IPC extends events_1.EventEmitter {
         this.fetchTimeout = setup.fetchTimeout;
         this.events = new Map();
         this.ipcEventListeners = new Map();
+        this.messageHandler = setup.messageHandler;
         // register user event listener
         this.ipcEventListeners.set("ipcEvent", [(msg) => {
                 const event = this.events.get(msg.event);
@@ -27,14 +29,28 @@ class IPC extends events_1.EventEmitter {
                     });
                 }
             }]);
-        process.on("message", msg => {
+        const ipcEventListener = (msg) => {
             const event = this.ipcEventListeners.get(msg.op);
             if (event) {
                 event.forEach(fn => {
                     fn(msg);
                 });
             }
-        });
+        };
+        if (cluster_1.isMaster) {
+            this.on("ipcEvent", ipcEventListener);
+        }
+        else {
+            process.on("message", ipcEventListener);
+        }
+    }
+    sendMessage(message) {
+        if (this.messageHandler) {
+            return this.messageHandler(message);
+        }
+        else if (process.send) {
+            process.send(message);
+        }
     }
     sendLog(type, value, source) {
         let valueToSend = value;
@@ -43,16 +59,15 @@ class IPC extends events_1.EventEmitter {
             valueTranslatedFrom = "Error";
             valueToSend = ErrorHandler_1.errorToJSON(value);
         }
-        if (process.send)
-            process.send({
-                op: type,
-                ipcLogObject: true,
-                msg: valueToSend,
-                source,
-                valueTranslatedFrom,
-                valueTypeof: typeof value,
-                timestamp: new Date().getTime()
-            });
+        this.sendMessage({
+            op: type,
+            ipcLogObject: true,
+            msg: valueToSend,
+            source,
+            valueTranslatedFrom,
+            valueTypeof: typeof value,
+            timestamp: new Date().getTime()
+        });
     }
     /**
      * Sends a log to the Admiral
@@ -161,24 +176,28 @@ class IPC extends events_1.EventEmitter {
     broadcast(op, message) {
         if (!message)
             message = null;
-        if (process.send)
-            process.send({ op: "broadcast", event: { op, msg: message } });
+        this.sendMessage({ op: "broadcast", event: { op, msg: message } });
     }
     /**
-     * Broadcast to the master process.
-     * The event can be listened to using `Admiral.on("event", callback);`
+     * Send to the master process.
+     * The event can be listened to using `Admiral.on("event", listener);`
      * @param op Name of the event
      * @param message Message to send
      * @example
      * ```js
-     * this.ipc.admiralBroadcast("Hello", "I'm working!");
+     * this.ipc.sendToAdmiral("Hello", "I'm working!");
      * ```
     */
-    admiralBroadcast(op, message) {
+    sendToAdmiral(op, message) {
         if (!message)
             message = null;
-        if (process.send)
-            process.send({ op: "admiralBroadcast", event: { op, msg: message } });
+        this.sendMessage({ op: "admiralBroadcast", event: { op, msg: message } });
+    }
+    /**
+     * @deprecated Use {@link IPC.sendToAdmiral}
+    */
+    admiralBroadcast(op, message) {
+        return this.sendToAdmiral(op, message);
     }
     /**
      * Send a message to a specific cluster.
@@ -194,11 +213,10 @@ class IPC extends events_1.EventEmitter {
     sendTo(cluster, op, message) {
         if (!message)
             message = null;
-        if (process.send)
-            process.send({ op: "sendTo", cluster: cluster, event: { msg: message, op } });
+        this.sendMessage({ op: "sendTo", cluster: cluster, event: { msg: message, op } });
     }
     /**
-     * Fetch a user from the Eris client on any cluster
+     * Fetch a cached user from the Eris client on any cluster
      * @param id User ID
      * @returns The Eris user object converted to JSON
      * @example
@@ -207,16 +225,15 @@ class IPC extends events_1.EventEmitter {
      * ```
     */
     fetchUser(id) {
-        if (process.send)
-            process.send({ op: "fetchUser", id });
         return new Promise((resolve) => {
             this.once(id, (r) => {
                 resolve(r);
             });
+            this.sendMessage({ op: "fetchUser", id });
         });
     }
     /**
-     * Fetch a guild from the Eris client on any cluster
+     * Fetch a cached guild from the Eris client on any cluster
      * @param id Guild ID
      * @returns The Eris guild object converted to JSON
      * @example
@@ -225,16 +242,15 @@ class IPC extends events_1.EventEmitter {
      * ```
     */
     fetchGuild(id) {
-        if (process.send)
-            process.send({ op: "fetchGuild", id });
         return new Promise((resolve) => {
             this.once(id, (r) => {
                 resolve(r);
             });
+            this.sendMessage({ op: "fetchGuild", id });
         });
     }
     /**
-     * Fetch a Channel from the Eris client on any cluster
+     * Fetch a cached channel from the Eris client on any cluster
      * @param id Channel ID
      * @returns The Eris channel object converted to JSON
      * @example
@@ -243,16 +259,15 @@ class IPC extends events_1.EventEmitter {
      * ```
     */
     fetchChannel(id) {
-        if (process.send)
-            process.send({ op: "fetchChannel", id });
         return new Promise((resolve) => {
             this.once(id, (r) => {
                 resolve(r);
             });
+            this.sendMessage({ op: "fetchChannel", id });
         });
     }
     /**
-     * Fetch a user from the Eris client on any cluster
+     * Fetch a cached member from the Eris client on any cluster
      * @param guildID Guild ID
      * @param memberID the member's user ID
      * @returns The Eris member object converted to JSON
@@ -263,14 +278,13 @@ class IPC extends events_1.EventEmitter {
     */
     fetchMember(guildID, memberID) {
         const UUID = JSON.stringify({ guildID, memberID });
-        if (process.send)
-            process.send({ op: "fetchMember", id: UUID });
         return new Promise((resolve) => {
             this.once(UUID, (r) => {
                 if (r)
                     r.id = memberID;
                 resolve(r);
             });
+            this.sendMessage({ op: "fetchMember", id: UUID });
         });
     }
     /**
@@ -299,8 +313,8 @@ class IPC extends events_1.EventEmitter {
         if (!receptive)
             receptive = false;
         const UUID = "serviceCommand" + crypto_1.default.randomBytes(16).toString("hex");
-        if (process.send)
-            process.send({ op: "serviceCommand",
+        const sendCommand = () => {
+            this.sendMessage({ op: "serviceCommand",
                 command: {
                     service,
                     msg: message,
@@ -308,6 +322,7 @@ class IPC extends events_1.EventEmitter {
                     receptive
                 }
             });
+        };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // timeout
@@ -332,7 +347,12 @@ class IPC extends events_1.EventEmitter {
                     this.removeListener(UUID, listener);
                 }, returnTimeout ? returnTimeout : this.fetchTimeout);
                 this.once(UUID, listener);
+                sendCommand();
             });
+        }
+        else {
+            sendCommand();
+            return;
         }
     }
     /**
@@ -355,8 +375,8 @@ class IPC extends events_1.EventEmitter {
         if (!receptive)
             receptive = false;
         const UUID = "clusterCommand" + crypto_1.default.randomBytes(16).toString("hex");
-        if (process.send)
-            process.send({ op: "clusterCommand",
+        const sendCommand = () => {
+            this.sendMessage({ op: "clusterCommand",
                 command: {
                     clusterID,
                     msg: message,
@@ -364,6 +384,7 @@ class IPC extends events_1.EventEmitter {
                     receptive
                 }
             });
+        };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // timeout
@@ -388,7 +409,12 @@ class IPC extends events_1.EventEmitter {
                     this.removeListener(UUID, listener);
                 }, returnTimeout ? returnTimeout : this.fetchTimeout);
                 this.once(UUID, listener);
+                sendCommand();
             });
+        }
+        else {
+            sendCommand();
+            return;
         }
     }
     /**
@@ -415,26 +441,23 @@ class IPC extends events_1.EventEmitter {
             receptive = false;
         const UUID = "allClusterCommand" + crypto_1.default.randomBytes(16).toString("hex");
         const sendCommand = () => {
-            if (process.send)
-                process.send({ op: "allClustersCommand",
-                    command: {
-                        msg: message,
-                        UUID,
-                        receptive
-                    }
-                });
+            this.sendMessage({ op: "allClustersCommand",
+                command: {
+                    msg: message,
+                    UUID,
+                    receptive
+                }
+            });
         };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // wait for cluster info first
                 new Promise((res) => {
-                    if (process.send)
-                        process.send({ op: "getAdmiralInfo" });
                     this.once("admiralInfo", data => {
                         res(data.clusters);
                     });
+                    this.sendMessage({ op: "getAdmiralInfo" });
                 }).then((clusterInfo) => {
-                    sendCommand();
                     // get responses
                     let clustersReturned = 0;
                     const dataRecieved = new Map();
@@ -460,6 +483,7 @@ class IPC extends events_1.EventEmitter {
                         this.removeListener(UUID, dataReturnCallback);
                     }, returnTimeout ? returnTimeout : this.fetchTimeout);
                     this.on(UUID, dataReturnCallback);
+                    sendCommand();
                 });
             });
         }
@@ -472,22 +496,19 @@ class IPC extends events_1.EventEmitter {
      * @returns The latest stats
     */
     getStats() {
-        if (process.send)
-            process.send({ op: "getStats" });
         return new Promise((resolve) => {
             const callback = (r) => {
                 //this.removeListener("statsReturn", callback);
                 resolve(r);
             };
-            this.once("statsReturn", callback);
+            this.on("statsReturn", callback);
+            this.sendMessage({ op: "getStats" });
         });
     }
     /**
      * @returns Collection of clusters and collection of services
      */
     getWorkers() {
-        if (process.send)
-            process.send({ op: "getWorkers" });
         return new Promise((resolve) => {
             const callback = (r) => {
                 const parsed = {
@@ -497,6 +518,7 @@ class IPC extends events_1.EventEmitter {
                 resolve(parsed);
             };
             this.once("workersReturn", callback);
+            this.sendMessage({ op: "getWorkers" });
         });
     }
     /**
@@ -504,13 +526,12 @@ class IPC extends events_1.EventEmitter {
      * @returns Promise with stats
      */
     collectStats() {
-        if (process.send)
-            process.send({ op: "executeStats" });
         return new Promise((resolve) => {
             const callback = (r) => {
                 resolve(r);
             };
             this.once("statsReturn", callback);
+            this.sendMessage({ op: "executeStats" });
         });
     }
     /**
@@ -519,16 +540,14 @@ class IPC extends events_1.EventEmitter {
      * @param hard Whether to ignore the soft shutdown function
     */
     restartCluster(clusterID, hard) {
-        if (process.send)
-            process.send({ op: "restartCluster", clusterID, hard: hard ? true : false });
+        this.sendMessage({ op: "restartCluster", clusterID, hard: hard ? true : false });
     }
     /**
      * Restarts all clusters
      * @param hard Whether to ignore the soft shutdown function
     */
     restartAllClusters(hard) {
-        if (process.send)
-            process.send({ op: "restartAllClusters", hard: hard ? true : false });
+        this.sendMessage({ op: "restartAllClusters", hard: hard ? true : false });
     }
     /**
      * Restarts a specific service
@@ -536,16 +555,14 @@ class IPC extends events_1.EventEmitter {
      * @param hard Whether to ignore the soft shutdown function
     */
     restartService(serviceName, hard) {
-        if (process.send)
-            process.send({ op: "restartService", serviceName, hard: hard ? true : false });
+        this.sendMessage({ op: "restartService", serviceName, hard: hard ? true : false });
     }
     /**
      * Restarts all services
      * @param hard Whether to ignore the soft shutdown function
     */
     restartAllServices(hard) {
-        if (process.send)
-            process.send({ op: "restartAllServices", hard: hard ? true : false });
+        this.sendMessage({ op: "restartAllServices", hard: hard ? true : false });
     }
     /**
      * Shuts down a cluster
@@ -553,8 +570,7 @@ class IPC extends events_1.EventEmitter {
      * @param hard Whether to ignore the soft shutdown function
     */
     shutdownCluster(clusterID, hard) {
-        if (process.send)
-            process.send({ op: "shutdownCluster", clusterID, hard: hard ? true : false });
+        this.sendMessage({ op: "shutdownCluster", clusterID, hard: hard ? true : false });
     }
     /**
      * Shuts down a service
@@ -562,8 +578,7 @@ class IPC extends events_1.EventEmitter {
      * @param hard Whether to ignore the soft shutdown function
     */
     shutdownService(serviceName, hard) {
-        if (process.send)
-            process.send({ op: "shutdownService", serviceName, hard: hard ? true : false });
+        this.sendMessage({ op: "shutdownService", serviceName, hard: hard ? true : false });
     }
     /**
      * Create a service
@@ -582,24 +597,21 @@ class IPC extends events_1.EventEmitter {
             return;
         }
         // send to master process
-        if (process.send)
-            process.send({ op: "createService", serviceName, servicePath });
+        this.sendMessage({ op: "createService", serviceName, servicePath });
     }
     /**
      * Shuts down everything and exits the master process
      * @param hard Whether to ignore the soft shutdown function
     */
     totalShutdown(hard) {
-        if (process.send)
-            process.send({ op: "totalShutdown", hard: hard ? true : false });
+        this.sendMessage({ op: "totalShutdown", hard: hard ? true : false });
     }
     /**
      * Reshards all clusters
      * @param options Change the resharding options
     */
     reshard(options) {
-        if (process.send)
-            process.send({ op: "reshard", options });
+        this.sendMessage({ op: "reshard", options });
     }
     /**
      * Sends an eval to the mentioned cluster.
@@ -621,8 +633,8 @@ class IPC extends events_1.EventEmitter {
         if (!receptive)
             receptive = false;
         const UUID = "clusterEval" + crypto_1.default.randomBytes(16).toString("hex");
-        if (process.send)
-            process.send({ op: "clusterEval",
+        const sendCommand = () => {
+            this.sendMessage({ op: "clusterEval",
                 request: {
                     clusterID,
                     stringToEvaluate,
@@ -630,6 +642,7 @@ class IPC extends events_1.EventEmitter {
                     receptive
                 }
             });
+        };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // timeout
@@ -654,7 +667,12 @@ class IPC extends events_1.EventEmitter {
                     this.removeListener(UUID, listener);
                 }, returnTimeout ? returnTimeout : this.fetchTimeout);
                 this.once(UUID, listener);
+                sendCommand();
             });
+        }
+        else {
+            sendCommand();
+            return;
         }
     }
     /**
@@ -680,26 +698,24 @@ class IPC extends events_1.EventEmitter {
             receptive = false;
         const UUID = "allClustersEval" + crypto_1.default.randomBytes(16).toString("hex");
         const sendCommand = () => {
-            if (process.send)
-                process.send({ op: "allClustersEval",
-                    request: {
-                        stringToEvaluate: stringToEvaluate,
-                        UUID,
-                        receptive
-                    }
-                });
+            this.sendMessage({ op: "allClustersEval",
+                request: {
+                    stringToEvaluate: stringToEvaluate,
+                    UUID,
+                    receptive
+                }
+            });
         };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // wait for cluster info first
-                new Promise((res) => {
-                    if (process.send)
-                        process.send({ op: "getAdmiralInfo" });
+                /*new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void) => {
                     this.once("admiralInfo", data => {
-                        res(data.clusters);
+                        res(data.clusters as Record<number, Admiral.ClusterCollection>);
                     });
-                }).then((clusterInfo) => {
-                    sendCommand();
+                    this.sendMessage({op: "getAdmiralInfo"});
+                })*/
+                this.getWorkers().then((workers) => {
                     // get responses
                     let clustersReturned = 0;
                     const dataRecieved = new Map();
@@ -713,7 +729,7 @@ class IPC extends events_1.EventEmitter {
                         }
                         dataRecieved.set(msg.clusterID, msg.value);
                         // end if done
-                        if (clustersReturned === Object.keys(clusterInfo).length) {
+                        if (clustersReturned === workers.clusters.size) {
                             if (timeout)
                                 clearTimeout(timeout);
                             resolve(dataRecieved);
@@ -725,6 +741,7 @@ class IPC extends events_1.EventEmitter {
                         this.removeListener(UUID, dataReturnCallback);
                     }, returnTimeout ? returnTimeout : this.fetchTimeout);
                     this.on(UUID, dataReturnCallback);
+                    sendCommand();
                 });
             });
         }
@@ -753,8 +770,8 @@ class IPC extends events_1.EventEmitter {
         if (!receptive)
             receptive = false;
         const UUID = "serviceEval" + crypto_1.default.randomBytes(16).toString("hex");
-        if (process.send)
-            process.send({ op: "serviceEval",
+        const sendCommand = () => {
+            this.sendMessage({ op: "serviceEval",
                 request: {
                     serviceName,
                     stringToEvaluate,
@@ -762,6 +779,7 @@ class IPC extends events_1.EventEmitter {
                     receptive
                 }
             });
+        };
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // timeout
@@ -786,7 +804,12 @@ class IPC extends events_1.EventEmitter {
                     this.removeListener(UUID, listener);
                 }, returnTimeout ? returnTimeout : this.fetchTimeout);
                 this.once(UUID, listener);
+                sendCommand();
             });
+        }
+        else {
+            sendCommand();
+            return;
         }
     }
 }

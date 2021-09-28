@@ -13,6 +13,7 @@ export interface IpcHandledLog {
 }
 export interface Setup {
     fetchTimeout: number;
+    messageHandler?: (message: any) => void;
 }
 /**
  * Handles communication between clusters, services, and the admiral.
@@ -21,7 +22,9 @@ export declare class IPC extends EventEmitter {
     private events;
     private ipcEventListeners;
     private fetchTimeout;
+    private messageHandler?;
     constructor(setup: Setup);
+    private sendMessage;
     private sendLog;
     /**
      * Sends a log to the Admiral
@@ -99,14 +102,18 @@ export declare class IPC extends EventEmitter {
     */
     broadcast(op: string, message?: unknown): void;
     /**
-     * Broadcast to the master process.
-     * The event can be listened to using `Admiral.on("event", callback);`
+     * Send to the master process.
+     * The event can be listened to using `Admiral.on("event", listener);`
      * @param op Name of the event
      * @param message Message to send
      * @example
      * ```js
-     * this.ipc.admiralBroadcast("Hello", "I'm working!");
+     * this.ipc.sendToAdmiral("Hello", "I'm working!");
      * ```
+    */
+    sendToAdmiral(op: string, message?: unknown): void;
+    /**
+     * @deprecated Use {@link IPC.sendToAdmiral}
     */
     admiralBroadcast(op: string, message?: unknown): void;
     /**
@@ -122,7 +129,7 @@ export declare class IPC extends EventEmitter {
     */
     sendTo(cluster: number, op: string, message?: unknown): void;
     /**
-     * Fetch a user from the Eris client on any cluster
+     * Fetch a cached user from the Eris client on any cluster
      * @param id User ID
      * @returns The Eris user object converted to JSON
      * @example
@@ -132,7 +139,7 @@ export declare class IPC extends EventEmitter {
     */
     fetchUser(id: string): Promise<any>;
     /**
-     * Fetch a guild from the Eris client on any cluster
+     * Fetch a cached guild from the Eris client on any cluster
      * @param id Guild ID
      * @returns The Eris guild object converted to JSON
      * @example
@@ -142,7 +149,7 @@ export declare class IPC extends EventEmitter {
     */
     fetchGuild(id: string): Promise<any>;
     /**
-     * Fetch a Channel from the Eris client on any cluster
+     * Fetch a cached channel from the Eris client on any cluster
      * @param id Channel ID
      * @returns The Eris channel object converted to JSON
      * @example
@@ -152,7 +159,7 @@ export declare class IPC extends EventEmitter {
     */
     fetchChannel(id: string): Promise<any>;
     /**
-     * Fetch a user from the Eris client on any cluster
+     * Fetch a cached member from the Eris client on any cluster
      * @param guildID Guild ID
      * @param memberID the member's user ID
      * @returns The Eris member object converted to JSON

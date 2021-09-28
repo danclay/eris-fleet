@@ -101,6 +101,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="ipc.html#events" class="tsd-kind-icon">events</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="ipc.html#fetchtimeout" class="tsd-kind-icon">fetch<wbr>Timeout</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="ipc.html#ipceventlisteners" class="tsd-kind-icon">ipc<wbr>Event<wbr>Listeners</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="ipc.html#messagehandler" class="tsd-kind-icon">message<wbr>Handler</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="ipc.html#defaultmaxlisteners" class="tsd-kind-icon">default<wbr>Max<wbr>Listeners</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external"><a href="ipc.html#errormonitor" class="tsd-kind-icon">error<wbr>Monitor</a></li>
 							</ul>
@@ -128,6 +129,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#fetchuser" class="tsd-kind-icon">fetch<wbr>User</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="ipc.html#getmaxlisteners" class="tsd-kind-icon">get<wbr>Max<wbr>Listeners</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#getstats" class="tsd-kind-icon">get<wbr>Stats</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#getworkers" class="tsd-kind-icon">get<wbr>Workers</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="ipc.html#listenercount" class="tsd-kind-icon">listener<wbr>Count</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="ipc.html#listeners" class="tsd-kind-icon">listeners</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#log" class="tsd-kind-icon">log</a></li>
@@ -146,7 +148,9 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#restartcluster" class="tsd-kind-icon">restart<wbr>Cluster</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#restartservice" class="tsd-kind-icon">restart<wbr>Service</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="ipc.html#sendlog" class="tsd-kind-icon">send<wbr>Log</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="ipc.html#sendmessage" class="tsd-kind-icon">send<wbr>Message</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#sendto" class="tsd-kind-icon">send<wbr>To</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#sendtoadmiral" class="tsd-kind-icon">send<wbr>ToAdmiral</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#servicecommand" class="tsd-kind-icon">service<wbr>Command</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="ipc.html#serviceeval" class="tsd-kind-icon">service<wbr>Eval</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external"><a href="ipc.html#setmaxlisteners" class="tsd-kind-icon">set<wbr>Max<wbr>Listeners</a></li>
@@ -174,7 +178,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides EventEmitter.constructor</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L27">src/util/IPC.ts:27</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L31">src/util/IPC.ts:31</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -196,7 +200,7 @@
 					<div class="tsd-signature tsd-kind-icon">events<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>msg<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L25">src/util/IPC.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L28">src/util/IPC.ts:28</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -206,7 +210,7 @@
 					<div class="tsd-signature tsd-kind-icon">fetch<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L27">src/util/IPC.ts:27</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L30">src/util/IPC.ts:30</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -216,9 +220,40 @@
 					<div class="tsd-signature tsd-kind-icon">ipc<wbr>Event<wbr>Listeners<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">(</span>msg<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L26">src/util/IPC.ts:26</a></li>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L29">src/util/IPC.ts:29</a></li>
 						</ul>
 					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="messagehandler" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> <span class="tsd-flag ts-flagOptional">Optional</span> message<wbr>Handler</h3>
+					<div class="tsd-signature tsd-kind-icon">message<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">void</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L31">src/util/IPC.ts:31</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-class">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>message: <span class="tsd-signature-type">any</span></h5>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
 					<a name="defaultmaxlisteners" class="tsd-anchor"></a>
@@ -310,18 +345,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L197">src/util/IPC.ts:197</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L223">src/util/IPC.ts:223</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Broadcast to the master process.
-									The event can be listened to using <code>Admiral.on(&quot;event&quot;, callback);</code></p>
-								</div>
 								<dl class="tsd-comment-tags">
-									<dt>example</dt>
-									<dd><pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">admiralBroadcast</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Hello&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;I&#039;m working!&quot;</span><span style="color: #000000">);</span>
-</code></pre>
+									<dt>deprecated</dt>
+									<dd><p>Use <a href="ipc.html#sendtoadmiral">IPC.sendToAdmiral</a></p>
 									</dd>
 								</dl>
 							</div>
@@ -329,15 +359,9 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>op: <span class="tsd-signature-type">string</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Name of the event</p>
-									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> message: <span class="tsd-signature-type">unknown</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Message to send</p>
-									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -354,7 +378,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L429">src/util/IPC.ts:429</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L462">src/util/IPC.ts:462</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -435,7 +459,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L682">src/util/IPC.ts:682</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L737">src/util/IPC.ts:737</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -518,7 +542,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L182">src/util/IPC.ts:182</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L200">src/util/IPC.ts:200</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -562,7 +586,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L372">src/util/IPC.ts:372</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L399">src/util/IPC.ts:399</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -620,7 +644,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L625">src/util/IPC.ts:625</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L674">src/util/IPC.ts:674</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -680,7 +704,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L509">src/util/IPC.ts:509</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L559">src/util/IPC.ts:559</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -703,7 +727,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L300">src/util/IPC.ts:300</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L321">src/util/IPC.ts:321</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -742,7 +766,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L582">src/util/IPC.ts:582</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L631">src/util/IPC.ts:631</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -786,7 +810,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L122">src/util/IPC.ts:122</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L140">src/util/IPC.ts:140</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -856,7 +880,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L96">src/util/IPC.ts:96</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L114">src/util/IPC.ts:114</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -917,12 +941,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L265">src/util/IPC.ts:265</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L288">src/util/IPC.ts:288</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Fetch a Channel from the Eris client on any cluster</p>
+									<p>Fetch a cached channel from the Eris client on any cluster</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
@@ -955,12 +979,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L246">src/util/IPC.ts:246</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L270">src/util/IPC.ts:270</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Fetch a guild from the Eris client on any cluster</p>
+									<p>Fetch a cached guild from the Eris client on any cluster</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
@@ -993,12 +1017,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L285">src/util/IPC.ts:285</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L307">src/util/IPC.ts:307</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Fetch a user from the Eris client on any cluster</p>
+									<p>Fetch a cached member from the Eris client on any cluster</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
@@ -1037,12 +1061,12 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L227">src/util/IPC.ts:227</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L252">src/util/IPC.ts:252</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Fetch a user from the Eris client on any cluster</p>
+									<p>Fetch a cached user from the Eris client on any cluster</p>
 								</div>
 								<dl class="tsd-comment-tags">
 									<dt>example</dt>
@@ -1093,11 +1117,29 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L492">src/util/IPC.ts:492</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L525">src/util/IPC.ts:525</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/stats.html" class="tsd-signature-type" data-tsd-kind="Interface">Stats</a><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>The latest stats</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="getworkers" class="tsd-anchor"></a>
+					<h3>get<wbr>Workers</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Workers<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>clusters<span class="tsd-signature-symbol">: </span><a href="collection.html" class="tsd-signature-type" data-tsd-kind="Class">Collection</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/clustercollection.html" class="tsd-signature-type" data-tsd-kind="Interface">ClusterCollection</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>services<span class="tsd-signature-symbol">: </span><a href="collection.html" class="tsd-signature-type" data-tsd-kind="Class">Collection</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/servicecollection.html" class="tsd-signature-type" data-tsd-kind="Interface">ServiceCollection</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L540">src/util/IPC.ts:540</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{ </span>clusters<span class="tsd-signature-symbol">: </span><a href="collection.html" class="tsd-signature-type" data-tsd-kind="Class">Collection</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/clustercollection.html" class="tsd-signature-type" data-tsd-kind="Interface">ClusterCollection</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>services<span class="tsd-signature-symbol">: </span><a href="collection.html" class="tsd-signature-type" data-tsd-kind="Class">Collection</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><a href="../interfaces/servicecollection.html" class="tsd-signature-type" data-tsd-kind="Interface">ServiceCollection</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Collection of clusters and collection of services</p>
 						</li>
 					</ul>
 				</section>
@@ -1159,7 +1201,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L83">src/util/IPC.ts:83</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L101">src/util/IPC.ts:101</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1451,7 +1493,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L139">src/util/IPC.ts:139</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L157">src/util/IPC.ts:157</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1585,7 +1627,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L605">src/util/IPC.ts:605</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L654">src/util/IPC.ts:654</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1616,7 +1658,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L533">src/util/IPC.ts:533</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L582">src/util/IPC.ts:582</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1647,7 +1689,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L550">src/util/IPC.ts:550</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L599">src/util/IPC.ts:599</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1678,7 +1720,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L525">src/util/IPC.ts:525</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L574">src/util/IPC.ts:574</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1715,7 +1757,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L542">src/util/IPC.ts:542</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L591">src/util/IPC.ts:591</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1752,7 +1794,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L55">src/util/IPC.ts:55</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L73">src/util/IPC.ts:73</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1771,6 +1813,29 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="sendmessage" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> send<wbr>Message</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">send<wbr>Message<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L65">src/util/IPC.ts:65</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>message: <span class="tsd-signature-type">any</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="sendto" class="tsd-anchor"></a>
 					<h3>send<wbr>To</h3>
@@ -1781,7 +1846,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L213">src/util/IPC.ts:213</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L238">src/util/IPC.ts:238</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1822,6 +1887,50 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="sendtoadmiral" class="tsd-anchor"></a>
+					<h3>send<wbr>ToAdmiral</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">send<wbr>ToAdmiral<span class="tsd-signature-symbol">(</span>op<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, message<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L215">src/util/IPC.ts:215</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Send to the master process.
+									The event can be listened to using <code>Admiral.on(&quot;event&quot;, listener);</code></p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>example</dt>
+									<dd><pre><code class="language-js"><span style="color: #0000FF">this</span><span style="color: #000000">.</span><span style="color: #001080">ipc</span><span style="color: #000000">.</span><span style="color: #795E26">sendToAdmiral</span><span style="color: #000000">(</span><span style="color: #A31515">&quot;Hello&quot;</span><span style="color: #000000">, </span><span style="color: #A31515">&quot;I&#039;m working!&quot;</span><span style="color: #000000">);</span>
+</code></pre>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>op: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Name of the event</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> message: <span class="tsd-signature-type">unknown</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Message to send</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="servicecommand" class="tsd-anchor"></a>
 					<h3>service<wbr>Command</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -1831,7 +1940,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L318">src/util/IPC.ts:318</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L339">src/util/IPC.ts:339</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1889,7 +1998,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L757">src/util/IPC.ts:757</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L813">src/util/IPC.ts:813</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1973,7 +2082,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L559">src/util/IPC.ts:559</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L608">src/util/IPC.ts:608</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2010,7 +2119,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L568">src/util/IPC.ts:568</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L617">src/util/IPC.ts:617</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2047,7 +2156,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L597">src/util/IPC.ts:597</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L646">src/util/IPC.ts:646</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2078,7 +2187,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L157">src/util/IPC.ts:157</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L175">src/util/IPC.ts:175</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2139,7 +2248,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L109">src/util/IPC.ts:109</a></li>
+									<li>Defined in <a href="https://github.com/danclay/eris-fleet/blob/master/src/util/IPC.ts#L127">src/util/IPC.ts:127</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2247,6 +2356,9 @@
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="ipc.html#ipceventlisteners" class="tsd-kind-icon">ipc<wbr>Event<wbr>Listeners</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="ipc.html#messagehandler" class="tsd-kind-icon">message<wbr>Handler</a>
+							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-static tsd-is-external">
 								<a href="ipc.html#defaultmaxlisteners" class="tsd-kind-icon">default<wbr>Max<wbr>Listeners</a>
 							</li>
@@ -2313,6 +2425,9 @@
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="ipc.html#getstats" class="tsd-kind-icon">get<wbr>Stats</a>
 							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="ipc.html#getworkers" class="tsd-kind-icon">get<wbr>Workers</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-external">
 								<a href="ipc.html#listenercount" class="tsd-kind-icon">listener<wbr>Count</a>
 							</li>
@@ -2367,8 +2482,14 @@
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="ipc.html#sendlog" class="tsd-kind-icon">send<wbr>Log</a>
 							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="ipc.html#sendmessage" class="tsd-kind-icon">send<wbr>Message</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="ipc.html#sendto" class="tsd-kind-icon">send<wbr>To</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="ipc.html#sendtoadmiral" class="tsd-kind-icon">send<wbr>ToAdmiral</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="ipc.html#servicecommand" class="tsd-kind-icon">service<wbr>Command</a>

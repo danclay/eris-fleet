@@ -1,35 +1,19 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Admiral = void 0;
+const IPC_1 = require("./../util/IPC");
 const events_1 = require("events");
 const os_1 = require("os");
-const master = __importStar(require("cluster"));
-const cluster_1 = require("cluster");
+const cluster_1 = __importDefault(require("cluster"));
 const Collection_1 = require("../util/Collection");
 const Queue_1 = require("../util/Queue");
-const Eris = __importStar(require("eris"));
+const eris_1 = __importDefault(require("eris"));
 const Cluster_1 = require("../clusters/Cluster");
 const Service_1 = require("../services/Service");
-const path = __importStar(require("path"));
+const path_1 = __importDefault(require("path"));
 const util_1 = require("util");
 const ErrorHandler_1 = require("../util/ErrorHandler");
 /**
@@ -87,7 +71,7 @@ class Admiral extends events_1.EventEmitter {
         this.clusterTimeout = options.clusterTimeout || 5e3;
         this.serviceTimeout = options.serviceTimeout || 0;
         this.killTimeout = options.killTimeout || 10e3;
-        this.erisClient = options.customClient || Eris.Client;
+        this.erisClient = options.customClient || eris_1.default.Client;
         this.useCentralRequestHandler = options.useCentralRequestHandler || false;
         this.nodeArgs = options.nodeArgs;
         this.statsInterval = options.statsInterval || 60e3;
@@ -107,11 +91,11 @@ class Admiral extends events_1.EventEmitter {
         // Deals with needed components
         if (!options.token)
             throw "No token!";
-        if (!path.isAbsolute(options.path))
+        if (!path_1.default.isAbsolute(options.path))
             throw "The path needs to be absolute!";
         if (options.services) {
             options.services.forEach((e) => {
-                if (!path.isAbsolute(e.path)) {
+                if (!path_1.default.isAbsolute(e.path)) {
                     throw `Path for service ${e.name} needs to be absolute!`;
                 }
                 if (options.services.filter((s) => s.name == e.name).length > 1) {
@@ -191,6 +175,21 @@ class Admiral extends events_1.EventEmitter {
         this.fetches = new Map();
         this.launchingManager = new Map();
         this.connectedClusterGroups = new Map();
+        // Admiral's simulated ipc
+        this.ipc = new IPC_1.IPC({
+            fetchTimeout: this.fetchTimeout,
+            messageHandler: (initialMessage) => {
+                const fakeWorker = {
+                    id: "master",
+                    send: (replyMessage) => {
+                        if (replyMessage.op !== "return")
+                            return;
+                        this.ipc.emit(replyMessage.id, replyMessage.value);
+                    }
+                };
+                this.ipcMessageHandler(fakeWorker, initialMessage);
+            }
+        });
         if (this.statsInterval !== "disable") {
             this.stats = {
                 guilds: 0,
@@ -213,27 +212,11 @@ class Admiral extends events_1.EventEmitter {
             this.clusterCount = os_1.cpus().length;
         this.eris = new this.erisClient(this.token);
         this.launch();
-        if (master.isMaster) {
-            cluster_1.on("message", (worker, message) => {
+        if (cluster_1.default.isMaster) {
+            cluster_1.default.on("message", (worker, message) => {
                 var _a, _b;
                 if (message.op) {
                     switch (message.op) {
-                        case "log": {
-                            this.ipcLog("log", message, worker);
-                            break;
-                        }
-                        case "debug": {
-                            this.ipcLog("debug", message, worker);
-                            break;
-                        }
-                        case "error": {
-                            this.ipcLog("error", message, worker);
-                            break;
-                        }
-                        case "warn": {
-                            this.ipcLog("warn", message, worker);
-                            break;
-                        }
                         case "launched": {
                             const lr = this.launchingManager.get(worker.id);
                             if (lr) {
@@ -342,266 +325,6 @@ class Admiral extends events_1.EventEmitter {
                             // if (!this.queue.queue[1]) this.emit("ready");
                             break;
                         }
-                        case "fetchGuild":
-                        case "fetchMember":
-                        case "fetchChannel":
-                        case "fetchUser": {
-                            this.fetchInfo(message.op, message.id, worker.id);
-                            break;
-                        }
-                        case "serviceCommand": {
-                            const service = this.services.get(message.command.service);
-                            if (service) {
-                                const serviceWorker = master.workers[service.workerID];
-                                if (serviceWorker) {
-                                    serviceWorker.send({
-                                        op: "command",
-                                        command: message.command,
-                                        UUID: worker.id,
-                                    });
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.command.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Service ${message.command.service} is unavailable.`,
-                                                serviceName: service.serviceName
-                                            },
-                                        },
-                                    });
-                                    const clusterObj = this.clusters.find((c) => c.workerID == worker.id);
-                                    this.error(`A service I requested (${message.command.service}) is unavailable.`, `Cluster ${clusterObj ? clusterObj.clusterID : "?"}`);
-                                }
-                            }
-                            else {
-                                worker.send({
-                                    op: "return",
-                                    id: message.command.UUID,
-                                    value: {
-                                        value: {
-                                            err: `Service ${message.command.service} does not exist.`,
-                                            serviceName: message.command.service
-                                        },
-                                    },
-                                });
-                                const clusterObj = this.clusters.find((c) => c.workerID == worker.id);
-                                this.error(`A service I requested (${message.command.service}) does not exist.`, `Cluster ${clusterObj ? clusterObj.clusterID : "?"}`);
-                            }
-                            break;
-                        }
-                        case "clusterCommand": {
-                            const cluster = this.clusters.get(message.command.clusterID);
-                            if (cluster) {
-                                const clusterWorker = master.workers[cluster.workerID];
-                                if (clusterWorker) {
-                                    clusterWorker.send({
-                                        op: "command",
-                                        command: message.command,
-                                        UUID: worker.id,
-                                    });
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.command.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Cluster ${message.command.clusterID} is unavailable.`,
-                                                clusterID: cluster.clusterID
-                                            },
-                                        },
-                                    });
-                                    this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
-                                }
-                            }
-                            else {
-                                worker.send({
-                                    op: "return",
-                                    id: message.command.UUID,
-                                    value: {
-                                        value: {
-                                            err: `Cluster ${message.command.clusterID} does not exist.`,
-                                            clusterID: message.command.clusterID
-                                        },
-                                    },
-                                });
-                                this.error(`The cluster I requested (${message.command.clusterID}) does not exist.`, `Worker ${worker.id}`);
-                            }
-                            break;
-                        }
-                        case "allClustersCommand": {
-                            this.clusters.forEach((c) => {
-                                const clusterWorker = master.workers[c.workerID];
-                                if (clusterWorker) {
-                                    process.nextTick(() => clusterWorker.send({
-                                        op: "command",
-                                        command: message.command,
-                                        UUID: worker.id
-                                    }));
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.command.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Cluster ${message.command.clusterID} is unavailable.`,
-                                                clusterID: c.clusterID
-                                            },
-                                        },
-                                    });
-                                    this.error(`The cluster I requested (${message.command.clusterID}) is unavailable.`, `Worker ${worker.id}`);
-                                }
-                            });
-                            break;
-                        }
-                        case "clusterEval": {
-                            const cluster = this.clusters.get(message.request.clusterID);
-                            if (cluster) {
-                                const clusterWorker = master.workers[cluster.workerID];
-                                if (clusterWorker) {
-                                    clusterWorker.send({
-                                        op: "eval",
-                                        request: message.request,
-                                        UUID: worker.id,
-                                    });
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.request.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Cluster ${message.request.clusterID} is unavailable.`,
-                                                clusterID: cluster.clusterID
-                                            },
-                                        },
-                                    });
-                                    this.error(`The cluster I requested (${message.request.clusterID}) is unavailable.`, `Worker ${worker.id}`);
-                                }
-                            }
-                            else {
-                                worker.send({
-                                    op: "return",
-                                    id: message.request.UUID,
-                                    value: {
-                                        value: {
-                                            err: `Cluster ${message.request.clusterID} does not exist.`,
-                                            clusterID: message.request.clusterID
-                                        },
-                                    },
-                                });
-                                this.error(`The cluster I requested (${message.request.clusterID}) does not exist.`, `Worker ${worker.id}`);
-                            }
-                            break;
-                        }
-                        case "serviceEval": {
-                            const service = this.services.get(message.request.serviceName);
-                            if (service) {
-                                const serviceWorker = master.workers[service.workerID];
-                                if (serviceWorker) {
-                                    serviceWorker.send({
-                                        op: "eval",
-                                        request: message.request,
-                                        UUID: worker.id,
-                                    });
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.request.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Service ${message.request.serviceName} is unavailable.`,
-                                                serviceName: service.serviceName
-                                            },
-                                        },
-                                    });
-                                    this.error(`The service I requested (${message.request.serviceName}) is unavailable.`, `Worker ${worker.id}`);
-                                }
-                            }
-                            else {
-                                worker.send({
-                                    op: "return",
-                                    id: message.request.UUID,
-                                    value: {
-                                        value: {
-                                            err: `Service ${message.request.serviceName} does not exist.`,
-                                            serviceName: message.command.service
-                                        },
-                                    },
-                                });
-                                this.error(`The service I requested (${message.request.serviceName}) does not exist.`, `Worker ${worker.id}`);
-                            }
-                            break;
-                        }
-                        case "allClustersEval": {
-                            this.clusters.forEach((c) => {
-                                const clusterWorker = master.workers[c.workerID];
-                                if (clusterWorker) {
-                                    process.nextTick(() => clusterWorker.send({
-                                        op: "eval",
-                                        request: message.request,
-                                        UUID: worker.id
-                                    }));
-                                }
-                                else {
-                                    worker.send({
-                                        op: "return",
-                                        id: message.request.UUID,
-                                        value: {
-                                            value: {
-                                                err: `Cluster ${message.request.clusterID} is unavailable.`,
-                                                clusterID: c.clusterID
-                                            },
-                                        },
-                                    });
-                                    this.error(`The cluster I requested (${message.request.clusterID}) is unavailable.`, `Worker ${worker.id}`);
-                                }
-                            });
-                            break;
-                        }
-                        case "return": {
-                            const worker = master.workers[message.UUID];
-                            if (worker) {
-                                const UUID = JSON.stringify({
-                                    id: message.value.id,
-                                    UUID: message.UUID,
-                                });
-                                const fetch = this.fetches.get(UUID);
-                                if (message.value.noValue) {
-                                    if (fetch !== undefined) {
-                                        let clustersLaunching = 0;
-                                        this.launchingWorkers.forEach((w) => {
-                                            if (w.cluster)
-                                                clustersLaunching++;
-                                        });
-                                        if (fetch.checked + 1 == this.clusters.size + clustersLaunching) {
-                                            worker.send({
-                                                op: "return",
-                                                id: message.value.id,
-                                                value: null,
-                                            });
-                                            this.fetches.delete(UUID);
-                                        }
-                                        else {
-                                            this.fetches.set(UUID, Object.assign(fetch, { checked: fetch.checked + 1 }));
-                                        }
-                                    }
-                                }
-                                else {
-                                    this.fetches.delete(UUID);
-                                    worker.send({
-                                        op: "return",
-                                        id: message.value.id,
-                                        value: message.value,
-                                    });
-                                }
-                            }
-                            break;
-                        }
                         case "collectStats": {
                             if (this.prelimStats && !this.pauseStats) {
                                 const recievedTimestamp = new Date().getTime();
@@ -655,113 +378,14 @@ class Admiral extends events_1.EventEmitter {
                             this.centralApiRequest(worker, message.request.UUID, message.request.data);
                             break;
                         }
-                        case "getStats": {
-                            // Sends the latest stats upon request from the IPC
-                            worker.send({
-                                op: "return",
-                                id: "statsReturn",
-                                value: this.stats,
-                            });
-                            break;
-                        }
-                        case "getWorkers": {
-                            // sends worker information
-                            worker.send({
-                                op: "return",
-                                id: "workersReturn",
-                                value: {
-                                    clusters: {
-                                        dataType: "Map",
-                                        value: Array.from(this.clusters.entries())
-                                    },
-                                    services: {
-                                        dataType: "Map",
-                                        value: Array.from(this.services.entries())
-                                    }
-                                }
-                            });
-                            break;
-                        }
-                        case "executeStats": {
-                            this.collectStats()
-                                .then(stats => {
-                                worker.send({
-                                    op: "return",
-                                    id: "statsReturn",
-                                    value: stats,
-                                });
-                            });
-                            break;
-                        }
-                        case "broadcast": {
-                            this.broadcast(message.event.op, message.event.msg);
-                            break;
-                        }
-                        case "sendTo": {
-                            const clusterObj = this.clusters.get(message.cluster);
-                            if (!clusterObj)
-                                return;
-                            const worker = master.workers[clusterObj.workerID];
-                            if (!worker)
-                                return;
-                            worker.send({ op: "ipcEvent", event: message.event.op, msg: message.event.msg });
-                            break;
-                        }
-                        case "restartCluster": {
-                            this.restartCluster(message.clusterID, message.hard);
-                            break;
-                        }
-                        case "restartAllClusters": {
-                            this.restartAllClusters(message.hard);
-                            break;
-                        }
-                        case "restartService": {
-                            this.restartService(message.serviceName, message.hard);
-                            break;
-                        }
-                        case "restartAllServices": {
-                            this.restartAllServices(message.hard);
-                            break;
-                        }
-                        case "shutdownCluster": {
-                            this.shutdownCluster(message.clusterID, message.hard);
-                            break;
-                        }
-                        case "shutdownService": {
-                            this.shutdownService(message.serviceName, message.hard);
-                            break;
-                        }
-                        case "createService": {
-                            this.createService(message.serviceName, message.servicePath);
-                            break;
-                        }
-                        case "totalShutdown": {
-                            this.totalShutdown(message.hard);
-                            break;
-                        }
-                        case "reshard": {
-                            this.reshard(message.options);
-                            break;
-                        }
-                        case "admiralBroadcast": {
-                            this.emit(message.event.op, message.event.msg);
-                            break;
-                        }
-                        case "getAdmiralInfo": {
-                            worker.send({
-                                op: "return",
-                                id: "admiralInfo",
-                                value: {
-                                    clusters: Object.fromEntries(this.clusters),
-                                    services: Object.fromEntries(this.services)
-                                }
-                            });
+                        default: {
+                            this.ipcMessageHandler(worker, message);
                             break;
                         }
                     }
                 }
             });
-            cluster_1.on("disconnect", (worker) => {
+            cluster_1.default.on("disconnect", (worker) => {
                 const cluster = this.clusters.find((c) => c.workerID == worker.id);
                 const service = this.services.find((s) => s.workerID == worker.id);
                 if (cluster) {
@@ -771,7 +395,7 @@ class Admiral extends events_1.EventEmitter {
                     this.warn(`Service ${service.serviceName} disconnected :(`, "Admiral");
                 }
             });
-            cluster_1.on("exit", (worker /*, code, signal*/) => {
+            cluster_1.default.on("exit", (worker /*, code, signal*/) => {
                 var _a;
                 if (this.softKills.get(worker.id)) {
                     const name = () => {
@@ -798,7 +422,7 @@ class Admiral extends events_1.EventEmitter {
                 }
             });
             this.queue.on("execute", (item /*, prevItem?: QueueItem*/) => {
-                const worker = master.workers[item.workerID];
+                const worker = cluster_1.default.workers[item.workerID];
                 if (worker) {
                     if (item.message.op == "connect") {
                         const concurrency = () => {
@@ -853,7 +477,7 @@ class Admiral extends events_1.EventEmitter {
                             var _a;
                             if (this.queue.queue[0])
                                 if (this.queue.queue[0].workerID == item.workerID) {
-                                    const worker = master.workers[item.workerID];
+                                    const worker = cluster_1.default.workers[item.workerID];
                                     if (worker) {
                                         worker.kill();
                                         const name = () => {
@@ -884,10 +508,414 @@ class Admiral extends events_1.EventEmitter {
             });
         }
     }
+    ipcMessageHandler(worker, message) {
+        const logSourced = (type, msg) => {
+            let source = `Worker ${worker.id}`;
+            if (worker.id === "master") {
+                source = "Admiral";
+            }
+            else {
+                const clusterObj = this.clusters.find((c) => c.workerID == worker.id);
+                const serviceObj = this.services.find((c) => c.workerID == worker.id);
+                if (clusterObj)
+                    source = `Cluster ${clusterObj.clusterID}`;
+                if (serviceObj)
+                    source = `Service ${serviceObj.serviceName}`;
+            }
+            this[type](msg, source);
+        };
+        if (!message.op)
+            return;
+        switch (message.op) {
+            // fallback log
+            case "log": {
+                this.ipcLog("log", message, worker);
+                break;
+            }
+            case "debug": {
+                this.ipcLog("debug", message, worker);
+                break;
+            }
+            case "error": {
+                this.ipcLog("error", message, worker);
+                break;
+            }
+            case "warn": {
+                this.ipcLog("warn", message, worker);
+                break;
+            }
+            case "fetchGuild":
+            case "fetchMember":
+            case "fetchChannel":
+            case "fetchUser": {
+                this.fetchInfo(message.op, message.id, worker);
+                break;
+            }
+            case "serviceCommand": {
+                const service = this.services.get(message.command.service);
+                if (service) {
+                    const serviceWorker = cluster_1.default.workers[service.workerID];
+                    if (serviceWorker) {
+                        serviceWorker.send({
+                            op: "command",
+                            command: message.command,
+                            UUID: worker.id,
+                        });
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.command.UUID,
+                            value: {
+                                value: {
+                                    err: `Service ${message.command.service} is unavailable.`,
+                                    serviceName: service.serviceName
+                                },
+                            },
+                        });
+                        logSourced("warn", `A service I requested (${message.command.service}) is unavailable.`);
+                    }
+                }
+                else {
+                    worker.send({
+                        op: "return",
+                        id: message.command.UUID,
+                        value: {
+                            value: {
+                                err: `Service ${message.command.service} does not exist.`,
+                                serviceName: message.command.service
+                            },
+                        },
+                    });
+                    logSourced("warn", `A service I requested (${message.command.service}) does not exist.`);
+                }
+                break;
+            }
+            case "clusterCommand": {
+                const cluster = this.clusters.get(message.command.clusterID);
+                if (cluster) {
+                    const clusterWorker = cluster_1.default.workers[cluster.workerID];
+                    if (clusterWorker) {
+                        clusterWorker.send({
+                            op: "command",
+                            command: message.command,
+                            UUID: worker.id,
+                        });
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.command.UUID,
+                            value: {
+                                value: {
+                                    err: `Cluster ${message.command.clusterID} is unavailable.`,
+                                    clusterID: cluster.clusterID
+                                },
+                            },
+                        });
+                        logSourced("warn", `The cluster I requested (${message.command.clusterID}) is unavailable.`);
+                    }
+                }
+                else {
+                    worker.send({
+                        op: "return",
+                        id: message.command.UUID,
+                        value: {
+                            value: {
+                                err: `Cluster ${message.command.clusterID} does not exist.`,
+                                clusterID: message.command.clusterID
+                            },
+                        },
+                    });
+                    logSourced("warn", `The cluster I requested (${message.command.clusterID}) does not exist.`);
+                }
+                break;
+            }
+            case "allClustersCommand": {
+                this.clusters.forEach((c) => {
+                    const clusterWorker = cluster_1.default.workers[c.workerID];
+                    if (clusterWorker) {
+                        process.nextTick(() => clusterWorker.send({
+                            op: "command",
+                            command: message.command,
+                            UUID: worker.id
+                        }));
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.command.UUID,
+                            value: {
+                                value: {
+                                    err: `Cluster ${message.command.clusterID} is unavailable.`,
+                                    clusterID: c.clusterID
+                                },
+                            },
+                        });
+                        logSourced("warn", `The cluster I requested (${message.command.clusterID}) is unavailable.`);
+                    }
+                });
+                break;
+            }
+            case "clusterEval": {
+                const cluster = this.clusters.get(message.request.clusterID);
+                if (cluster) {
+                    const clusterWorker = cluster_1.default.workers[cluster.workerID];
+                    if (clusterWorker) {
+                        clusterWorker.send({
+                            op: "eval",
+                            request: message.request,
+                            UUID: worker.id,
+                        });
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.request.UUID,
+                            value: {
+                                value: {
+                                    err: `Cluster ${message.request.clusterID} is unavailable.`,
+                                    clusterID: cluster.clusterID
+                                },
+                            },
+                        });
+                        logSourced("warn", `The cluster I requested (${message.request.clusterID}) is unavailable.`);
+                    }
+                }
+                else {
+                    worker.send({
+                        op: "return",
+                        id: message.request.UUID,
+                        value: {
+                            value: {
+                                err: `Cluster ${message.request.clusterID} does not exist.`,
+                                clusterID: message.request.clusterID
+                            },
+                        },
+                    });
+                    logSourced("warn", `The cluster I requested (${message.request.clusterID}) does not exist.`);
+                }
+                break;
+            }
+            case "serviceEval": {
+                const service = this.services.get(message.request.serviceName);
+                if (service) {
+                    const serviceWorker = cluster_1.default.workers[service.workerID];
+                    if (serviceWorker) {
+                        serviceWorker.send({
+                            op: "eval",
+                            request: message.request,
+                            UUID: worker.id,
+                        });
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.request.UUID,
+                            value: {
+                                value: {
+                                    err: `Service ${message.request.serviceName} is unavailable.`,
+                                    serviceName: service.serviceName
+                                },
+                            },
+                        });
+                        logSourced("warn", `The service I requested (${message.request.serviceName}) is unavailable.`);
+                    }
+                }
+                else {
+                    worker.send({
+                        op: "return",
+                        id: message.request.UUID,
+                        value: {
+                            value: {
+                                err: `Service ${message.request.serviceName} does not exist.`,
+                                serviceName: message.command.service
+                            },
+                        },
+                    });
+                    logSourced("warn", `The service I requested (${message.request.serviceName}) does not exist.`);
+                }
+                break;
+            }
+            case "allClustersEval": {
+                this.clusters.forEach((c) => {
+                    const clusterWorker = cluster_1.default.workers[c.workerID];
+                    if (clusterWorker) {
+                        process.nextTick(() => clusterWorker.send({
+                            op: "eval",
+                            request: message.request,
+                            UUID: worker.id
+                        }));
+                    }
+                    else {
+                        worker.send({
+                            op: "return",
+                            id: message.request.UUID,
+                            value: {
+                                value: {
+                                    err: `Cluster ${message.request.clusterID} is unavailable.`,
+                                    clusterID: c.clusterID
+                                },
+                            },
+                        });
+                        logSourced("warn", `The cluster I requested (${message.request.clusterID}) is unavailable.`);
+                    }
+                });
+                break;
+            }
+            case "return": {
+                const worker = cluster_1.default.workers[message.UUID];
+                if (worker) {
+                    const UUID = JSON.stringify({
+                        id: message.value.id,
+                        UUID: message.UUID,
+                    });
+                    const fetch = this.fetches.get(UUID);
+                    if (message.value.noValue) {
+                        if (fetch !== undefined) {
+                            let clustersLaunching = 0;
+                            this.launchingWorkers.forEach((w) => {
+                                if (w.cluster)
+                                    clustersLaunching++;
+                            });
+                            if (fetch.checked + 1 == this.clusters.size + clustersLaunching) {
+                                worker.send({
+                                    op: "return",
+                                    id: message.value.id,
+                                    value: null,
+                                });
+                                this.fetches.delete(UUID);
+                            }
+                            else {
+                                this.fetches.set(UUID, Object.assign(fetch, { checked: fetch.checked + 1 }));
+                            }
+                        }
+                    }
+                    else {
+                        this.fetches.delete(UUID);
+                        worker.send({
+                            op: "return",
+                            id: message.value.id,
+                            value: message.value,
+                        });
+                    }
+                }
+                break;
+            }
+            case "getStats": {
+                // Sends the latest stats upon request from the IPC
+                worker.send({
+                    op: "return",
+                    id: "statsReturn",
+                    value: this.stats,
+                });
+                break;
+            }
+            case "getWorkers": {
+                // sends worker information
+                worker.send({
+                    op: "return",
+                    id: "workersReturn",
+                    value: {
+                        clusters: {
+                            dataType: "Map",
+                            value: Array.from(this.clusters.entries())
+                        },
+                        services: {
+                            dataType: "Map",
+                            value: Array.from(this.services.entries())
+                        }
+                    }
+                });
+                break;
+            }
+            case "executeStats": {
+                this.collectStats()
+                    .then(stats => {
+                    worker.send({
+                        op: "return",
+                        id: "statsReturn",
+                        value: stats,
+                    });
+                });
+                break;
+            }
+            case "broadcast": {
+                this.broadcast(message.event.op, message.event.msg);
+                break;
+            }
+            case "sendTo": {
+                const clusterObj = this.clusters.get(message.cluster);
+                if (!clusterObj)
+                    return;
+                const worker = cluster_1.default.workers[clusterObj.workerID];
+                if (!worker)
+                    return;
+                worker.send({ op: "ipcEvent", event: message.event.op, msg: message.event.msg });
+                break;
+            }
+            case "restartCluster": {
+                this.restartCluster(message.clusterID, message.hard);
+                break;
+            }
+            case "restartAllClusters": {
+                this.restartAllClusters(message.hard);
+                break;
+            }
+            case "restartService": {
+                this.restartService(message.serviceName, message.hard);
+                break;
+            }
+            case "restartAllServices": {
+                this.restartAllServices(message.hard);
+                break;
+            }
+            case "shutdownCluster": {
+                this.shutdownCluster(message.clusterID, message.hard);
+                break;
+            }
+            case "shutdownService": {
+                this.shutdownService(message.serviceName, message.hard);
+                break;
+            }
+            case "createService": {
+                this.createService(message.serviceName, message.servicePath);
+                break;
+            }
+            case "totalShutdown": {
+                this.totalShutdown(message.hard);
+                break;
+            }
+            case "reshard": {
+                this.reshard(message.options);
+                break;
+            }
+            case "admiralBroadcast": {
+                this.ipc.emit("ipcEvent", {
+                    op: "ipcEvent",
+                    event: message.event.op,
+                    msg: message.event.msg
+                });
+                this.emit(message.event.op, message.event.msg);
+                break;
+            }
+            case "getAdmiralInfo": {
+                worker.send({
+                    op: "return",
+                    id: "admiralInfo",
+                    value: {
+                        clusters: Object.fromEntries(this.clusters),
+                        services: Object.fromEntries(this.services)
+                    }
+                });
+                break;
+            }
+        }
+    }
     launch() {
         this.launchingWorkers.clear();
         this.pauseStats = true;
-        if (master.isMaster) {
+        if (cluster_1.default.isMaster) {
             process.on("uncaughtException", (e) => this.error(e));
             process.nextTick(() => {
                 if (this.whatToLog.includes("admiral_start")) {
@@ -925,7 +953,7 @@ class Admiral extends events_1.EventEmitter {
                             silent: false,
                         };
                     }
-                    master.setupMaster(opts);
+                    cluster_1.default.setupMaster(opts);
                     // Start stuff
                     if (this.servicesToCreate && !this.resharding) {
                         this.startService(this.servicesToCreate);
@@ -936,7 +964,7 @@ class Admiral extends events_1.EventEmitter {
                 });
             });
         }
-        else if (master.isWorker) {
+        else if (cluster_1.default.isWorker) {
             if (process.env.type === "cluster") {
                 new Cluster_1.Cluster({
                     erisClient: this.erisClient,
@@ -992,7 +1020,7 @@ class Admiral extends events_1.EventEmitter {
         if (!clusterObj)
             return;
         const workerID = clusterObj.workerID;
-        const worker = master.workers[workerID];
+        const worker = cluster_1.default.workers[workerID];
         if (worker) {
             const restartItem = this.restartWorker(worker, true, hard ? false : true);
             if (restartItem)
@@ -1010,7 +1038,7 @@ class Admiral extends events_1.EventEmitter {
             process.nextTick(() => {
                 completed++;
                 const workerID = cluster.workerID;
-                const worker = master.workers[workerID];
+                const worker = cluster_1.default.workers[workerID];
                 if (worker) {
                     const restartItem = this.restartWorker(worker, true, hard ? false : true);
                     if (restartItem)
@@ -1033,7 +1061,7 @@ class Admiral extends events_1.EventEmitter {
         if (!serviceObj)
             return;
         const workerID = serviceObj.workerID;
-        const worker = master.workers[workerID];
+        const worker = cluster_1.default.workers[workerID];
         if (worker) {
             const restartItem = this.restartWorker(worker, true, hard ? false : true);
             if (restartItem)
@@ -1053,7 +1081,7 @@ class Admiral extends events_1.EventEmitter {
                 const serviceObj = this.services.get(service.serviceName);
                 if (serviceObj) {
                     const workerID = serviceObj.workerID;
-                    const worker = master.workers[workerID];
+                    const worker = cluster_1.default.workers[workerID];
                     if (worker) {
                         const restartItem = this.restartWorker(worker, true, hard ? false : true);
                         if (restartItem)
@@ -1077,7 +1105,7 @@ class Admiral extends events_1.EventEmitter {
         if (!clusterObj)
             return;
         const workerID = clusterObj.workerID;
-        const worker = master.workers[workerID];
+        const worker = cluster_1.default.workers[workerID];
         if (worker) {
             const shutdownItem = this.shutdownWorker(worker, hard ? false : true);
             this.queue.item(shutdownItem);
@@ -1093,7 +1121,7 @@ class Admiral extends events_1.EventEmitter {
         if (!serviceObj)
             return;
         const workerID = serviceObj.workerID;
-        const worker = master.workers[workerID];
+        const worker = cluster_1.default.workers[workerID];
         if (worker) {
             const shutdownItem = this.shutdownWorker(worker, hard ? false : true);
             this.queue.item(shutdownItem);
@@ -1115,7 +1143,7 @@ class Admiral extends events_1.EventEmitter {
      */
     createService(serviceName, servicePath) {
         // if path is not absolute
-        if (!path.isAbsolute(servicePath)) {
+        if (!path_1.default.isAbsolute(servicePath)) {
             this.error("Service path must be absolute!", "Admiral");
             return;
         }
@@ -1176,7 +1204,7 @@ class Admiral extends events_1.EventEmitter {
             this.clusters.forEach((cluster) => {
                 total++;
                 process.nextTick(() => {
-                    const worker = master.workers[cluster.workerID];
+                    const worker = cluster_1.default.workers[cluster.workerID];
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
@@ -1187,7 +1215,7 @@ class Admiral extends events_1.EventEmitter {
             this.services.forEach((service) => {
                 total++;
                 process.nextTick(() => {
-                    const worker = master.workers[service.workerID];
+                    const worker = cluster_1.default.workers[service.workerID];
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
@@ -1198,7 +1226,7 @@ class Admiral extends events_1.EventEmitter {
             this.launchingWorkers.forEach((workerData, workerID) => {
                 total++;
                 process.nextTick(() => {
-                    const worker = master.workers[workerID];
+                    const worker = cluster_1.default.workers[workerID];
                     if (worker) {
                         const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
                         queueItems.push(shutdownItem);
@@ -1241,7 +1269,7 @@ class Admiral extends events_1.EventEmitter {
                 let i = 0;
                 const queueItems = [];
                 oldClusters.forEach((c) => {
-                    const oldWorker = master.workers[c.workerID];
+                    const oldWorker = cluster_1.default.workers[c.workerID];
                     if (oldWorker) {
                         const shutdownItem = this.shutdownWorker(oldWorker, true, () => {
                             if (this.whatToLog.includes("resharding_worker_killed")) {
@@ -1250,7 +1278,7 @@ class Admiral extends events_1.EventEmitter {
                             const newWorkerClusterObj = this.clusters.get(c.clusterID);
                             let newWorker;
                             if (newWorkerClusterObj) {
-                                newWorker = master.workers[newWorkerClusterObj.workerID];
+                                newWorker = cluster_1.default.workers[newWorkerClusterObj.workerID];
                             }
                             if (this.whatToLog.includes("resharding_transition")) {
                                 this.log(`Transitioning to new worker for cluster ${c.clusterID}`, "Admiral");
@@ -1262,7 +1290,7 @@ class Admiral extends events_1.EventEmitter {
                                 // load code for new clusters
                                 this.clusters.forEach((c) => {
                                     if (!oldClusters.get(c.clusterID)) {
-                                        const newWorker = master.workers[c.workerID];
+                                        const newWorker = cluster_1.default.workers[c.workerID];
                                         if (newWorker)
                                             newWorker.send({ op: "loadCode" });
                                         if (this.whatToLog.includes("resharding_transition")) {
@@ -1299,14 +1327,19 @@ class Admiral extends events_1.EventEmitter {
         if (!msg)
             msg = null;
         this.clusters.forEach((c) => {
-            const worker = master.workers[c.workerID];
+            const worker = cluster_1.default.workers[c.workerID];
             if (worker)
                 process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
         });
         this.services.forEach((s) => {
-            const worker = master.workers[s.workerID];
+            const worker = cluster_1.default.workers[s.workerID];
             if (worker)
                 process.nextTick(() => worker.send({ op: "ipcEvent", event: op, msg }));
+        });
+        this.ipc.emit("ipcEvent", {
+            op: "ipcEvent",
+            event: op,
+            msg
         });
     }
     /**
@@ -1328,7 +1361,7 @@ class Admiral extends events_1.EventEmitter {
             const queueItems = [];
             for (let i = 0; i < servicesToStart.length; i++) {
                 const service = servicesToStart[i];
-                const worker = master.fork({
+                const worker = cluster_1.default.fork({
                     type: "service",
                     NODE_ENV: process.env.NODE_ENV,
                 });
@@ -1372,7 +1405,7 @@ class Admiral extends events_1.EventEmitter {
     }
     startCluster() {
         for (let i = 0; i < this.clusterCount; i++) {
-            const worker = master.fork({
+            const worker = cluster_1.default.fork({
                 type: "cluster",
                 NODE_ENV: process.env.NODE_ENV,
             });
@@ -1610,7 +1643,7 @@ class Admiral extends events_1.EventEmitter {
         const service = this.services.find((s) => s.workerID == worker.id);
         let item;
         if (cluster) {
-            const newWorker = master.fork({
+            const newWorker = cluster_1.default.fork({
                 NODE_ENV: process.env.NODE_ENV,
                 type: "cluster",
             });
@@ -1685,7 +1718,7 @@ class Admiral extends events_1.EventEmitter {
             };
         }
         else if (service) {
-            const newWorker = master.fork({
+            const newWorker = cluster_1.default.fork({
                 NODE_ENV: process.env.NODE_ENV,
                 type: "service",
             });
@@ -1760,13 +1793,14 @@ class Admiral extends events_1.EventEmitter {
             }
         }*/
     }
-    fetchInfo(op, id, UUID) {
+    fetchInfo(op, id, requestWorker) {
+        const UUID = requestWorker.id;
         const mapUUID = JSON.stringify({ id, UUID });
         this.fetches.set(mapUUID, { UUID, op, id, checked: 0 });
         for (let i = 0; this.clusters.get(i); i++) {
             process.nextTick(() => {
                 const cluster = this.clusters.get(i);
-                const worker = master.workers[cluster.workerID];
+                const worker = cluster_1.default.workers[cluster.workerID];
                 if (worker)
                     worker.send({ op, id, UUID });
             });
@@ -1774,11 +1808,10 @@ class Admiral extends events_1.EventEmitter {
         setTimeout(() => {
             if (this.fetches.get(mapUUID)) {
                 this.fetches.delete(mapUUID);
-                const worker = master.workers[UUID];
-                if (worker) {
-                    worker.send({
+                if (requestWorker) {
+                    requestWorker.send({
                         op: "return",
-                        id: id,
+                        id,
                         value: null,
                     });
                 }
@@ -1808,14 +1841,14 @@ class Admiral extends events_1.EventEmitter {
         this.statsWorkersCounted = 0;
         this.clusters.forEach((c) => {
             process.nextTick(() => {
-                const worker = master.workers[c.workerID];
+                const worker = cluster_1.default.workers[c.workerID];
                 if (worker)
                     worker.send({ op: "collectStats" });
             });
         });
         this.services.forEach((s) => {
             process.nextTick(() => {
-                const worker = master.workers[s.workerID];
+                const worker = cluster_1.default.workers[s.workerID];
                 if (worker)
                     worker.send({ op: "collectStats" });
             });
@@ -1856,33 +1889,41 @@ class Admiral extends events_1.EventEmitter {
             messageToLog = message;
         }
         if (!source) {
-            let cluster = this.clusters.find((c) => c.workerID == worker.id);
-            let service = this.services.find((s) => s.workerID == worker.id);
-            if (!service && !cluster) {
-                const soft = this.softKills.get(worker.id);
-                const launching = this.launchingWorkers.get(worker.id);
-                if (soft) {
-                    if (soft.type == "cluster") {
-                        cluster = { clusterID: Number(soft.id) };
+            if (worker.id === "master") {
+                source = "Admiral";
+            }
+            else {
+                let cluster = this.clusters.find((c) => c.workerID == worker.id);
+                let service = this.services.find((s) => s.workerID == worker.id);
+                if (!service && !cluster) {
+                    const soft = this.softKills.get(worker.id);
+                    const launching = this.launchingWorkers.get(worker.id);
+                    if (soft) {
+                        if (soft.type == "cluster") {
+                            cluster = { clusterID: Number(soft.id) };
+                        }
+                        else if (soft.type == "service") {
+                            service = { serviceName: String(soft.id) };
+                        }
                     }
-                    else if (soft.type == "service") {
-                        service = { serviceName: String(soft.id) };
+                    else if (launching) {
+                        if (launching.cluster) {
+                            cluster = { clusterID: launching.cluster.clusterID };
+                        }
+                        else if (launching.service) {
+                            service = { serviceName: launching.service.serviceName };
+                        }
                     }
                 }
-                else if (launching) {
-                    if (launching.cluster) {
-                        cluster = { clusterID: launching.cluster.clusterID };
-                    }
-                    else if (launching.service) {
-                        service = { serviceName: launching.service.serviceName };
-                    }
+                if (cluster) {
+                    source = `Cluster ${cluster.clusterID}`;
                 }
-            }
-            if (cluster) {
-                source = `Cluster ${cluster.clusterID}`;
-            }
-            else if (service) {
-                source = `Service ${service.serviceName}`;
+                else if (service) {
+                    source = `Service ${service.serviceName}`;
+                }
+                else {
+                    source = "?";
+                }
             }
         }
         this.emitLog(type, messageToLog, source);

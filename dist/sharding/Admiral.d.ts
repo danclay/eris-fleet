@@ -1,7 +1,8 @@
 /// <reference types="node" />
+import { IPC } from "./../util/IPC";
 import { EventEmitter } from "events";
 import { Collection } from "../util/Collection";
-import * as Eris from "eris";
+import Eris from "eris";
 interface ServiceCreator {
     name: string;
     path: string;
@@ -284,6 +285,11 @@ export declare class Admiral extends EventEmitter {
     clusters: Collection<number, ClusterCollection>;
     /** Map of services by name */
     services: Collection<string, ServiceCollection>;
+    /**
+     * IPC class for the Admiral which functions like the worker IPC classes.
+     * Has some redundant functions which already exist on the Admiral class.
+     */
+    ipc: IPC;
     /** Maps of workers currently launching by ID */
     private launchingWorkers;
     private path;
@@ -334,6 +340,7 @@ export declare class Admiral extends EventEmitter {
      * @param options Options to configure the sharding manager
     */
     constructor(options: Options);
+    private ipcMessageHandler;
     private launch;
     private centralApiRequest;
     /**

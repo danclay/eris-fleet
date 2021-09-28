@@ -119,7 +119,7 @@ export class Cluster {
 					const messageParsed = JSON.parse(message.id);
 					const guild = this.bot.guilds.get(messageParsed.guildID);
 					if (guild) {
-						const member = (await guild.fetchMembers({userIDs: [messageParsed.memberID], presences: true}))[0];
+						const member = guild.members.get(messageParsed.memberID);
 						if (member) {
 							const clean = member.toJSON();
 							clean.id = message.id;
