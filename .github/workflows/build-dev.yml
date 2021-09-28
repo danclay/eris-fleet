@@ -21,4 +21,4 @@ jobs:
           git add .
           git add dist/ -f
           git commit -m "${{ github.event.head_commit.message }}"
-          git push origin master:dev -f
+          git push origin development:dev -f

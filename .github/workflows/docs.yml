@@ -4,7 +4,7 @@ on:
     - master
 name: Publish docs
 jobs:
-  buildDocs:
+  build:
     name: Publish project documentation
     runs-on: ubuntu-latest
     steps:
