@@ -457,7 +457,7 @@ export class Admiral extends EventEmitter {
 				if (!path.isAbsolute(e.path)) {
 					throw `Path for service ${e.name} needs to be absolute!`;
 				}
-				if (options.services!.filter((s) => s.name == e.name).length > 1) {
+				if (options.services!.filter((s) => s.name === e.name).length > 1) {
 					throw `Duplicate service names for service ${e.name}!`;
 				}
 			});
@@ -632,7 +632,7 @@ export class Admiral extends EventEmitter {
 							this.softKills.get(worker.id)?.fn();
 						}
 						if (this.queue.queue[1]) {
-							if (this.queue.queue[1].type == "cluster" && this.queue.queue[0].type == "cluster") {
+							if (this.queue.queue[1].type === "cluster" && this.queue.queue[0].type === "cluster") {
 								const clusterToGroupMap = this.chunkConcurrencyGroups();
 								const clusterGroupID = clusterToGroupMap.get(launchedWorker.cluster!.clusterID);
 								if (!clusterGroupID && clusterGroupID !== 0) {
@@ -647,7 +647,7 @@ export class Admiral extends EventEmitter {
 									setTimeout(() => this.queue.execute(), this.clusterTimeout);
 								}
 								//setTimeout(() => this.queue.execute(), this.clusterTimeout);
-							} else if (this.startServicesTogether && this.queue.queue[1].type == "cluster" && this.queue.queue[0].type == "service") {
+							} else if (this.startServicesTogether && this.queue.queue[1].type === "cluster" && this.queue.queue[0].type === "service") {
 								// check concurrency for services
 								if (this.servicesToCreate) {
 									if (this.services.size >= this.servicesToCreate.length) {
@@ -684,9 +684,9 @@ export class Admiral extends EventEmitter {
 					}
 					case "collectStats": {
 						if (this.prelimStats && !this.pauseStats) {
-							const recievedTimestamp = new Date().getTime();
-							const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
-							const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+							const receivedTimestamp = new Date().getTime();
+							const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+							const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
 							if (cluster) {
 								this.prelimStats.guilds += message.stats.guilds;
 								this.prelimStats.users += message.stats.users;
@@ -697,15 +697,15 @@ export class Admiral extends EventEmitter {
 								this.prelimStats.shardCount += message.stats.shardStats.length;
 
 								this.prelimStats.clusters.push(
-									Object.assign(message.stats, {id: cluster.clusterID, ipcLatency: recievedTimestamp - message.stats.ipcLatency}),
+									Object.assign(message.stats, {id: cluster.clusterID, ipcLatency: receivedTimestamp - message.stats.ipcLatency}),
 								);
-								if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
+								if (typeof this.statsWorkersCounted === "number") this.statsWorkersCounted++;
 							} else if (service) {
 								this.prelimStats.servicesRam += message.stats.ram;
 								this.prelimStats.services.push(
-									Object.assign(message.stats, {name: service.serviceName, ipcLatency: recievedTimestamp - message.stats.ipcLatency}),
+									Object.assign(message.stats, {name: service.serviceName, ipcLatency: receivedTimestamp - message.stats.ipcLatency}),
 								);
-								if (typeof this.statsWorkersCounted == "number") this.statsWorkersCounted++;
+								if (typeof this.statsWorkersCounted === "number") this.statsWorkersCounted++;
 							}
 							this.prelimStats.totalRam += message.stats.ram;
 						}
@@ -748,10 +748,10 @@ export class Admiral extends EventEmitter {
 
 			master.on("disconnect", (worker) => {
 				const cluster = this.clusters.find(
-					(c: ClusterCollection) => c.workerID == worker.id,
+					(c: ClusterCollection) => c.workerID === worker.id,
 				);
 				const service = this.services.find(
-					(s: ServiceCollection) => s.workerID == worker.id,
+					(s: ServiceCollection) => s.workerID === worker.id,
 				);
 				if (cluster) {
 					this.warn(`Cluster ${cluster.clusterID} disconnected :(`, "Admiral");
@@ -763,8 +763,8 @@ export class Admiral extends EventEmitter {
 			master.on("exit", (worker/*, code, signal*/) => {
 				if (this.softKills.get(worker.id)) {
 					const name = () => {
-						const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
-						const service = this.services.find((s: ServiceCollection) => s.workerID == worker.id);
+						const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+						const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
 						if (cluster) {
 							return "Cluster " + cluster.clusterID;
 						} else if (service) {
@@ -785,7 +785,7 @@ export class Admiral extends EventEmitter {
 			this.queue.on("execute", (item: QueueItem/*, prevItem?: QueueItem*/) => {
 				const worker = master.workers[item.workerID];
 				if (worker) {
-					if (item.message.op == "connect") {
+					if (item.message.op === "connect") {
 						const concurrency = () => {
 							if (item.type === "service" && this.startServicesTogether && this.queue.queue[1]) {
 								// start services together
@@ -828,16 +828,16 @@ export class Admiral extends EventEmitter {
 								},
 							});
 						}
-					} else if (item.message.op == "shutdown") {
+					} else if (item.message.op === "shutdown") {
 						worker.send(item.message);
 						setTimeout(() => {
-							if (this.queue.queue[0]) if (this.queue.queue[0].workerID == item.workerID) {
+							if (this.queue.queue[0]) if (this.queue.queue[0].workerID === item.workerID) {
 								const worker = master.workers[item.workerID];
 								if (worker) {
 									worker.kill();
 									const name = () => {
-										const cluster = this.clusters.find((c: ClusterCollection) => c.workerID == item.workerID);
-										const service = this.services.find((s: ServiceCollection) => s.workerID == item.workerID);
+										const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === item.workerID);
+										const service = this.services.find((s: ServiceCollection) => s.workerID === item.workerID);
 										if (cluster) {
 											return "Cluster " + cluster.clusterID;
 										} else if (service) {
@@ -867,8 +867,8 @@ export class Admiral extends EventEmitter {
 			if (worker.id === "master") {
 				source = "Admiral";
 			} else {
-				const clusterObj = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id);
-				const serviceObj = this.services.find((c: ServiceCollection) => c.workerID == worker.id);
+				const clusterObj = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+				const serviceObj = this.services.find((c: ServiceCollection) => c.workerID === worker.id);
 				if (clusterObj) source = `Cluster ${clusterObj.clusterID}`;
 				if (serviceObj) source = `Service ${serviceObj.serviceName}`;
 			}
@@ -1146,7 +1146,7 @@ export class Admiral extends EventEmitter {
 						if (w.cluster) clustersLaunching++;
 					});
 
-					if (fetch.checked + 1 == this.clusters.size + clustersLaunching) {
+					if (fetch.checked + 1 === this.clusters.size + clustersLaunching) {
 						sendReturn(null);
 						this.fetches.delete(UUID);
 					} else {
@@ -1558,7 +1558,7 @@ export class Admiral extends EventEmitter {
 			let done = 0;
 			const doneFn = () => {
 				done++;
-				if (done == total) {
+				if (done === total) {
 					// clear override
 					this.queue.override = undefined;
 					if (this.whatToLog.includes("total_shutdown")) {
@@ -1659,7 +1659,7 @@ export class Admiral extends EventEmitter {
 							}
 							if (newWorker) newWorker.send({op: "loadCode"});
 							i++;
-							if (i == oldClusters.size) {
+							if (i === oldClusters.size) {
 								// load code for new clusters
 								this.clusters.forEach((c: ClusterCollection) => {
 									if (!oldClusters.get(c.clusterID)) {
@@ -1802,7 +1802,7 @@ export class Admiral extends EventEmitter {
 		if (this.whatToLog.includes("all_clusters_launched")) this.log("All clusters launched!", "Admiral");
 
 		if (this.chunks) this.chunks.forEach((chunk, clusterID) => {
-			const workerID = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID == clusterID)!.cluster!.workerID;
+			const workerID = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID === clusterID)!.cluster!.workerID;
 
 			/* this.clusters.set(clusterID, {
 				workerID: workerID,
@@ -1824,7 +1824,7 @@ export class Admiral extends EventEmitter {
 		for (const i of Array(this.clusterCount).keys()) {
 			const ID = Number(i);
 
-			const cluster = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID == ID)!.cluster!;
+			const cluster = this.launchingWorkers.find((w: WorkerCollection) => w.cluster?.clusterID === ID)!.cluster!;
 
 			
 			queueItems.push({
@@ -1915,20 +1915,20 @@ export class Admiral extends EventEmitter {
 		if (customMaps) {
 			if (customMaps.clusters) {
 				cluster = customMaps.clusters.find(
-					(c: ClusterCollection) => c.workerID == worker.id,
+					(c: ClusterCollection) => c.workerID === worker.id,
 				);
 			} else {
 				cluster = this.clusters.find(
-					(c: ClusterCollection) => c.workerID == worker.id,
+					(c: ClusterCollection) => c.workerID === worker.id,
 				);
 			}
 			if (customMaps.services) {
 				service = customMaps.services.find(
-					(s: ServiceCollection) => s.workerID == worker.id,
+					(s: ServiceCollection) => s.workerID === worker.id,
 				);
 			} else {
 				service = this.services.find(
-					(s: ServiceCollection) => s.workerID == worker.id,
+					(s: ServiceCollection) => s.workerID === worker.id,
 				);
 			}
 			if (customMaps.launchingWorkers) {
@@ -1936,10 +1936,10 @@ export class Admiral extends EventEmitter {
 			}
 		} else {
 			cluster = this.clusters.find(
-				(c: ClusterCollection) => c.workerID == worker.id,
+				(c: ClusterCollection) => c.workerID === worker.id,
 			);
 			service = this.services.find(
-				(s: ServiceCollection) => s.workerID == worker.id,
+				(s: ServiceCollection) => s.workerID === worker.id,
 			);
 			launchingWorker = this.launchingWorkers.get(worker.id);
 		}
@@ -2026,10 +2026,10 @@ export class Admiral extends EventEmitter {
 
 	private restartWorker(worker: master.Worker, manual?: boolean, soft?: boolean) {
 		const cluster = this.clusters.find(
-			(c: ClusterCollection) => c.workerID == worker.id,
+			(c: ClusterCollection) => c.workerID === worker.id,
 		);
 		const service = this.services.find(
-			(s: ServiceCollection) => s.workerID == worker.id,
+			(s: ServiceCollection) => s.workerID === worker.id,
 		);
 
 		let item;
@@ -2182,7 +2182,7 @@ export class Admiral extends EventEmitter {
 		return item;
 		/*if ((service || cluster) && item) {
 			if (this.queue.queue[0]) {
-				if (this.queue.queue[0].workerID == worker.id) {
+				if (this.queue.queue[0].workerID === worker.id) {
 					this.queue.queue[0] = item;
 					this.queue.execute(true);
 				} else {
@@ -2294,15 +2294,15 @@ export class Admiral extends EventEmitter {
 			if (worker.id === "master") {
 				source = "Admiral";
 			} else {
-				let cluster = this.clusters.find((c: ClusterCollection) => c.workerID == worker.id) as {clusterID: number};
-				let service = this.services.find((s: ServiceCollection) => s.workerID == worker.id) as {serviceName: string};
+				let cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id) as {clusterID: number};
+				let service = this.services.find((s: ServiceCollection) => s.workerID === worker.id) as {serviceName: string};
 				if (!service && !cluster) {
 					const soft = this.softKills.get(worker.id);
 					const launching = this.launchingWorkers.get(worker.id);
 					if (soft) {
-						if (soft.type == "cluster") {
+						if (soft.type === "cluster") {
 							cluster = {clusterID: Number(soft.id)};
-						} else if (soft.type == "service") {
+						} else if (soft.type === "service") {
 							service = {serviceName: String(soft.id)};
 						}
 					} else if (launching) {

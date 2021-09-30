@@ -216,7 +216,7 @@ export class Cluster {
 							ready: shard.ready,
 							latency: shard.latency,
 							status: shard.status,
-							guilds: Object.values(this.bot.guildShardMap).filter(e => e == shard.id).length,
+							guilds: Object.values(this.bot.guildShardMap).filter(e => e === shard.id).length,
 							users: shardUsers,
 							members: shardUsers
 						});

@@ -60,7 +60,7 @@ export class Queue extends EventEmitter {
 	public item(item: QueueItem, override?: string): void {
 		if (this.override && override !== this.override) return;
 		this.queue.push(item);
-		if (this.queue.length == 1) this.execute(true, override);
+		if (this.queue.length === 1) this.execute(true, override);
 	}
 
 	public bunkItems(items: QueueItem[], override?: string): void {

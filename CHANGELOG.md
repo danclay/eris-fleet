@@ -91,6 +91,6 @@ Fixed [issue 60](https://github.com/danclay/eris-fleet/issues/60) where Discord 
 - Added logging customization (see README for more details)
 - Added less logging option (see README for more details)
 - Added shard disconnection errors being logged
-- Added error reporting for an error occuring while starting a service `this.serviceStartingError(Error)`
+- Added error reporting for an error occurring while starting a service `this.serviceStartingError(Error)`
 - Moved `this.restartCluster(Number)` to the IPC, so it is now `this.ipc.restartCluster(Number)`
 - Added fetch functionality to services

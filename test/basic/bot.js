@@ -11,8 +11,13 @@ module.exports = class BotWorker extends BaseClusterWorker {
     async handleMessage(msg) {
         if (msg.content === "!ping" && !msg.author.bot) {
             this.bot.createMessage(msg.channel.id, "Pong!");
+			const data = await this.ipc.clusterCommand(0, null, true)
         }
     }
+
+	async handleCommand() {
+		return "temp"
+	}
 
     shutdown(done) {
         // Optional function to gracefully shutdown things if you need to.

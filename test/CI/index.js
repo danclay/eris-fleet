@@ -39,16 +39,16 @@ if (isMaster) {
     let i = 0;
     Admiral.on('ready', () => {
         i++;
-        if (i == 1) {
+        if (i === 1) {
             console.log("Starting test 1");
             Admiral.broadcast("test1");
-        } else if (i == 2) {
+        } else if (i === 2) {
             console.log("Starting restart test");
             Admiral.broadcast("test2");
-        } else if (i == 3) {
+        } else if (i === 3) {
             console.log("Starting reshard test");
             Admiral.broadcast("test3");
-        } else if (i == 5) {
+        } else if (i === 5) {
             console.log("Starting total shutdown test");
             Admiral.broadcast("test4");
         }

@@ -125,7 +125,7 @@ module.exports = class BotWorker extends BaseClusterWorker {
 }
 ```
 **Make sure your bot file extends BaseClusterWorker!**
-The bot above will respond with "Pong!" when it recieves the command "!ping".
+The bot above will respond with "Pong!" when it receives the command "!ping".
 
 ## Services
 
@@ -221,7 +221,7 @@ Visit [the docs](https://danclay.github.io/eris-fleet/classes/fleet.html) for a 
 
 ### Central Request Handler
 
-The central request handler forwards Eris requests to the master process where the request is sent to a single Eris request handler instance. This helps to prevent 429 errors from occuring when you have x number of clusters keeping track of ratelimiting separately. When a response is recieved, it is sent back to the cluster's Eris client.
+The central request handler forwards Eris requests to the master process where the request is sent to a single Eris request handler instance. This helps to prevent 429 errors from occurring when you have x number of clusters keeping track of ratelimiting separately. When a response is received, it is sent back to the cluster's Eris client.
 
 ### Concurrency
 

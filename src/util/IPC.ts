@@ -142,10 +142,10 @@ export class IPC extends EventEmitter {
 	}
 
 	/** 
-	 * Register for an event. This will recieve broadcasts and messages sent to this cluster.
+	 * Register for an event. This will receive broadcasts and messages sent to this cluster.
 	 * Events can be sent using {@link sendTo} and {@link broadcast}
 	 * @param event Name of the event
-	 * @param callback Function run when event is recieved
+	 * @param callback Function run when event is received
 	 * @example
 	 * ```js
 	 * this.ipc.register("hello!", (message) => {
@@ -448,12 +448,12 @@ export class IPC extends EventEmitter {
 	 * @param message Whatever message you want to send with the command (defaults to `null`)
 	 * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
-	 * @param callback Function which will be run everytime a new command return is recieved
+	 * @param callback Function which will be run everytime a new command return is received
 	 * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
 	 * @example
 	 * ```js
 	 * this.ipc.allClustersCommand("hello clusters!", true, undefined, (id, data) => {
-	 * 	console.log(`I just recieved ${data} from ${id}!`);
+	 * 	console.log(`I just received ${data} from ${id}!`);
 	 * })
 	 * .then((data) => this.ipc.log(`All my clusters responded and my data in a map. Here is the data from cluster 0: ${data.get(0)}`))
 	 * .catch((error) => this.ipc.error(error));
@@ -485,20 +485,20 @@ export class IPC extends EventEmitter {
 				}).then((clusterInfo) => {
 					// get responses
 					let clustersReturned = 0;
-					const dataRecieved: Map<number, any> = new Map();
+					const datareceived: Map<number, any> = new Map();
 					let timeout: NodeJS.Timeout | undefined = undefined;
 					const dataReturnCallback = (msg: {clusterID: number, value: any}) => {
-						if (dataRecieved.get(msg.clusterID)) return;
+						if (datareceived.get(msg.clusterID)) return;
 						clustersReturned++;
 						if (callback) {
 							callback(msg.clusterID, msg.value);
 						}
-						dataRecieved.set(msg.clusterID, msg.value);
+						datareceived.set(msg.clusterID, msg.value);
 
 						// end if done
 						if (clustersReturned === Object.keys(clusterInfo).length) {
 							if (timeout) clearTimeout(timeout);
-							resolve(dataRecieved);
+							resolve(datareceived);
 							this.removeListener(UUID, dataReturnCallback);
 						}
 					};
@@ -723,12 +723,12 @@ export class IPC extends EventEmitter {
 	 * @param stringToEvaluate String to send to eval
 	 * @param receptive Whether you expect something to be returned to you from the command (defaults to `false`)
 	 * @param returnTimeout How long to wait for a return (defaults to `options.fetchTimeout`)
-	 * @param callback Function which will be run everytime a new command return is recieved
+	 * @param callback Function which will be run everytime a new command return is received
 	 * @returns Promise which provides a map with the data replied mapped by cluster ID if `receptive = true`
 	 * @example
 	 * ```js
 	 * this.ipc.allClustersCommand("return 'heyo!'", true, undefined, (id, data) => {
-	 * 	console.log(`I just recieved ${data} from ${id}!`);
+	 * 	console.log(`I just received ${data} from ${id}!`);
 	 * })
 	 * .then((data) => this.ipc.log(`All my clusters responded and my data in a map. Here is the data from cluster 0: ${data.get(0)}`))
 	 * .catch((error) => this.ipc.error(error));
@@ -760,20 +760,20 @@ export class IPC extends EventEmitter {
 				this.getWorkers().then((workers) => {
 					// get responses
 					let clustersReturned = 0;
-					const dataRecieved: Map<number, any> = new Map();
+					const datareceived: Map<number, any> = new Map();
 					let timeout: NodeJS.Timeout | undefined = undefined;
 					const dataReturnCallback = (msg: {clusterID: number, value: any}) => {
-						if (dataRecieved.get(msg.clusterID)) return;
+						if (datareceived.get(msg.clusterID)) return;
 						clustersReturned++;
 						if (callback) {
 							callback(msg.clusterID, msg.value);
 						}
-						dataRecieved.set(msg.clusterID, msg.value);
+						datareceived.set(msg.clusterID, msg.value);
 
 						// end if done
 						if (clustersReturned === workers.clusters.size) {
 							if (timeout) clearTimeout(timeout);
-							resolve(dataRecieved);
+							resolve(datareceived);
 							this.removeListener(UUID, dataReturnCallback);
 						}
 					};
