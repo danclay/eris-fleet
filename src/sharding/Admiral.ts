@@ -207,6 +207,13 @@ export interface Options {
 	 * @defaultValue false
 	 */
 	shutdownTogether?: boolean;
+	/**
+	 * Whether to broadcast Admiral events (e.g. when a cluster is ready)
+	 * Note to avoid using Admiral event names when this is enabled
+	 * @defaultValue true
+	 */
+	broadcastAdmiralEvents?: boolean;
+
 }
 
 export interface ShardStats {
@@ -407,6 +414,7 @@ export class Admiral extends EventEmitter {
 	private maxConcurrencyOverride?: number;
 	private maxConcurrency: number;
 	private shutdownTogether: boolean;
+	private broadcastAdmiralEvents: boolean;
 
 	/** 
 	 * Creates the sharding manager
@@ -437,6 +445,7 @@ export class Admiral extends EventEmitter {
 		this.maxConcurrencyOverride = options.maxConcurrencyOverride;
 		this.maxConcurrency = this.maxConcurrencyOverride || 1;
 		this.shutdownTogether = options.shutdownTogether || false;
+		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents || true;
 		this.resharding = false;
 		this.statsStarted = false;
 		if (options.startingStatus) this.startingStatus = options.startingStatus;
@@ -602,6 +611,7 @@ export class Admiral extends EventEmitter {
 							});
 							// Emit a cluster is ready
 							this.emit("clusterReady", launchedWorker.cluster);
+							if (this.broadcastAdmiralEvents) this.broadcast("clusterReady", launchedWorker.cluster);
 						} else if (launchedWorker.service) {
 							if (!this.softKills.get(worker.id)) {
 								this.services.set(launchedWorker.service.serviceName, {
@@ -612,6 +622,7 @@ export class Admiral extends EventEmitter {
 							}
 							// Emit a service is ready
 							this.emit("serviceReady", launchedWorker.service);
+							if (this.broadcastAdmiralEvents) this.broadcast("serviceReady", launchedWorker.service);
 						}
 						this.launchingWorkers.delete(worker.id);
 						if (!this.resharding && !this.softKills.get(worker.id)) {
@@ -649,6 +660,7 @@ export class Admiral extends EventEmitter {
 						} else {
 							this.queue.execute();
 							this.emit("ready");
+							if (this.broadcastAdmiralEvents) this.broadcast("ready");
 							// clear the connected groups values
 							this.connectedClusterGroups.clear();
 							// After all clusters and services are ready
@@ -710,13 +722,14 @@ export class Admiral extends EventEmitter {
 									timestamp: new Date().getTime()
 								});
 								this.collectingStats = false;
-								this.emit("stats", this.stats);
+								
 								if (this.whatToLog.includes("stats_update")) {
 									this.log("Stats updated.", "Admiral");
 								}
 
 								// Sends the clusters the latest stats
-								this.broadcast("stats", this.stats);
+								this.emit("stats", this.stats);
+								if (this.broadcastAdmiralEvents) this.broadcast("stats", this.stats);
 						}
 
 						break;
@@ -1107,39 +1120,42 @@ export class Admiral extends EventEmitter {
 			break;
 		}
 		case "return": {
-			const worker = master.workers[message.UUID];
-			if (worker) {
-				const UUID = JSON.stringify({
-					id: message.value.id,
-					UUID: message.UUID,
-				});
-				const fetch = this.fetches.get(UUID);
-				if (message.value.noValue) {
-					if (fetch !== undefined) {
-						let clustersLaunching = 0;
-						this.launchingWorkers.forEach((w) => {
-							if (w.cluster) clustersLaunching++;
-						});
-
-						if (fetch.checked + 1 == this.clusters.size + clustersLaunching) {
-							worker.send({
-								op: "return",
-								id: message.value.id,
-								value: null,
-							});
-							this.fetches.delete(UUID);
-						} else {
-							this.fetches.set(UUID, Object.assign(fetch, {checked: fetch.checked + 1}));
-						}
-					}
+			const sendReturn = (value: any) => {
+				if (message.UUID === "master") {
+					this.ipc.emit(message.value.id, value);
 				} else {
-					this.fetches.delete(UUID);
-					worker.send({
-						op: "return",
-						id: message.value.id,
-						value: message.value,
-					});
+					const requestingWorker = master.workers[message.UUID];
+					if (requestingWorker) {
+						requestingWorker.send({
+							op: "return",
+							id: message.value.id,
+							value: value,
+						});
+					}
 				}
+			};
+			const UUID = JSON.stringify({
+				id: message.value.id,
+				UUID: message.UUID,
+			});
+			const fetch = this.fetches.get(UUID);
+			if (message.value.noValue) {
+				if (fetch !== undefined) {
+					let clustersLaunching = 0;
+					this.launchingWorkers.forEach((w) => {
+						if (w.cluster) clustersLaunching++;
+					});
+
+					if (fetch.checked + 1 == this.clusters.size + clustersLaunching) {
+						sendReturn(null);
+						this.fetches.delete(UUID);
+					} else {
+						this.fetches.set(UUID, Object.assign(fetch, {checked: fetch.checked + 1}));
+					}
+				}
+			} else {
+				this.fetches.delete(UUID);
+				sendReturn(message.value);
 			}
 
 			break;
@@ -1680,7 +1696,7 @@ export class Admiral extends EventEmitter {
 	 * admiral.broadcast("hello clusters!", "Want to chat?");
 	 * ```
 	*/
-	public broadcast(op: string, msg: unknown): void {
+	public broadcast(op: string, msg?: unknown): void {
 		if (!msg) msg = null;
 		this.clusters.forEach((c: ClusterCollection) => {
 			const worker = master.workers[c.workerID];

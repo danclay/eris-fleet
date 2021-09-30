@@ -108,8 +108,8 @@ module.exports = class BotWorker extends BaseClusterWorker {
         this.bot.on('messageCreate', this.handleMessage.bind(this));
 
         // Demonstration of the properties the cluster has (Keep reading for info on IPC):
-        console.log(this.workerID); // ID of the worker
-        console.log(this.clusterID); // The ID of the cluster
+        this.ipc.log(this.workerID); // ID of the worker
+        this.ipc.log(this.clusterID); // The ID of the cluster
     }
 
     async handleMessage(msg) {
@@ -155,8 +155,8 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
         this.serviceReady();
 
         // Demonstration of the properties the service has (Keep reading for info on IPC):
-        console.log(this.workerID); // ID of the worker
-        console.log(this.serviceName); // The name of the service
+    	this.ipc.log(this.workerID); // ID of the worker
+    	this.ipc.log(this.serviceName); // The name of the service
 
     }
     // This is the function which will handle commands

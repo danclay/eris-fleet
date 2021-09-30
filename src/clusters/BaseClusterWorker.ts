@@ -23,9 +23,9 @@ export interface Setup {
  * 
  * 		// Demonstration of the properties the cluster has (Keep reading for info on IPC):
  * 		// ID of the worker
- * 		console.log(this.workerID);
+ * 		this.ipc.log(this.workerID);
  * 		// The ID of the cluster
- * 		console.log(this.clusterID);
+ * 		this.ipc.log(this.clusterID);
  * 	}
  * 	async handleMessage(msg) {
  * 		if (msg.content === "!ping" && !msg.author.bot) {

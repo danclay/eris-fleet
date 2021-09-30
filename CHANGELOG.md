@@ -25,6 +25,7 @@ This may skip some little bug fixes.
 - Added IPC class to Admiral
 - Renamed `ipc.admiralBroadcast` to `ipc.sendToAdmiral`
 - Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` if no member is found.
+- Added broadcasting of Admiral events (and option to disable)
 
 ### Breaking changes:
 
