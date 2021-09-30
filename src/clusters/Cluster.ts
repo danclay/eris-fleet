@@ -272,19 +272,24 @@ export class Cluster {
 
 		const options = Object.assign(this.clientOptions, {autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount});
 
-		let App = (await import(this.path));
-
 		let bot;
-		if (App.Eris) {
-			bot = new App.Eris.Client(this.token, options);
-			App = App.BotWorker;
-		} else {
-			bot = new this.erisClient(this.token, options);
-			if (App.BotWorker) {
+		let App;
+		try {
+			App = (await import(this.path));
+			if (App.Eris) {
+				bot = new App.Eris.Client(this.token, options);
 				App = App.BotWorker;
 			} else {
-				App = App.default ? App.default : App;
+				bot = new this.erisClient(this.token, options);
+				if (App.BotWorker) {
+					App = App.BotWorker;
+				} else {
+					App = App.default ? App.default : App;
+				}
 			}
+		} catch (e) {
+			this.ipc.error(e);
+			process.exit(1);
 		}
 		this.App = App;
 
@@ -355,7 +360,16 @@ export class Cluster {
 		if (this.app) return;
 		//let App = (await import(this.path)).default;
 		//App = App.default ? App.default : App;
-		this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id, ipc: this.ipc});
-		if (this.whatToLog.includes("code_loaded")) this.ipc.log("Cluster code loaded");
+		try {
+			this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id, ipc: this.ipc});
+			if (!this.app) return;
+			if (process.send) process.send({op: "codeLoaded"});
+		} catch (e) {
+			this.ipc.error(e);
+			// disconnect bot
+			if (this.bot) this.bot.disconnect({reconnect: false});
+			// kill cluster
+			process.exit(1);
+		}
 	}
 }

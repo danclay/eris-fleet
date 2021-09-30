@@ -146,40 +146,36 @@ export class Service {
 		if (this.app) return;
 		if (this.whatToLog.includes("service_start")) this.ipc.log(`Starting service ${this.serviceName}`);
 
-		let App = (await import(this.path));
-		if (App.ServiceWorker) {
-			App = App.ServiceWorker;
-		} else {
-			App = App.default ? App.default : App;
+		let App;
+		try {
+			App = (await import(this.path));
+			if (App.ServiceWorker) {
+				App = App.ServiceWorker;
+			} else {
+				App = App.default ? App.default : App;
+			}
+			this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+		} catch (e) {
+			this.ipc.error(e);
+			process.exit(1);
 		}
-		this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
 
-		let ready = false;
-		if (this.app) this.app.readyPromise.then(() => {
-			if (this.whatToLog.includes("service_ready")) this.ipc.log(`Service ${this.serviceName} is ready!`);
-			if (process.send) process.send({op: "connected"});
-			ready = true;
-			this.connectedTimestamp = new Date().getTime();
-		}).catch((err: unknown) => {
-			this.ipc.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
-			process.kill(0);
-		});
-
-		// Timeout
+		let timeout: NodeJS.Timeout;
 		if (this.timeout !== 0) {
-			setTimeout(() => {
-				if (!ready) {
-					this.ipc.error(`Service ${this.serviceName} took too long to start.`);
-					process.kill(0);
-				}
+			timeout = setTimeout(() => {
+				this.ipc.error(`Service ${this.serviceName} took too long to start.`);
+				process.exit(1);
 			}, this.timeout);
 		}
 
-		/* this.app.admiral.on("broadcast", (m) => {
-			if (!m.event) console.error(`Service ${this.serviceName} | My emit cannot be completed since the message doesn't have a "message"!`);
-			if (!m.msg) m.msg = null;
-			//@ts-ignore
-			process.send({op: "broadcast", event: {op: m.event, msg: m.msg}});
-		}) */
+		if (this.app) this.app.readyPromise.then(() => {
+			if (process.send) process.send({op: "connected"});
+			if (process.send) process.send({op: "codeLoaded"});
+			if (timeout) clearTimeout(timeout);
+			this.connectedTimestamp = new Date().getTime();
+		}).catch((e: unknown) => {
+			this.ipc.error(e);
+			process.exit(1);
+		});
 	}
 }

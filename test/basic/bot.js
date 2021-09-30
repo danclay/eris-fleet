@@ -15,8 +15,9 @@ module.exports = class BotWorker extends BaseClusterWorker {
         }
     }
 
-	async handleCommand() {
-		return "temp"
+	handleCommand() {
+		// Optional function to return data from this cluster when requested
+		return "hello!"
 	}
 
     shutdown(done) {

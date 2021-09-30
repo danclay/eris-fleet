@@ -25,11 +25,6 @@ if (isMaster) {
     Admiral.on('warn', m => console.warn(m));
     Admiral.on('error', m => console.error(inspect(m)));
 
-    setTimeout(async () => {
-		console.log("start")
-		const data = await Admiral.ipc.clusterCommand(0, null, true)
-		console.log(data)
-	}, 5e3)
     // Logs stats when they arrive
-    //Admiral.on('stats', m => console.log(m));
+    Admiral.on('stats', m => console.log(m));
 }

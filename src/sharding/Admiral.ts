@@ -213,7 +213,11 @@ export interface Options {
 	 * @defaultValue true
 	 */
 	broadcastAdmiralEvents?: boolean;
-
+	/**
+	 * Maximum amount of restarts of a worker before giving up. -1 is infinite.
+	 * @defaultValue 5
+	 */
+	maxRestarts: number;
 }
 
 export interface ShardStats {
@@ -348,8 +352,11 @@ interface WorkerCollection {
  * @fires Admiral#error Error to log. Supplies either a message or an {@link ObjectLog}.
  * @fires Admiral#clusterReady Fires when a cluster is ready. Supplies {@link ClusterCollection | Cluster Object}.
  * @fires Admiral#serviceReady Fires when a service is ready. Supplies {@link ServiceCollection | Service Object}.
+ * @fires Admiral#clusterShutdown Fires when a cluster is shutdown. Supplies {@link ClusterCollection | Cluster Object}.
+ * @fires Admiral#serviceShutdown Fires when a service is shutdown. Supplies {@link ServiceCollection | Service Object}.
  * @fires Admiral#ready Fires when the queue is empty.
  * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
+ * @fires Admiral#reshardingComplete Fires when resharding completes.
 */
 export class Admiral extends EventEmitter {
 	/** Map of clusters by ID */
@@ -415,6 +422,11 @@ export class Admiral extends EventEmitter {
 	private maxConcurrency: number;
 	private shutdownTogether: boolean;
 	private broadcastAdmiralEvents: boolean;
+	private maxRestarts: number;
+	/** Map of cluster ID to sequential failed restarts */
+	private clustersSequentialFailedRestarts: Map<number, number>;
+	/** Map of service name to sequential failed restarts */
+	private servicesSequentialFailedRestarts: Map<string, number>;
 
 	/** 
 	 * Creates the sharding manager
@@ -446,6 +458,7 @@ export class Admiral extends EventEmitter {
 		this.maxConcurrency = this.maxConcurrencyOverride || 1;
 		this.shutdownTogether = options.shutdownTogether || false;
 		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents || true;
+		this.maxRestarts = options.maxRestarts || 5;
 		this.resharding = false;
 		this.statsStarted = false;
 		if (options.startingStatus) this.startingStatus = options.startingStatus;
@@ -535,6 +548,8 @@ export class Admiral extends EventEmitter {
 		this.fetches = new Map();
 		this.launchingManager = new Map();
 		this.connectedClusterGroups = new Map();
+		this.clustersSequentialFailedRestarts = new Map();
+		this.servicesSequentialFailedRestarts = new Map();
 		// Admiral's simulated ipc
 		this.ipc = new IPC({
 			fetchTimeout: this.fetchTimeout,
@@ -674,6 +689,18 @@ export class Admiral extends EventEmitter {
 						}
 						break;
 					}
+					case "codeLoaded": {
+						const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+						const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
+						if (cluster) {
+							this.clustersSequentialFailedRestarts.delete(cluster.clusterID);
+							if (this.whatToLog.includes("code_loaded")) this.log("Cluster code loaded", `Cluster ${cluster.clusterID}`);
+						} else if (service) {
+							this.servicesSequentialFailedRestarts.delete(service.serviceName);
+							if (this.whatToLog.includes("service_ready")) this.log(`Service ${service.serviceName} is ready!`);
+						}
+						break;
+					}
 					case "shutdown": {
 						const workerID = this.queue.queue[0].workerID;
 						if (this.softKills.get(workerID)) {
@@ -761,22 +788,49 @@ export class Admiral extends EventEmitter {
 			});
 
 			master.on("exit", (worker/*, code, signal*/) => {
+				const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+				const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
+				const name = () => {
+					if (cluster) {
+						return "Cluster " + cluster.clusterID;
+					} else if (service) {
+						return "Service " + service.serviceName;
+					} else {
+						return "Worker " + worker.id;
+					}
+				};
+
 				if (this.softKills.get(worker.id)) {
-					const name = () => {
-						const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
-						const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
-						if (cluster) {
-							return "Cluster " + cluster.clusterID;
-						} else if (service) {
-							return "Service " + service.serviceName;
-						} else {
-							return "Worker " + worker.id;
-						}
-					};
 					this.warn(name() + " died during a soft kill.", "Admiral");
 					this.queue.execute();
 					this.softKills.get(worker.id)?.fn(true);
 				} else {
+					// manage failed attempts
+					if (cluster) {
+						const totalRestarts = this.clustersSequentialFailedRestarts.get(cluster.clusterID) ?? 0;
+						if (totalRestarts >= this.maxRestarts) {
+							this.warn(`Cluster ${cluster.clusterID} has reached the maximum number of sequential restarts`, "Admiral");
+							this.clustersSequentialFailedRestarts.delete(cluster.clusterID);
+							// execute queue if the item in 0 failed
+							if (this.queue.queue[0].workerID === worker.id) {
+								this.queue.execute();
+							}
+							return;
+						}
+						this.clustersSequentialFailedRestarts.set(cluster.clusterID, totalRestarts + 1);
+					} else if (service) {
+						const totalRestarts = this.servicesSequentialFailedRestarts.get(service.serviceName) ?? 0;
+						if (totalRestarts >= this.maxRestarts) {
+							this.warn(`Service ${service.serviceName} has reached the maximum number of sequential restarts`, "Admiral");
+							this.servicesSequentialFailedRestarts.delete(service.serviceName);
+							// execute queue if the item in 0 failed
+							if (this.queue.queue[0].workerID === worker.id) {
+								this.queue.execute();
+							}
+							return;
+						}
+						this.servicesSequentialFailedRestarts.set(service.serviceName, totalRestarts + 1);
+					}
 					const restartItem = this.restartWorker(worker);
 					if (restartItem) this.queue.item(restartItem);
 				}
@@ -1673,6 +1727,8 @@ export class Admiral extends EventEmitter {
 								if (this.whatToLog.includes("resharding_transition_complete")) {
 									this.log("Transitioned all clusters to the new workers!", "Admiral");
 								}
+								this.emit("reshardingComplete");
+								if (this.broadcastAdmiralEvents) this.broadcast("reshardingComplete");
 							}
 						}, {clusters: oldClusters});
 						queueItems.push(shutdownItem);
@@ -1965,7 +2021,9 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(worker.id, {
 					fn: (failed?: boolean) => {
 						if (!failed) {
-							this.log(`Safely shutdown cluster ${cluster!.clusterID}`, "Admiral");
+							if (this.whatToLog.includes("cluster_shutdown")) this.log(`Safely shutdown cluster ${cluster!.clusterID}`, "Admiral");
+							this.emit("clusterShutdown", cluster);
+							if (this.broadcastAdmiralEvents) this.broadcast("clusterShutdown", cluster);
 							worker.kill();
 						}
 						if (!customMaps) {
@@ -1986,6 +2044,8 @@ export class Admiral extends EventEmitter {
 				if (this.whatToLog.includes("cluster_shutdown")) {
 					this.log(`Hard shutdown of cluster ${cluster.clusterID} complete`, "Admiral");
 				}
+				this.emit("clusterShutdown", cluster);
+				if (this.broadcastAdmiralEvents) this.broadcast("clusterShutdown", cluster);
 				if (!customMaps) this.clusters.delete(cluster.clusterID);
 			}
 
@@ -1995,7 +2055,9 @@ export class Admiral extends EventEmitter {
 				// Preform soft shutdown
 				this.softKills.set(worker.id, {
 					fn: () => {
-						this.log(`Safely shutdown service ${service!.serviceName}`, "Admiral");
+						if (this.whatToLog.includes("service_shutdown")) this.log(`Safely shutdown service ${service!.serviceName}`, "Admiral");
+						this.emit("serviceShutdown", service);
+						if (this.broadcastAdmiralEvents) this.broadcast("serviceShutdown", service);
 						worker.kill();
 						if (!customMaps) {
 							this.services.delete(service!.serviceName);
@@ -2015,6 +2077,8 @@ export class Admiral extends EventEmitter {
 				if (this.whatToLog.includes("service_shutdown")) {
 					this.log(`Hard shutdown of service ${service.serviceName} complete`, "Admiral");
 				}
+				this.emit("serviceShutdown", service);
+				if (this.broadcastAdmiralEvents) this.broadcast("serviceShutdown", service);
 				if (!customMaps) this.services.delete(service.serviceName);
 			}
 
@@ -2078,7 +2142,7 @@ export class Admiral extends EventEmitter {
 			} else {
 				if (manual) {
 					worker.kill();
-					this.warn(`Cluster ${cluster.clusterID} killed upon request`, "Admiral");
+					this.log(`Cluster ${cluster.clusterID} killed upon request`, "Admiral");
 				} else {
 					this.warn(`Cluster ${cluster.clusterID} died :(`, "Admiral");
 				}
@@ -2153,7 +2217,7 @@ export class Admiral extends EventEmitter {
 			} else {
 				if (manual) {
 					worker.kill();
-					this.warn(`Service ${service.serviceName} killed upon request`, "Admiral");
+					this.log(`Service ${service.serviceName} killed upon request`, "Admiral");
 				} else {
 					this.warn(`Service ${service.serviceName} died :(`, "Admiral");
 				}

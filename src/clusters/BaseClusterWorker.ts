@@ -32,6 +32,10 @@ export interface Setup {
  * 			this.bot.createMessage(msg.channel.id, "Pong!");
  * 		}
  * 	}
+ * handleCommand(dataSentInCommand) {
+ * 		// Optional function to return data from this cluster when requested
+ * 		return "hello!"
+ * }
  * 	shutdown(done) {
  * 		// Optional function to gracefully shutdown things if you need to.
  * 		done(); // Use this function when you are done gracefully shutting down.

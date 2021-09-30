@@ -1,11 +1,11 @@
 <div align="center">
   <p>
-  <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Library" /></a>
-    <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="NPM version" /></a>
+  <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Discord Library" /></a>
+    <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square&label=version&logo=npm" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
     <a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
 	<a href="https://david-dm.org/danclay/eris-fleet?type=peer"><img src="https://img.shields.io/david/peer/danclay/eris-fleet.svg?type=peer&cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
-    <a href="https://travis-ci.com/github/danclay/eris-fleet/builds"><img src="https://img.shields.io/travis/com/danclay/eris-fleet/master?cacheSeconds=3600&style=flat-square" alt="Build" /></a>
+    <a href="https://github.com/danclay/eris-fleet/actions/workflows/ci.yml"><img src="https://img.shields.io/github/workflow/status/danclay/eris-fleet/Node.js%20CI/master?style=flat-square&logo=github" alt="Node.js CI" /></a>
   </p>
   <p>
     <a href="https://www.npmjs.com/package/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
@@ -117,6 +117,11 @@ module.exports = class BotWorker extends BaseClusterWorker {
             this.bot.createMessage(msg.channel.id, "Pong!");
         }
     }
+
+	handleCommand(dataSentInCommand) {
+		// Optional function to return data from this cluster when requested
+		return "hello!"
+	}
 
     shutdown(done) {
         // Optional function to gracefully shutdown things if you need to.
