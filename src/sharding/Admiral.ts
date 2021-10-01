@@ -217,7 +217,7 @@ export interface Options {
 	 * Maximum amount of restarts of a worker before giving up. -1 is infinite.
 	 * @defaultValue 5
 	 */
-	maxRestarts: number;
+	maxRestarts?: number;
 }
 
 export interface ShardStats {
@@ -806,31 +806,34 @@ export class Admiral extends EventEmitter {
 					this.softKills.get(worker.id)?.fn(true);
 				} else {
 					// manage failed attempts
-					if (cluster) {
-						const totalRestarts = this.clustersSequentialFailedRestarts.get(cluster.clusterID) ?? 0;
-						if (totalRestarts >= this.maxRestarts) {
-							this.warn(`Cluster ${cluster.clusterID} has reached the maximum number of sequential restarts`, "Admiral");
-							this.clustersSequentialFailedRestarts.delete(cluster.clusterID);
-							// execute queue if the item in 0 failed
-							if (this.queue.queue[0].workerID === worker.id) {
-								this.queue.execute();
+					if (this.maxRestarts !== -1) {
+						if (cluster) {
+							const totalRestarts = this.clustersSequentialFailedRestarts.get(cluster.clusterID) ?? 0;
+							if (totalRestarts >= this.maxRestarts) {
+								this.warn(`Cluster ${cluster.clusterID} has reached the maximum number of sequential restarts`, "Admiral");
+								this.clustersSequentialFailedRestarts.delete(cluster.clusterID);
+								// execute queue if the item in 0 failed
+								if (this.queue.queue[0].workerID === worker.id) {
+									this.queue.execute();
+								}
+								return;
 							}
-							return;
-						}
-						this.clustersSequentialFailedRestarts.set(cluster.clusterID, totalRestarts + 1);
-					} else if (service) {
-						const totalRestarts = this.servicesSequentialFailedRestarts.get(service.serviceName) ?? 0;
-						if (totalRestarts >= this.maxRestarts) {
-							this.warn(`Service ${service.serviceName} has reached the maximum number of sequential restarts`, "Admiral");
-							this.servicesSequentialFailedRestarts.delete(service.serviceName);
-							// execute queue if the item in 0 failed
-							if (this.queue.queue[0].workerID === worker.id) {
-								this.queue.execute();
+							this.clustersSequentialFailedRestarts.set(cluster.clusterID, totalRestarts + 1);
+						} else if (service) {
+							const totalRestarts = this.servicesSequentialFailedRestarts.get(service.serviceName) ?? 0;
+							if (totalRestarts >= this.maxRestarts) {
+								this.warn(`Service ${service.serviceName} has reached the maximum number of sequential restarts`, "Admiral");
+								this.servicesSequentialFailedRestarts.delete(service.serviceName);
+								// execute queue if the item in 0 failed
+								if (this.queue.queue[0].workerID === worker.id) {
+									this.queue.execute();
+								}
+								return;
 							}
-							return;
+							this.servicesSequentialFailedRestarts.set(service.serviceName, totalRestarts + 1);
 						}
-						this.servicesSequentialFailedRestarts.set(service.serviceName, totalRestarts + 1);
 					}
+					
 					const restartItem = this.restartWorker(worker);
 					if (restartItem) this.queue.item(restartItem);
 				}
