@@ -570,9 +570,13 @@ export class IPC extends EventEmitter {
 	 * Restarts a specific cluster
 	 * @param clusterID ID of the cluster to restart
 	 * @param hard Whether to ignore the soft shutdown function
+	 * @returns Promise which resolves with the cluster object when it restarts
 	*/
-	public restartCluster(clusterID: number, hard?: boolean): void {
-		this.sendMessage({op: "restartCluster", clusterID, hard: hard ? true : false});
+	public restartCluster(clusterID: number, hard?: boolean): Promise<Admiral.ClusterCollection | undefined> {
+		return new Promise((res) => {
+			this.once(`clusterReady${clusterID}`, res);
+			this.sendMessage({op: "restartCluster", clusterID, hard: hard ? true : false});
+		});
 	}
 
 	/**
@@ -587,9 +591,13 @@ export class IPC extends EventEmitter {
 	 * Restarts a specific service
 	 * @param serviceName Name of the service
 	 * @param hard Whether to ignore the soft shutdown function
+	 * @returns Promise which resolves with the service object when it restarts
 	*/
-	public restartService(serviceName: string, hard?: boolean): void {
-		this.sendMessage({op: "restartService", serviceName, hard: hard ? true : false});
+	public restartService(serviceName: string, hard?: boolean): Promise<Admiral.ServiceCollection | undefined> {
+		return new Promise((res) => {
+			this.once(`serviceReady${serviceName}`, res);
+			this.sendMessage({op: "restartService", serviceName, hard: hard ? true : false});
+		});
 	}
 
 	/**
@@ -604,18 +612,26 @@ export class IPC extends EventEmitter {
 	 * Shuts down a cluster
 	 * @param clusterID The ID of the cluster to shutdown
 	 * @param hard Whether to ignore the soft shutdown function
+	 * @returns Promise which resolves with the cluster object when it shuts down
 	*/
-	public shutdownCluster(clusterID: number, hard?: boolean): void {
-		this.sendMessage({op: "shutdownCluster", clusterID, hard: hard ? true : false});
+	public shutdownCluster(clusterID: number, hard?: boolean): Promise<Admiral.ClusterCollection | undefined> {
+		return new Promise((res) => {
+			this.once(`clusterShutdown${clusterID}`, res);
+			this.sendMessage({op: "shutdownCluster", clusterID, hard: hard ? true : false});
+		});
 	}
 
 	/**
 	 * Shuts down a service
 	 * @param serviceName The name of the service
 	 * @param hard Whether to ignore the soft shutdown function
+	 * @returns Promise which resolves with the service object when it shuts down
 	*/
-	public shutdownService(serviceName: string, hard?: boolean): void {
-		this.sendMessage({op: "shutdownService", serviceName, hard: hard ? true : false});
+	public shutdownService(serviceName: string, hard?: boolean): Promise<Admiral.ServiceCollection | undefined> {
+		return new Promise((res) => {
+			this.once(`serviceShutdown${serviceName}`, res);
+			this.sendMessage({op: "shutdownService", serviceName, hard: hard ? true : false});
+		});
 	}
 
 	/** 
@@ -627,16 +643,20 @@ export class IPC extends EventEmitter {
 	 * const path = require("path");
 	 * this.ipc.createService("myService", path.join(__dirname, "./service.js"))
 	 * ```
+	 * @returns Promise which resolves with the service object when it is ready
 	 */
-	public createService(serviceName: string, servicePath: string): void {
-		// if path is not absolute
-		if (!path.isAbsolute(servicePath)) {
-			this.error("Service path must be absolute!");
-			return;
-		}
+	public createService(serviceName: string, servicePath: string): Promise<Admiral.ServiceCollection | undefined> {
+		return new Promise((res, rej) => {
+			// if path is not absolute
+			if (!path.isAbsolute(servicePath)) {
+				rej("Service path must be absolute!");
+				return;
+			}
+			this.once(`serviceReady${serviceName}`, res);
 
-		// send to master process
-		this.sendMessage({op: "createService", serviceName, servicePath});
+			// send to master process
+			this.sendMessage({op: "createService", serviceName, servicePath});
+		});
 	}
 
 	/**
@@ -650,9 +670,13 @@ export class IPC extends EventEmitter {
 	/**
 	 * Reshards all clusters
 	 * @param options Change the resharding options
+	 * @returns Promise which resolves when resharding is complete (note that this only resolves when using a service or the Admiral)
 	*/
-	public reshard(options?: Admiral.ReshardOptions): void {
-		this.sendMessage({op: "reshard", options});
+	public reshard(options?: Admiral.ReshardOptions): Promise<void> {
+		return new Promise((res) => {
+			this.once("reshardingComplete", res);
+			this.sendMessage({op: "reshard", options});
+		});
 	}
 
 	/**

@@ -33,6 +33,7 @@ This may skip some little bug fixes.
 - Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` if no member is found.
 - Added broadcasting of Admiral events (and option to disable)
 - Added maximum sequential restarts (default: 5)
+- IPC commands (e.g. restarting clusters) now returns a promise which resolves when complete
 
 ## 0.3.9
 - Added support for extended eris class

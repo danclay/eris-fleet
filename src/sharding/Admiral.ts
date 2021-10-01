@@ -1174,43 +1174,7 @@ export class Admiral extends EventEmitter {
 			break;
 		}
 		case "return": {
-			const sendReturn = (value: any) => {
-				if (message.UUID === "master") {
-					this.ipc.emit(message.value.id, value);
-				} else {
-					const requestingWorker = master.workers[message.UUID];
-					if (requestingWorker) {
-						requestingWorker.send({
-							op: "return",
-							id: message.value.id,
-							value: value,
-						});
-					}
-				}
-			};
-			const UUID = JSON.stringify({
-				id: message.value.id,
-				UUID: message.UUID,
-			});
-			const fetch = this.fetches.get(UUID);
-			if (message.value.noValue) {
-				if (fetch !== undefined) {
-					let clustersLaunching = 0;
-					this.launchingWorkers.forEach((w) => {
-						if (w.cluster) clustersLaunching++;
-					});
-
-					if (fetch.checked + 1 === this.clusters.size + clustersLaunching) {
-						sendReturn(null);
-						this.fetches.delete(UUID);
-					} else {
-						this.fetches.set(UUID, Object.assign(fetch, {checked: fetch.checked + 1}));
-					}
-				}
-			} else {
-				this.fetches.delete(UUID);
-				sendReturn(message.value);
-			}
+			this.ipcReturn(message);
 
 			break;
 		}
@@ -1269,6 +1233,19 @@ export class Admiral extends EventEmitter {
 		}
 		case "restartCluster": {
 			this.restartCluster(message.clusterID, message.hard);
+			// resolve promise
+			const listener = (cluster: ClusterCollection) => {
+				if (cluster.clusterID !== message.clusterID) return;
+				this.removeListener("clusterReady", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: `clusterReady${cluster.clusterID}`,
+						value: cluster
+					}
+				});
+			};
+			this.on("clusterReady", listener);
 
 			break;
 		}
@@ -1279,6 +1256,19 @@ export class Admiral extends EventEmitter {
 		}
 		case "restartService": {
 			this.restartService(message.serviceName, message.hard);
+			// resolve promise
+			const listener = (service: ServiceCollection) => {
+				if (service.serviceName !== message.serviceName) return;
+				this.removeListener("serviceReady", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: `serviceReady${service.serviceName}`,
+						value: service
+					}
+				});
+			};
+			this.on("serviceReady", listener);
 
 			break;
 		}
@@ -1289,16 +1279,55 @@ export class Admiral extends EventEmitter {
 		}
 		case "shutdownCluster": {
 			this.shutdownCluster(message.clusterID, message.hard);
+			// resolve promise
+			const listener = (cluster: ClusterCollection) => {
+				if (cluster.clusterID !== message.clusterID) return;
+				this.removeListener("clusterShutdown", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: `clusterShutdown${cluster.clusterID}`,
+						value: cluster
+					}
+				});
+			};
+			this.on("clusterShutdown", listener);
 
 			break;
 		}
 		case "shutdownService": {
 			this.shutdownService(message.serviceName, message.hard);
+			// resolve promise
+			const listener = (service: ServiceCollection) => {
+				if (service.serviceName !== message.serviceName) return;
+				this.removeListener("serviceShutdown", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: `serviceShutdown${service.serviceName}`,
+						value: service
+					}
+				});
+			};
+			this.on("serviceShutdown", listener);
 
 			break;
 		}
 		case "createService": {
 			this.createService(message.serviceName, message.servicePath);
+			// resolve promise
+			const listener = (service: ServiceCollection) => {
+				if (service.serviceName !== message.serviceName) return;
+				this.removeListener("serviceReady", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: `serviceReady${service.serviceName}`,
+						value: service
+					}
+				});
+			};
+			this.on("serviceReady", listener);
 
 			break;
 		}
@@ -1309,6 +1338,18 @@ export class Admiral extends EventEmitter {
 		}
 		case "reshard": {
 			this.reshard(message.options);
+			// resolve promise
+			const listener = () => {
+				this.removeListener("reshardingComplete", listener);
+				this.ipcReturn({
+					UUID: worker.id,
+					value: {
+						id: "reshardingComplete",
+						value: null
+					}
+				});
+			};
+			this.on("reshardingComplete", listener);
 
 			break;
 		}
@@ -1407,6 +1448,46 @@ export class Admiral extends EventEmitter {
 					overrideConsole: this.overrideConsole
 				});
 			}
+		}
+	}
+
+	private ipcReturn(message: {UUID: string | number, value: {id: string | symbol, value: any, noValue?: boolean}}) {
+		const sendReturn = (value: any) => {
+			if (message.UUID === "master") {
+				this.ipc.emit(message.value.id, value);
+			} else {
+				const requestingWorker = master.workers[message.UUID];
+				if (requestingWorker) {
+					requestingWorker.send({
+						op: "return",
+						id: message.value.id,
+						value: value,
+					});
+				}
+			}
+		};
+		const UUID = JSON.stringify({
+			id: message.value.id,
+			UUID: message.UUID,
+		});
+		const fetch = this.fetches.get(UUID);
+		if (message.value.noValue) {
+			if (fetch !== undefined) {
+				let clustersLaunching = 0;
+				this.launchingWorkers.forEach((w) => {
+					if (w.cluster) clustersLaunching++;
+				});
+
+				if (fetch.checked + 1 === this.clusters.size + clustersLaunching) {
+					sendReturn(null);
+					this.fetches.delete(UUID);
+				} else {
+					this.fetches.set(UUID, Object.assign(fetch, {checked: fetch.checked + 1}));
+				}
+			}
+		} else {
+			this.fetches.delete(UUID);
+			sendReturn(message.value);
 		}
 	}
 
@@ -2020,18 +2101,20 @@ export class Admiral extends EventEmitter {
 				// Preform soft shutdown
 				this.softKills.set(worker.id, {
 					fn: (failed?: boolean) => {
-						if (!failed) {
-							if (this.whatToLog.includes("cluster_shutdown")) this.log(`Safely shutdown cluster ${cluster!.clusterID}`, "Admiral");
-							this.emit("clusterShutdown", cluster);
-							if (this.broadcastAdmiralEvents) this.broadcast("clusterShutdown", cluster);
-							worker.kill();
-						}
 						if (!customMaps) {
 							this.clusters.delete(cluster!.clusterID);
 							// if was launching
 							this.launchingWorkers.delete(worker.id);
 						}
 						this.softKills.delete(worker.id);
+
+						if (!failed) {
+							if (this.whatToLog.includes("cluster_shutdown")) this.log(`Safely shutdown cluster ${cluster!.clusterID}`, "Admiral");
+							this.emit("clusterShutdown", cluster);
+							if (this.broadcastAdmiralEvents) this.broadcast("clusterShutdown", cluster);
+							worker.kill();
+						}
+
 						this.queue.execute(false, "shutdownWorker");
 						if (callback) callback();
 					},
@@ -2041,12 +2124,12 @@ export class Admiral extends EventEmitter {
 				}
 			} else {
 				worker.kill();
+				if (!customMaps) this.clusters.delete(cluster.clusterID);
 				if (this.whatToLog.includes("cluster_shutdown")) {
 					this.log(`Hard shutdown of cluster ${cluster.clusterID} complete`, "Admiral");
 				}
 				this.emit("clusterShutdown", cluster);
 				if (this.broadcastAdmiralEvents) this.broadcast("clusterShutdown", cluster);
-				if (!customMaps) this.clusters.delete(cluster.clusterID);
 			}
 
 			item.type = "cluster";
@@ -2056,15 +2139,15 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(worker.id, {
 					fn: () => {
 						if (this.whatToLog.includes("service_shutdown")) this.log(`Safely shutdown service ${service!.serviceName}`, "Admiral");
-						this.emit("serviceShutdown", service);
-						if (this.broadcastAdmiralEvents) this.broadcast("serviceShutdown", service);
-						worker.kill();
 						if (!customMaps) {
 							this.services.delete(service!.serviceName);
 							// if was launching
 							this.launchingWorkers.delete(worker.id);
 						}
 						this.softKills.delete(worker.id);
+						worker.kill();
+						this.emit("serviceShutdown", service);
+						if (this.broadcastAdmiralEvents) this.broadcast("serviceShutdown", service);
 						this.queue.execute(false, "shutdownWorker");
 						if (callback) callback();
 					},
@@ -2074,12 +2157,12 @@ export class Admiral extends EventEmitter {
 				}
 			} else {
 				worker.kill();
+				if (!customMaps) this.services.delete(service.serviceName);
 				if (this.whatToLog.includes("service_shutdown")) {
 					this.log(`Hard shutdown of service ${service.serviceName} complete`, "Admiral");
 				}
 				this.emit("serviceShutdown", service);
 				if (this.broadcastAdmiralEvents) this.broadcast("serviceShutdown", service);
-				if (!customMaps) this.services.delete(service.serviceName);
 			}
 
 			item.type = "service";
@@ -2140,13 +2223,13 @@ export class Admiral extends EventEmitter {
 					this.log(`Performing soft restart of cluster ${cluster.clusterID}`, "Admiral");
 				}
 			} else {
+				this.clusters.delete(cluster.clusterID);
 				if (manual) {
 					worker.kill();
 					this.log(`Cluster ${cluster.clusterID} killed upon request`, "Admiral");
 				} else {
 					this.warn(`Cluster ${cluster.clusterID} died :(`, "Admiral");
 				}
-				this.clusters.delete(cluster.clusterID);
 				this.clusters.set(
 					cluster.clusterID,
 					Object.assign(cluster, {workerID: newWorker.id}),
@@ -2215,13 +2298,13 @@ export class Admiral extends EventEmitter {
 					this.log(`Performing soft restart of service ${service.serviceName}`, "Admiral");
 				}
 			} else {
+				this.services.delete(service.serviceName);
 				if (manual) {
 					worker.kill();
 					this.log(`Service ${service.serviceName} killed upon request`, "Admiral");
 				} else {
 					this.warn(`Service ${service.serviceName} died :(`, "Admiral");
 				}
-				this.services.delete(service.serviceName);
 				this.services.set(
 					service.serviceName,
 					Object.assign(service, {workerID: newWorker.id}),
