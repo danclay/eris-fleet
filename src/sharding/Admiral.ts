@@ -434,31 +434,31 @@ export class Admiral extends EventEmitter {
 	*/
 	public constructor(options: Options) {
 		super();
-		this.objectLogging = options.objectLogging || false;
+		this.objectLogging = options.objectLogging ?? false;
 		this.path = options.path;
 		this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
-		this.guildsPerShard = options.guildsPerShard || 1300;
-		this.shardCount = options.shards || "auto";
-		this.clusterCount = options.clusters || "auto";
-		this.clientOptions = options.clientOptions || {};
-		this.clusterTimeout = options.clusterTimeout || 5e3;
-		this.serviceTimeout = options.serviceTimeout || 0;
-		this.killTimeout = options.killTimeout || 10e3;
-		this.erisClient = options.customClient || Eris.Client;
-		this.useCentralRequestHandler = options.useCentralRequestHandler || false;
+		this.guildsPerShard = options.guildsPerShard ?? 1300;
+		this.shardCount = options.shards ?? "auto";
+		this.clusterCount = options.clusters ?? "auto";
+		this.clientOptions = options.clientOptions ?? {};
+		this.clusterTimeout = options.clusterTimeout ?? 5e3;
+		this.serviceTimeout = options.serviceTimeout ?? 0;
+		this.killTimeout = options.killTimeout ?? 10e3;
+		this.erisClient = options.customClient ?? Eris.Client;
+		this.useCentralRequestHandler = options.useCentralRequestHandler ?? false;
 		this.nodeArgs = options.nodeArgs;
-		this.statsInterval = options.statsInterval || 60e3;
-		this.firstShardID = options.firstShardID || 0;
-		this.lastShardID = options.lastShardID || 0;
-		this.fetchTimeout = options.fetchTimeout || 10e3;
-		this.loadClusterCodeImmediately = options.loadCodeImmediately || false;
-		this.overrideConsole = options.overrideConsole || true;
-		this.startServicesTogether = options.startServicesTogether || false;
+		this.statsInterval = options.statsInterval ?? 60e3;
+		this.firstShardID = options.firstShardID ?? 0;
+		this.lastShardID = options.lastShardID ?? 0;
+		this.fetchTimeout = options.fetchTimeout ?? 10e3;
+		this.loadClusterCodeImmediately = options.loadCodeImmediately ?? false;
+		this.overrideConsole = options.overrideConsole ?? true;
+		this.startServicesTogether = options.startServicesTogether ?? false;
 		this.maxConcurrencyOverride = options.maxConcurrencyOverride;
-		this.maxConcurrency = this.maxConcurrencyOverride || 1;
-		this.shutdownTogether = options.shutdownTogether || false;
-		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents || true;
-		this.maxRestarts = options.maxRestarts || 5;
+		this.maxConcurrency = this.maxConcurrencyOverride ?? 1;
+		this.shutdownTogether = options.shutdownTogether ?? false;
+		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents ?? true;
+		this.maxRestarts = options.maxRestarts ?? 5;
 		this.resharding = false;
 		this.statsStarted = false;
 		if (options.startingStatus) this.startingStatus = options.startingStatus;
@@ -654,7 +654,7 @@ export class Admiral extends EventEmitter {
 									this.error("Error in starting cluster: invalid cluster group ID");
 									return;
 								}
-								const groupConnectedTotal = (this.connectedClusterGroups.get(clusterGroupID) || 0) + 1;
+								const groupConnectedTotal = (this.connectedClusterGroups.get(clusterGroupID) ?? 0) + 1;
 								this.connectedClusterGroups.set(clusterGroupID, groupConnectedTotal);
 								const groupConnectedMax = Object.entries(clusterToGroupMap).filter(([/*clusterID*/, groupID]) => groupID === clusterGroupID).length;
 								if (groupConnectedTotal >= groupConnectedMax) {
