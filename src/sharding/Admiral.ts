@@ -452,12 +452,12 @@ export class Admiral extends EventEmitter {
 		this.lastShardID = options.lastShardID || 0;
 		this.fetchTimeout = options.fetchTimeout || 10e3;
 		this.loadClusterCodeImmediately = options.loadCodeImmediately || false;
-		this.overrideConsole = options.overrideConsole || true;
+		this.overrideConsole = options.overrideConsole ?? true;
 		this.startServicesTogether = options.startServicesTogether || false;
 		this.maxConcurrencyOverride = options.maxConcurrencyOverride;
 		this.maxConcurrency = this.maxConcurrencyOverride || 1;
 		this.shutdownTogether = options.shutdownTogether || false;
-		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents || true;
+		this.broadcastAdmiralEvents = options.broadcastAdmiralEvents ?? true;
 		this.maxRestarts = options.maxRestarts || 5;
 		this.resharding = false;
 		this.statsStarted = false;
