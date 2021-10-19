@@ -2,21 +2,24 @@ import {worker} from "cluster";
 import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
 import { IPC } from "../util/IPC";
-import { LoggingOptions } from "../sharding/Admiral";
+import { LoggingOptions, ServiceCreator } from "../sharding/Admiral";
+import { ServiceConnectMessage } from "../util/Queue";
 
 interface ServiceInput {
 	fetchTimeout: number;
 	overrideConsole: boolean;
+	servicesToCreate: ServiceCreator[];
 }
 
 export class Service {
-	path!: string;
+	path?: string;
 	serviceName!: string;
 	app?: BaseServiceWorker;
 	timeout!: number;
 	whatToLog!: LoggingOptions[];
 	ipc: IPC;
 	connectedTimestamp?: number;
+	private ServiceWorker?: typeof BaseServiceWorker;
 
 	constructor(input: ServiceInput) {
 		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
@@ -43,10 +46,15 @@ export class Service {
 			if (message.op) {
 				switch (message.op) {
 				case "connect": {
-					this.path = message.path;
-					this.serviceName = message.serviceName;
-					this.timeout = message.timeout;
-					this.whatToLog = message.whatToLog;
+					const connectMessage = message as ServiceConnectMessage;
+					this.path = connectMessage.path;
+					this.serviceName = connectMessage.serviceName;
+					this.timeout = connectMessage.timeout;
+					this.whatToLog = connectMessage.whatToLog;
+
+					if (!this.path) {
+						this.ServiceWorker = input.servicesToCreate.find(s => s.name === this.serviceName)!.ServiceWorker;
+					}
 					this.loadCode();
 					break;
 				}
@@ -147,17 +155,27 @@ export class Service {
 		if (this.whatToLog.includes("service_start")) this.ipc.log(`Starting service ${this.serviceName}`);
 
 		let App;
-		try {
-			App = (await import(this.path));
-			if (App.ServiceWorker) {
-				App = App.ServiceWorker;
-			} else {
-				App = App.default ? App.default : App;
+		if (this.ServiceWorker) {
+			App = this.ServiceWorker;
+			try {
+				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+			} catch (e) {
+				this.ipc.error(e);
+				process.exit(1);
 			}
-			this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
-		} catch (e) {
-			this.ipc.error(e);
-			process.exit(1);
+		} else {
+			try {
+				App = await import(this.path!);
+				if (App.ServiceWorker) {
+					App = App.ServiceWorker;
+				} else {
+					App = App.default ? App.default : App;
+				}
+				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+			} catch (e) {
+				this.ipc.error(e);
+				process.exit(1);
+			}
 		}
 
 		let timeout: NodeJS.Timeout;

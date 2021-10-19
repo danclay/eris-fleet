@@ -1,6 +1,7 @@
 import {IPC} from "../util/IPC";
 import {Client} from "eris";
 
+/** @internal */
 export interface Setup {
 	bot: Client;
 	clusterID: number;

@@ -1,8 +1,9 @@
+import { ClusterConnectMessage } from "./../util/Queue";
 import * as Eris from "eris";
 import {worker} from "cluster";
 import {BaseClusterWorker} from "./BaseClusterWorker";
 import {inspect} from "util";
-import * as Admiral from "../sharding/Admiral";
+import {LoggingOptions, StartingStatus, ShardStats} from "../sharding/Admiral";
 import { CentralRequestHandler } from "../util/CentralRequestHandler";
 import { IPC } from "../util/IPC";
 
@@ -10,19 +11,20 @@ interface ClusterInput {
 	erisClient: typeof Eris.Client;
 	fetchTimeout: number;
 	overrideConsole: boolean;
+	BotWorker?: typeof BaseClusterWorker;
 }
 
 export class Cluster {
 	private erisClient: typeof Eris.Client;
 	firstShardID!: number;
 	lastShardID!: number;
-	path!: string;
+	path?: string;
 	clusterID!: number;
 	clusterCount!: number;
 	shardCount!: number;
 	shards!: number;
 	clientOptions!: Eris.ClientOptions;
-	whatToLog!: Admiral.LoggingOptions[];
+	whatToLog!: LoggingOptions[];
 	useCentralRequestHandler!: boolean;
 	bot!: Eris.Client;
 	private token!: string;
@@ -30,12 +32,14 @@ export class Cluster {
 	App!: typeof BaseClusterWorker;
 	ipc: IPC;
 	shutdown?: boolean;
-	private startingStatus?: Admiral.StartingStatus;
+	private startingStatus?: StartingStatus;
 	private loadClusterCodeImmediately!: boolean;
 	private resharding!: boolean;
+	private BotWorker?: typeof BaseClusterWorker;
 
 	constructor(input: ClusterInput) {
 		this.erisClient = input.erisClient;
+		this.BotWorker = input.BotWorker;
 		// add ipc
 		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
@@ -61,20 +65,21 @@ export class Cluster {
 			if (message.op) {
 				switch (message.op) {
 				case "connect": {
-					this.firstShardID = message.firstShardID;
-					this.lastShardID = message.lastShardID;
-					this.path = message.path;
-					this.clusterID = message.clusterID;
-					this.clusterCount = message.clusterCount;
-					this.shardCount = message.shardCount;
+					const connectMessage = message as ClusterConnectMessage;
+					this.firstShardID = connectMessage.firstShardID;
+					this.lastShardID = connectMessage.lastShardID;
+					this.path = connectMessage.path;
+					this.clusterID = connectMessage.clusterID;
+					this.clusterCount = connectMessage.clusterCount;
+					this.shardCount = connectMessage.shardCount;
 					this.shards = (this.lastShardID - this.firstShardID) + 1;
-					this.clientOptions = message.clientOptions;
-					this.token = message.token;
-					this.whatToLog = message.whatToLog;
-					this.useCentralRequestHandler = message.useCentralRequestHandler;
-					this.loadClusterCodeImmediately = message.loadClusterCodeImmediately;
-					this.resharding = message.resharding;
-					if (message.startingStatus) this.startingStatus = message.startingStatus;
+					this.clientOptions = connectMessage.clientOptions;
+					this.token = connectMessage.token;
+					this.whatToLog = connectMessage.whatToLog;
+					this.useCentralRequestHandler = connectMessage.useCentralRequestHandler;
+					this.loadClusterCodeImmediately = connectMessage.loadClusterCodeImmediately;
+					this.resharding = connectMessage.resharding;
+					if (connectMessage.startingStatus) this.startingStatus = connectMessage.startingStatus;
 
 					if (this.shards < 0) return;
 					this.connect();
@@ -197,7 +202,7 @@ export class Cluster {
 				}
 				case "collectStats": {
 					if (!this.bot) return;
-					const shardStats: Admiral.ShardStats[] = [];
+					const shardStats: ShardStats[] = [];
 					const getShardUsers = (id: number) => {
 						let users = 0;
 						this.bot.guildShardMap;
@@ -274,22 +279,27 @@ export class Cluster {
 
 		let bot;
 		let App;
-		try {
-			App = (await import(this.path));
-			if (App.Eris) {
-				bot = new App.Eris.Client(this.token, options);
-				App = App.BotWorker;
-			} else {
-				bot = new this.erisClient(this.token, options);
-				if (App.BotWorker) {
+		if (this.BotWorker) {
+			App = this.BotWorker;
+			bot = new this.erisClient(this.token, options);
+		} else {
+			try {
+				App = await import(this.path!);
+				if (App.Eris) {
+					bot = new App.Eris.Client(this.token, options);
 					App = App.BotWorker;
 				} else {
-					App = App.default ? App.default : App;
+					bot = new this.erisClient(this.token, options);
+					if (App.BotWorker) {
+						App = App.BotWorker;
+					} else {
+						App = App.default ? App.default : App;
+					}
 				}
+			} catch (e) {
+				this.ipc.error(e);
+				process.exit(1);
 			}
-		} catch (e) {
-			this.ipc.error(e);
-			process.exit(1);
 		}
 		this.App = App;
 

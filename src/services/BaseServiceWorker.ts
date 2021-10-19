@@ -1,5 +1,6 @@
 import {IPC} from "../util/IPC";
 
+/** @internal */
 export interface Setup {
 	serviceName: string;
 	workerID: number;

@@ -1,5 +1,5 @@
 import {EventEmitter} from "events";
-import * as Admiral from "../sharding/Admiral";
+import {ClusterCollection, ServiceCollection, Stats, ReshardOptions} from "../sharding/Admiral";
 import crypto from "crypto";
 import { errorToJSON } from "./ErrorHandler";
 import path from "path";
@@ -16,6 +16,7 @@ export interface IpcHandledLog {
 	timestamp: number
 }
 
+/** @internal */
 export interface Setup {
 	fetchTimeout: number;
 	messageHandler?: (message: any) => void;
@@ -30,6 +31,7 @@ export class IPC extends EventEmitter {
 	private fetchTimeout: number;
 	private messageHandler?: (message: any) => void
 
+	/** @internal */
 	public constructor(setup: Setup) {
 		super();
 		this.fetchTimeout = setup.fetchTimeout;
@@ -477,9 +479,9 @@ export class IPC extends EventEmitter {
 		if (receptive) {
 			return new Promise((resolve, reject) => {
 				// wait for cluster info first
-				new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void) => {
+				new Promise((res: (value: Record<number, ClusterCollection>) => void) => {
 					this.once("admiralInfo", data => {
-						res(data.clusters as Record<number, Admiral.ClusterCollection>);
+						res(data.clusters as Record<number, ClusterCollection>);
 					});
 					this.sendMessage({op: "getAdmiralInfo"});
 				}).then((clusterInfo) => {
@@ -522,9 +524,9 @@ export class IPC extends EventEmitter {
 	/**
 	 * @returns The latest stats
 	*/
-	public getStats(): Promise<Admiral.Stats> {
+	public getStats(): Promise<Stats> {
 		return new Promise((resolve) => {
-			const callback = (r: Admiral.Stats) => {
+			const callback = (r: Stats) => {
 				//this.removeListener("statsReturn", callback);
 				resolve(r);
 			};
@@ -537,12 +539,12 @@ export class IPC extends EventEmitter {
 	/**
 	 * @returns Collection of clusters and collection of services
 	 */
-	public getWorkers(): Promise<{clusters: Collection<number, Admiral.ClusterCollection>, services: Collection<string, Admiral.ServiceCollection>}> {
+	public getWorkers(): Promise<{clusters: Collection<number, ClusterCollection>, services: Collection<string, ServiceCollection>}> {
 		return new Promise((resolve) => {
 			const callback = (r: {clusters: {dataType: "Map", value: never}, services: {dataType: "Map", value: never}}) => {
 				const parsed = {
-					clusters: new Collection<number, Admiral.ClusterCollection>(r.clusters.value),
-					services: new Collection<string, Admiral.ServiceCollection>(r.services.value)
+					clusters: new Collection<number, ClusterCollection>(r.clusters.value),
+					services: new Collection<string, ServiceCollection>(r.services.value)
 				};
 				resolve(parsed);
 			};
@@ -556,9 +558,9 @@ export class IPC extends EventEmitter {
 	 * Force eris-fleet to fetch fresh stats
 	 * @returns Promise with stats
 	 */
-	public collectStats(): Promise<Admiral.Stats> {
+	public collectStats(): Promise<Stats> {
 		return new Promise((resolve) => {
-			const callback = (r: Admiral.Stats) => {
+			const callback = (r: Stats) => {
 				resolve(r);
 			};
 			this.once("statsReturn", callback);
@@ -572,7 +574,7 @@ export class IPC extends EventEmitter {
 	 * @param hard Whether to ignore the soft shutdown function
 	 * @returns Promise which resolves with the cluster object when it restarts
 	*/
-	public restartCluster(clusterID: number, hard?: boolean): Promise<Admiral.ClusterCollection | undefined> {
+	public restartCluster(clusterID: number, hard?: boolean): Promise<ClusterCollection | undefined> {
 		return new Promise((res) => {
 			this.once(`clusterReady${clusterID}`, res);
 			this.sendMessage({op: "restartCluster", clusterID, hard: hard ? true : false});
@@ -593,7 +595,7 @@ export class IPC extends EventEmitter {
 	 * @param hard Whether to ignore the soft shutdown function
 	 * @returns Promise which resolves with the service object when it restarts
 	*/
-	public restartService(serviceName: string, hard?: boolean): Promise<Admiral.ServiceCollection | undefined> {
+	public restartService(serviceName: string, hard?: boolean): Promise<ServiceCollection | undefined> {
 		return new Promise((res) => {
 			this.once(`serviceReady${serviceName}`, res);
 			this.sendMessage({op: "restartService", serviceName, hard: hard ? true : false});
@@ -614,7 +616,7 @@ export class IPC extends EventEmitter {
 	 * @param hard Whether to ignore the soft shutdown function
 	 * @returns Promise which resolves with the cluster object when it shuts down
 	*/
-	public shutdownCluster(clusterID: number, hard?: boolean): Promise<Admiral.ClusterCollection | undefined> {
+	public shutdownCluster(clusterID: number, hard?: boolean): Promise<ClusterCollection | undefined> {
 		return new Promise((res) => {
 			this.once(`clusterShutdown${clusterID}`, res);
 			this.sendMessage({op: "shutdownCluster", clusterID, hard: hard ? true : false});
@@ -627,7 +629,7 @@ export class IPC extends EventEmitter {
 	 * @param hard Whether to ignore the soft shutdown function
 	 * @returns Promise which resolves with the service object when it shuts down
 	*/
-	public shutdownService(serviceName: string, hard?: boolean): Promise<Admiral.ServiceCollection | undefined> {
+	public shutdownService(serviceName: string, hard?: boolean): Promise<ServiceCollection | undefined> {
 		return new Promise((res) => {
 			this.once(`serviceShutdown${serviceName}`, res);
 			this.sendMessage({op: "shutdownService", serviceName, hard: hard ? true : false});
@@ -645,7 +647,7 @@ export class IPC extends EventEmitter {
 	 * ```
 	 * @returns Promise which resolves with the service object when it is ready
 	 */
-	public createService(serviceName: string, servicePath: string): Promise<Admiral.ServiceCollection | undefined> {
+	public createService(serviceName: string, servicePath: string): Promise<ServiceCollection | undefined> {
 		return new Promise((res, rej) => {
 			// if path is not absolute
 			if (!path.isAbsolute(servicePath)) {
@@ -672,7 +674,7 @@ export class IPC extends EventEmitter {
 	 * @param options Change the resharding options
 	 * @returns Promise which resolves when resharding is complete (note that this only resolves when using a service or the Admiral)
 	*/
-	public reshard(options?: Admiral.ReshardOptions): Promise<void> {
+	public reshard(options?: ReshardOptions): Promise<void> {
 		return new Promise((res) => {
 			this.once("reshardingComplete", res);
 			this.sendMessage({op: "reshard", options});

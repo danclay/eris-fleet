@@ -1,3 +1,5 @@
+import { BaseClusterWorker } from "./../clusters/BaseClusterWorker";
+import { BaseServiceWorker } from "./../services/BaseServiceWorker";
 import { IPC, IpcHandledLog } from "./../util/IPC";
 import {EventEmitter} from "events";
 import {cpus} from "os";
@@ -16,9 +18,13 @@ interface FakeWorker {
 	send: (message: any) => void
 }
 
-interface ServiceCreator {
+export interface ServiceCreator {
+	/** Unique name of the service */
 	name: string;
-	path: string;
+	/** Aboslute path to the service (class should extend {@link BaseServiceWorker}) */
+	path?: string;
+	/** Your ServiceWorker class (must extend {@link BaseServiceWorker}) */
+	ServiceWorker?: typeof BaseServiceWorker
 }
 
 export interface ObjectLog {
@@ -77,7 +83,9 @@ export interface ReshardOptions {
 /** Options for the sharding manager */
 export interface Options {
 	/** Absolute path to the js file */
-	path: string;
+	path?: string;
+	/** Your BotWorker class (must extend {@link BaseClusterWorker}) */
+	BotWorker?: typeof BaseClusterWorker
 	/** Bot token */
 	token: string;
 	/** 
@@ -300,12 +308,13 @@ export interface ClusterCollection {
 export interface ServiceCollection {
 	serviceName: string;
 	workerID: number;
-	path: string;
+	path?: string;
 }
 
+/** @internal */
 interface WorkerCollection {
 	service?: {
-		path: string;
+		path?: string;
 		serviceName: string;
 		workerID: number;
 	};
@@ -370,7 +379,8 @@ export class Admiral extends EventEmitter {
 	public ipc: IPC;
 	/** Maps of workers currently launching by ID */
 	private launchingWorkers: Collection<number, WorkerCollection>;
-	private path: string;
+	private path?: string;
+	private BotWorker?: typeof BaseClusterWorker;
 	private token: string;
 	public guildsPerShard: number;
 	public shardCount: number | "auto";
@@ -436,6 +446,7 @@ export class Admiral extends EventEmitter {
 		super();
 		this.objectLogging = options.objectLogging ?? false;
 		this.path = options.path;
+		this.BotWorker = options.BotWorker;
 		this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
 		this.guildsPerShard = options.guildsPerShard ?? 1300;
 		this.shardCount = options.shards ?? "auto";
@@ -464,11 +475,21 @@ export class Admiral extends EventEmitter {
 		if (options.startingStatus) this.startingStatus = options.startingStatus;
 		// Deals with needed components
 		if (!options.token) throw "No token!";
-		if (!path.isAbsolute(options.path)) throw "The path needs to be absolute!";
+		if (!options.path && !options.BotWorker) {
+			throw "No bot worker path or class!";
+		}
+		if (options.path) {
+			if (!path.isAbsolute(options.path)) throw "The path needs to be absolute!";
+		}
 		if (options.services) {
 			options.services.forEach((e) => {
-				if (!path.isAbsolute(e.path)) {
-					throw `Path for service ${e.name} needs to be absolute!`;
+				if (!e.path && !e.ServiceWorker) {
+					throw `No path or class for service ${e.name}!`;
+				}
+				if (e.path) {
+					if (!path.isAbsolute(e.path)) {
+						throw `Path for service ${e.name} needs to be absolute!`;
+					}
 				}
 				if (options.services!.filter((s) => s.name === e.name).length > 1) {
 					throw `Duplicate service names for service ${e.name}!`;
@@ -1443,12 +1464,14 @@ export class Admiral extends EventEmitter {
 				new Cluster({
 					erisClient: this.erisClient,
 					fetchTimeout: this.fetchTimeout,
-					overrideConsole: this.overrideConsole
+					overrideConsole: this.overrideConsole,
+					BotWorker: this.BotWorker
 				});
 			} else if (process.env.type === "service") {
 				new Service({
 					fetchTimeout: this.fetchTimeout,
-					overrideConsole: this.overrideConsole
+					overrideConsole: this.overrideConsole,
+					servicesToCreate: this.servicesToCreate!
 				});
 			}
 		}
@@ -1651,23 +1674,28 @@ export class Admiral extends EventEmitter {
 	/** 
 	 * Create a service
 	 * @param serviceName Unique ame of the service
-	 * @param servicePath Absolute path to the service file
+	 * @param service Absolute path to the service file or your ServiceWorker class (extends {@link BaseServiceWorker})
 	 * @example
 	 * ```js
 	 * const path = require("path");
 	 * admiral.createService("myService", path.join(__dirname, "./service.js"))
 	 * ```
 	 */
-	public createService(serviceName: string, servicePath: string): void {
+	public createService(serviceName: string, service: string | typeof BaseServiceWorker): void {
 		// if path is not absolute
-		if (!path.isAbsolute(servicePath)) {
-			this.error("Service path must be absolute!", "Admiral");
-			return;
-		}
-		const serviceCreator = {
-			name: serviceName,
-			path: servicePath
+		const serviceCreator: ServiceCreator = {
+			name: serviceName
 		};
+		if (typeof service === "string") {
+			if (!path.isAbsolute(service)) {
+				this.error("Service path must be absolute!", "Admiral");
+				return;
+			}
+			serviceCreator.path = service;
+		} else {
+			serviceCreator.ServiceWorker = service;
+		}
+		
 		this.startService([serviceCreator], true);
 		// add to creation array
 		if (this.servicesToCreate) {
