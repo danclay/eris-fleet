@@ -20,7 +20,7 @@ jobs:
         cp -r ./dist ./build
         cp ./package.json ./build
         cp ./yarn.lock ./build
-        echo "This is a built version of the [development branch](https://github.com/danclay/eris-fleet/tree/dev). Please visit the development branch for documentation." >> ./build/README.md
+        echo "This is a built version of the [development branch](https://github.com/danclay/eris-fleet/tree/development). Please visit the development branch for documentation." >> ./build/README.md
         git config user.name 'github-actions[bot]'
         git config user.email 'github-actions[bot]@users.noreply.github.com'
     - name: Deploy

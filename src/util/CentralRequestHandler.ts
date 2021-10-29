@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { reconstructError } from "./ErrorHandler";
 import Eris from "eris";
 
-
 interface CentralRequestHandlerOptions {
 	timeout: number;
 }

@@ -34,6 +34,7 @@ For some more documentation check the [docs](https://danclay.github.io/eris-flee
 - Soft cluster and service restarts where the old worker is killed after the new one is ready
 - Graceful shutdowns
 - Central request handler
+- Central data store
 - Concurrency support
 
 ## Help

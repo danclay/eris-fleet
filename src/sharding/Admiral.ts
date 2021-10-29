@@ -380,8 +380,10 @@ export class Admiral extends EventEmitter {
 	public ipc: IPC;
 	/** Maps of workers currently launching by ID */
 	private launchingWorkers: Collection<number, WorkerCollection>;
-	private path?: string;
-	private BotWorker?: typeof BaseClusterWorker;
+	/** Path used when starting clusters */
+	public path?: string;
+	/** BotWorker class used when starting clusters */
+	public BotWorker?: typeof BaseClusterWorker;
 	private token: string;
 	public guildsPerShard: number;
 	public shardCount: number | "auto";
@@ -396,6 +398,7 @@ export class Admiral extends EventEmitter {
 	private useCentralRequestHandler: boolean;
 	private nodeArgs?: string[];
 	private statsInterval: number | "disable";
+	/** Current stats */
 	public stats?: Stats;
 	/** Services to create */
 	private servicesToCreate?: ServiceCreator[];
@@ -408,21 +411,13 @@ export class Admiral extends EventEmitter {
 	private pauseStats!: boolean;
 	private collectingStats!: boolean;
 	private whatToLog: LoggingOptions[];
-	private softKills: Map<
-		number,
-		{ fn: (failed?: boolean) => void; type?: "cluster" | "service"; id?: string | number }
-	>;
+	private softKills: Map<number, {fn: (failed?: boolean) => void, type?: "cluster" | "service", id?: string | number}>;
 	private launchingManager: Map<number, { waiting: () => void } | "launched">;
 	private objectLogging: boolean;
 	private startingStatus?: StartingStatus;
 	private resharding: boolean;
 	private statsStarted: boolean;
-	private fetches: Map<string, {
-		op: string;
-		id: number | string;
-		UUID: number | "master";
-		checked: number;
-	}>;
+	private fetches: Map<string, {op: string, id: number | string, UUID: number | "master", checked: number}>;
 	/** Map of cluster group number to the number of times that group's members have connected */
 	private connectedClusterGroups: Map<number, number>;
 	private fetchTimeout: number;
@@ -1990,6 +1985,14 @@ export class Admiral extends EventEmitter {
 				res(stats);
 			});
 		});
+	}
+
+	/**
+	 * Updates the BotWorker used by eris-fleet. The new class will be used the next time clusters are restarted.
+	 * @param BotWorker BotWorker class to update with
+	 */
+	public updateBotWorker(BotWorker: typeof BaseClusterWorker): void {
+		this.BotWorker = BotWorker;
 	}
 
 	private async startService(servicesToStart?: ServiceCreator[], onlyServices?: boolean) {
