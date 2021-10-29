@@ -1623,6 +1623,13 @@ class Admiral extends events_1.EventEmitter {
             });
         });
     }
+    /**
+     * Updates the BotWorker used by eris-fleet. The new class will be used the next time clusters are restarted.
+     * @param BotWorker BotWorker class to update with
+     */
+    updateBotWorker(BotWorker) {
+        this.BotWorker = BotWorker;
+    }
     async startService(servicesToStart, onlyServices) {
         if (!servicesToStart)
             servicesToStart = this.servicesToCreate;

@@ -315,8 +315,10 @@ export declare class Admiral extends EventEmitter {
     ipc: IPC;
     /** Maps of workers currently launching by ID */
     private launchingWorkers;
-    private path?;
-    private BotWorker?;
+    /** Path used when starting clusters */
+    path?: string;
+    /** BotWorker class used when starting clusters */
+    BotWorker?: typeof BaseClusterWorker;
     private token;
     guildsPerShard: number;
     shardCount: number | "auto";
@@ -331,6 +333,7 @@ export declare class Admiral extends EventEmitter {
     private useCentralRequestHandler;
     private nodeArgs?;
     private statsInterval;
+    /** Current stats */
     stats?: Stats;
     /** Services to create */
     private servicesToCreate?;
@@ -447,6 +450,11 @@ export declare class Admiral extends EventEmitter {
      * @returns Promise with stats
      */
     collectStats(): Promise<Stats>;
+    /**
+     * Updates the BotWorker used by eris-fleet. The new class will be used the next time clusters are restarted.
+     * @param BotWorker BotWorker class to update with
+     */
+    updateBotWorker(BotWorker: typeof BaseClusterWorker): void;
     private startService;
     private startCluster;
     private calculateShards;
