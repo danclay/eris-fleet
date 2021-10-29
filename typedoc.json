@@ -3,5 +3,6 @@
 	"readme": "./README.md",
 	"out": "docs",
 	"includeVersion": true,
-	"gitRevision": "master"
+	"gitRevision": "master",
+	"excludeInternal": true
 }

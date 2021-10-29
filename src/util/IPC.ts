@@ -22,6 +22,118 @@ export interface Setup {
 	messageHandler?: (message: any) => void;
 }
 
+/** Handles the central data store's IPC functions */
+export class CentralStore {
+	private ipc: IPC;
+
+	/** @internal */
+	public constructor(ipc: IPC) {
+		this.ipc = ipc;
+	}
+
+	/**
+	 * Copy of the central data store map
+	 * @returns A promise with the central data store map
+	 */
+	public copyMap(): Promise<Map<string, any>> {
+		const UUID = "centralStoreCopyMapComplete";
+		return new Promise((res) => {
+			this.ipc.once(UUID, (r: {map: {dataType: "Map", value: never}}) => {
+				const parsed = new Map<string, any>(r.map.value);
+				res(parsed);
+			});
+			this.ipc.sendMessage({op: "centralStoreCopyMap", UUID});
+		});
+	}
+
+	/** 
+	 * Clears the central
+	 * @returns A promise which resolves when complete
+	 */
+	public clear(): Promise<undefined> {
+		const UUID = "centralStoreClearComplete";
+		return new Promise((res) => {
+			this.ipc.once(UUID, () => {
+				res(undefined);
+			});
+			this.ipc.sendMessage({op: "centralStoreClear", UUID});
+		});
+	}
+
+	/**
+	 * Deletes a key from the central data store 
+	 * @param key The key to delete
+	 * @returns Promise which resolves a success boolean
+	 */
+	public delete(key: string): Promise<boolean> {
+		const UUID = `centralStoreDeleteComplete-${key}`;
+		return new Promise((res) => {
+			this.ipc.once(UUID, (success: boolean) => {
+				res(success);
+			});
+			this.ipc.sendMessage({op: "centralStoreDelete", UUID});
+		});
+	}
+
+	/**
+	 * Gets a value from the central data store
+	 * @param key The key to get
+	 * @returns Promise which resolves with the value
+	 */
+	public get(key: string): Promise<any> {
+		const UUID = `centralStoreGetComplete-${key}`;
+		return new Promise((res, rej) => {
+			this.ipc.once(UUID, (value: {value?: any, err?: string}) => {
+				if (value.err) {
+					rej(value.err);
+				} else {
+					res(value.value);
+				}
+			});
+			this.ipc.sendMessage({op: "centralStoreGet", key, UUID});
+		});
+	}
+
+	/**
+	 * Check whether a key exists in the central data store
+	 * @param key Key to check
+	 * @returns Promise which resolves with a boolean
+	 */
+	public has(key: string): Promise<boolean> {
+		const UUID = `centralStoreHasComplete-${key}`;
+		return new Promise((res, rej) => {
+			this.ipc.once(UUID, (value: {value?: any, err?: string}) => {
+				if (value.err) {
+					rej(value.err);
+				} else {
+					res(value.value);
+				}
+			});
+			this.ipc.sendMessage({op: "centralStoreHas", key, UUID});
+		});
+	}
+
+	/**
+	 * Assign a value to the central data store
+	 * @param key Unique key to assign this value
+	 * @param value The value
+	 * @returns Promise which resolves when complete
+	 */
+	public set(key: string, value: unknown): Promise<void> {
+		const UUID = `centralStoreSetComplete-${key}`;
+		return new Promise((res, rej) => {
+			this.ipc.once(UUID, (value: {err?: string}) => {
+				if (value.err) {
+					rej(value.err);
+				} else {
+					res();
+				}
+			});
+			this.ipc.sendMessage({op: "centralStoreSet", key, value, UUID});
+		});
+	}
+}
+
 /**
  * Handles communication between clusters, services, and the admiral.
  */
@@ -29,7 +141,8 @@ export class IPC extends EventEmitter {
 	private events: Map<string | number, Array<(msg: any) => void>>;
 	private ipcEventListeners: Map<string | number, Array<(msg: any) => void>>;
 	private fetchTimeout: number;
-	private messageHandler?: (message: any) => void
+	private messageHandler?: (message: any) => void;
+	public centralStore: CentralStore;
 
 	/** @internal */
 	public constructor(setup: Setup) {
@@ -38,6 +151,7 @@ export class IPC extends EventEmitter {
 		this.events = new Map();
 		this.ipcEventListeners = new Map();
 		this.messageHandler = setup.messageHandler;
+		this.centralStore = new CentralStore(this);
 
 		// register user event listener
 		this.ipcEventListeners.set("ipcEvent", [(msg) => {
@@ -64,7 +178,8 @@ export class IPC extends EventEmitter {
 		}
 	}
 
-	private sendMessage(message: any) {
+	/** @internal */
+	public sendMessage(message: unknown): void {
 		if (this.messageHandler) {
 			return this.messageHandler(message);
 		} else if (process.send) {
@@ -483,7 +598,6 @@ export class IPC extends EventEmitter {
 					this.once("admiralInfo", data => {
 						res(data.clusters as Record<number, ClusterCollection>);
 					});
-					this.sendMessage({op: "getAdmiralInfo"});
 				}).then((clusterInfo) => {
 					// get responses
 					let clustersReturned = 0;
@@ -776,13 +890,6 @@ export class IPC extends EventEmitter {
 
 		if (receptive) {
 			return new Promise((resolve, reject) => {
-				// wait for cluster info first
-				/*new Promise((res: (value: Record<number, Admiral.ClusterCollection>) => void) => {
-					this.once("admiralInfo", data => {
-						res(data.clusters as Record<number, Admiral.ClusterCollection>);
-					});
-					this.sendMessage({op: "getAdmiralInfo"});
-				})*/
 				this.getWorkers().then((workers) => {
 					// get responses
 					let clustersReturned = 0;

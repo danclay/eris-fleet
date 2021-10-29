@@ -308,6 +308,7 @@ export interface ClusterCollection {
 export interface ServiceCollection {
 	serviceName: string;
 	workerID: number;
+	/** Path only returned if the service was created using a path */
 	path?: string;
 }
 
@@ -373,7 +374,7 @@ export class Admiral extends EventEmitter {
 	/** Map of services by name */
 	public services: Collection<string, ServiceCollection>;
 	/** 
-	 * IPC class for the Admiral which functions like the worker IPC classes.
+	 * IPC for the Admiral which functions like the worker IPC classes.
 	 * Has some redundant functions which already exist on the Admiral class.
 	 */
 	public ipc: IPC;
@@ -437,6 +438,8 @@ export class Admiral extends EventEmitter {
 	private clustersSequentialFailedRestarts: Map<number, number>;
 	/** Map of service name to sequential failed restarts */
 	private servicesSequentialFailedRestarts: Map<string, number>;
+	/** Central storage map */
+	public centralStore: Map<string, any>;
 
 	/** 
 	 * Creates the sharding manager
@@ -476,7 +479,10 @@ export class Admiral extends EventEmitter {
 		// Deals with needed components
 		if (!options.token) throw "No token!";
 		if (!options.path && !options.BotWorker) {
-			throw "No bot worker path or class!";
+			throw "No BotWorker path or class!";
+		}
+		if (options.path && options.BotWorker) {
+			throw "Your options has both a path and BotWorker class! Please use one!";
 		}
 		if (options.path) {
 			if (!path.isAbsolute(options.path)) throw "The path needs to be absolute!";
@@ -485,6 +491,9 @@ export class Admiral extends EventEmitter {
 			options.services.forEach((e) => {
 				if (!e.path && !e.ServiceWorker) {
 					throw `No path or class for service ${e.name}!`;
+				}
+				if (e.path && e.ServiceWorker) {
+					throw `Service ${e.name} has both a path and class specified! Please only specify one!`;
 				}
 				if (e.path) {
 					if (!path.isAbsolute(e.path)) {
@@ -571,6 +580,7 @@ export class Admiral extends EventEmitter {
 		this.connectedClusterGroups = new Map();
 		this.clustersSequentialFailedRestarts = new Map();
 		this.servicesSequentialFailedRestarts = new Map();
+		this.centralStore = new Map();
 		// Admiral's simulated ipc
 		this.ipc = new IPC({
 			fetchTimeout: this.fetchTimeout,
@@ -1387,16 +1397,104 @@ export class Admiral extends EventEmitter {
 
 			break;
 		}
-		case "getAdmiralInfo": {
+		case "centralStoreCopyMap": {
 			worker.send({
 				op: "return",
-				id: "admiralInfo",
+				id: message.UUID,
 				value: {
-					clusters: Object.fromEntries(this.clusters),
-					services: Object.fromEntries(this.services)
+					map: {
+						dataType: "Map",
+						value: Array.from(this.centralStore.entries())
+					}
 				}
 			});
-
+			break;
+		}
+		case "centralStoreClear": {
+			this.centralStore.clear();
+			worker.send({
+				op: "return",
+				id: message.UUID,
+				value: undefined
+			});
+			break;
+		}
+		case "centralStoreDelete": {
+			if (typeof message.key !== "string") {
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: false
+				});
+			} else {
+				const success = this.centralStore.delete(message.key);
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: success
+				});
+			}
+			break;
+		}
+		case "centralStoreGet": {
+			if (typeof message.key !== "string") {
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {
+						err: "Key must be a string"
+					}
+				});
+			} else {
+				const value = this.centralStore.get(message.key);
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {
+						value
+					}
+				});
+			}
+			break;
+		}
+		case "centralStoreHas": {
+			if (typeof message.key !== "string") {
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {
+						err: "Key must be a string"
+					}
+				});
+			} else {
+				const value = this.centralStore.has(message.key);
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {
+						value
+					}
+				});
+			}
+			break;
+		}
+		case "centralStoreSet": {
+			if (typeof message.key !== "string") {
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {
+						err: "Key must be a string"
+					}
+				});
+			} else {
+				this.centralStore.set(message.key, message.value);
+				worker.send({
+					op: "return",
+					id: message.UUID,
+					value: {}
+				});
+			}
 			break;
 		}
 		}

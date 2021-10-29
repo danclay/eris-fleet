@@ -279,3 +279,7 @@ class BotWorker extends BaseClusterWorker {
 // This export is needed for this to work.
 module.exports = {BotWorker, Eris};
 ```
+
+## Using ES Modules
+
+Instead of using the file path, you can use ES Modules by passing your BotWorker class to `options.BotWorker` and your ServiceWorker class to `ServiceWorker` in the `options.services` array. See [test/](https://github.com/danclay/eris-fleet/tree/master/test) for examples.

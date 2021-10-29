@@ -7,6 +7,7 @@ This may skip some little bug fixes.
 ### Breaking changes:
 
 - When using `ipc.register`, the message is now the actual message, not an object with the message as "msg"
+- Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` to fetch a member which is not cached
 
 ### Other changes:
 
@@ -30,10 +31,11 @@ This may skip some little bug fixes.
 - Ability to get worker collections
 - Added IPC class to Admiral
 - Renamed `ipc.admiralBroadcast` to `ipc.sendToAdmiral`
-- Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` if no member is found.
 - Added broadcasting of Admiral events (and option to disable)
 - Added maximum sequential restarts (default: 5)
 - IPC commands (e.g. restarting clusters) now returns a promise which resolves when complete
+- The bot and service classes can now be used without a path by passing the class in `options.BotWorker` and `ServiceWorker` in your array of services (examples in `/test`)
+- Added a central storage map
 
 ## 0.3.9
 - Added support for extended eris class
