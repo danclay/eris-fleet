@@ -3,8 +3,6 @@
   <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Discord Library" /></a>
     <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square&label=version&logo=npm" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
-    <a href="https://david-dm.org/danclay/eris-fleet/"><img src="https://img.shields.io/david/danclay/eris-fleet.svg?cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
-	<a href="https://david-dm.org/danclay/eris-fleet?type=peer"><img src="https://img.shields.io/david/peer/danclay/eris-fleet.svg?type=peer&cacheSeconds=3600&style=flat-square" alt="Dependencies" /></a>
     <a href="https://github.com/danclay/eris-fleet/actions/workflows/ci.yml"><img src="https://img.shields.io/github/workflow/status/danclay/eris-fleet/Node.js%20CI/master?style=flat-square&logo=github" alt="Node.js CI" /></a>
   </p>
   <p>
@@ -12,29 +10,30 @@
   </p>
 </div>
 
-### [Documentation](https://danclay.github.io/eris-fleet/) | [Eris](https://abal.moe/Eris/docs/)
+### [Documentation](https://danclay.github.io/eris-fleet/) | [Eris](https://github.com/abalabahaha/eris)
 
-# About
+# About eris-fleet
 
 A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [megane](https://github.com/brussell98/megane) with services and configurable logging.
 
-For some more documentation check the [docs](https://danclay.github.io/eris-fleet/) and the [README on GitHub](https://github.com/danclay/eris-fleet/blob/master/README.md).
+For detailed documentation check the [docs](https://danclay.github.io/eris-fleet/).
 
 ## Highlighted Features:
 
 - Clustering across cores
 - Sharding
 - Recalculate shards with minimal downtime
+- Update a bot with minimal downtime using soft restarts
 - Customizable logging
 - Fetch data from across clusters easily
 - Services (non-eris workers)
 - IPC to communicate between clusters, other clusters, and services
 - Detailed stats collection
-- Use a modified version of Eris
 - Soft cluster and service restarts where the old worker is killed after the new one is ready
 - Graceful shutdowns
 - Central request handler
 - Central data store
+- Can use a modified version of Eris
 - Concurrency support
 
 ## Help
