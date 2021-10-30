@@ -326,11 +326,22 @@ export class Cluster {
 		if (this.loadClusterCodeImmediately && !this.resharding) this.loadCode();
 
 		bot.on("connect", (id: number) => {
-			if (this.whatToLog.includes("shard_connect")) this.ipc.log(`Shard ${id} connected!`);
+			if (process.send) process.send({
+				op: "shardUpdate",
+				shardID: id,
+				clusterID: this.clusterID,
+				type: "shardConnect"
+			});
 		});
 
 		bot.on("shardDisconnect", (err: Error, id: number) => {
-			if (!this.shutdown) if (this.whatToLog.includes("shard_disconnect")) this.ipc.log(`Shard ${id} disconnected with error: ${inspect(err)}`);
+			if (process.send) process.send({
+				op: "shardUpdate",
+				shardID: id,
+				clusterID: this.clusterID,
+				type: "shardDisconnect",
+				err: inspect(err)
+			});
 		});
 
 		bot.once("shardReady", () => {
@@ -338,11 +349,21 @@ export class Cluster {
 		});
 
 		bot.on("shardReady", (id: number) => {
-			if (this.whatToLog.includes("shard_ready")) this.ipc.log(`Shard ${id} is ready!`);
+			if (process.send) process.send({
+				op: "shardUpdate",
+				shardID: id,
+				clusterID: this.clusterID,
+				type: "shardReady"
+			});
 		});
 
 		bot.on("shardResume", (id: number) => {
-			if (this.whatToLog.includes("shard_resume")) this.ipc.log(`Shard ${id} has resumed!`);
+			if (process.send) process.send({
+				op: "shardUpdate",
+				shardID: id,
+				clusterID: this.clusterID,
+				type: "shardResume"
+			});
 		});
 
 		bot.on("warn", (message: string, id?: number) => {

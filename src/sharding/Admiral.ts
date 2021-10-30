@@ -13,6 +13,13 @@ import path from "path";
 import { inspect } from "util";
 import { errorToJSON, reconstructError } from "../util/ErrorHandler";
 
+export interface ShardUpdate {
+	shardID: number;
+	clusterID: number;
+	/** Whether the cluster is the one serving users. This is true for the first start and false for all soft cluster restarts or reshards. */
+	liveCluster: boolean;
+}
+
 interface FakeWorker {
 	id: number | "master",
 	send: (message: any) => void
@@ -191,6 +198,7 @@ export interface Options {
 	/**
 	 * Whether to load your cluster class as soon as possible or wait until Eris's ready event.
 	 * If you use this, your bot file must listen for the Eris ready event before doing anything which requires all shards to be connected.
+	 * Also note that this will allow or your BotWorker to listen for events already being listened for in the old cluster during a soft restart. Be careful to avoid responding to an event twice.
 	 * @defaultValue false
 	 */
 	loadCodeImmediately?: boolean;
@@ -367,6 +375,10 @@ interface WorkerCollection {
  * @fires Admiral#ready Fires when the queue is empty.
  * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
  * @fires Admiral#reshardingComplete Fires when resharding completes.
+ * @fires Admiral#shardReady Fires when a shard is ready. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardConnect Fires when a shard connects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardDisconnect Fires when a shard disconnects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardResume Fires when a shard resumes. Supplies {@link ShardUpdate}.
 */
 export class Admiral extends EventEmitter {
 	/** Map of clusters by ID */
@@ -791,6 +803,40 @@ export class Admiral extends EventEmitter {
 						this.centralApiRequest(worker, message.request.UUID, message.request.data);
 						break;
 					}
+					case "shardUpdate": {
+						let liveCluster = true;
+						const cluster = this.clusters.get(message.clusterID);
+						if (cluster) {
+							if (cluster.workerID !== worker.id) {
+								liveCluster = false;
+							}
+						}
+						const shardEmit: ShardUpdate = {
+							clusterID: message.clusterID,
+							shardID: message.shardID,
+							liveCluster
+						};
+						switch (message.type) {
+						case "shardReady": {
+							if (this.whatToLog.includes("shard_ready")) this.ipcLog("log", `Shard ${message.shardID} is ready!`, worker);
+							break;
+						}
+						case "shardConnect": {
+							if (this.whatToLog.includes("shard_connect")) this.ipcLog("log", `Shard ${message.shardID} connected!`, worker);
+							break;
+						}
+						case "shardDisconnect": {
+							if (this.whatToLog.includes("shard_disconnect")) this.ipcLog("log", `Shard ${message.shardID} disconnected with error ${message.err}`, worker);
+							break;
+						}
+						case "shardResume": {
+							if (this.whatToLog.includes("shard_resume")) this.ipcLog("log", `Shard ${message.shardID} resumed!`, worker);
+							break;
+						}
+						}
+						this.emit(message.type, shardEmit);
+						break;
+					}
 					default: {
 						this.ipcMessageHandler(worker, message);
 						break;
@@ -800,12 +846,8 @@ export class Admiral extends EventEmitter {
 			});
 
 			master.on("disconnect", (worker) => {
-				const cluster = this.clusters.find(
-					(c: ClusterCollection) => c.workerID === worker.id,
-				);
-				const service = this.services.find(
-					(s: ServiceCollection) => s.workerID === worker.id,
-				);
+				const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
+				const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
 				if (cluster) {
 					this.warn(`Cluster ${cluster.clusterID} disconnected :(`, "Admiral");
 				} else if (service) {

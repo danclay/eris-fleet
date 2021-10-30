@@ -33,7 +33,7 @@ export class CentralStore {
 
 	/**
 	 * Copy of the central data store map
-	 * @returns A promise with the central data store map
+	 * @returns A promise with the central data store map. Note that modifying this map will not modify the central data store.
 	 */
 	public copyMap(): Promise<Map<string, any>> {
 		const UUID = "centralStoreCopyMapComplete";
