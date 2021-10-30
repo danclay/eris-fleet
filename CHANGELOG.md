@@ -31,6 +31,7 @@ This may skip some little bug fixes.
 - Ability to get worker collections
 - Added IPC class to Admiral
 - Renamed `ipc.admiralBroadcast` to `ipc.sendToAdmiral`
+- Added more events to Admiral (e.g. clusters and shards becoming ready)
 - Added broadcasting of Admiral events (and option to disable)
 - Added maximum sequential restarts (default: 5)
 - IPC commands (e.g. restarting clusters) now returns a promise which resolves when complete

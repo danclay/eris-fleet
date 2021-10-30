@@ -28,7 +28,7 @@ interface FakeWorker {
 export interface ServiceCreator {
 	/** Unique name of the service */
 	name: string;
-	/** Aboslute path to the service (class should extend {@link BaseServiceWorker}) */
+	/** Absolute path to the service (class should extend {@link BaseServiceWorker}) */
 	path?: string;
 	/** Your ServiceWorker class (must extend {@link BaseServiceWorker}) */
 	ServiceWorker?: typeof BaseServiceWorker
