@@ -579,7 +579,7 @@ export class IPC extends EventEmitter {
 	public allClustersCommand(message?: unknown, receptive?: boolean, returnTimeout?: number, callback?: (clusterID: number, data?: any) => void): Promise<Map<number, any>> | void {
 		if (!message) message = null;
 		if (!receptive) receptive = false;
-		const UUID = "allClusterCommand" + crypto.randomBytes(16).toString("hex");
+		const UUID = "allClustersCommand" + crypto.randomBytes(16).toString("hex");
 
 		const sendCommand = () => {
 			this.sendMessage({op: "allClustersCommand", 
@@ -594,27 +594,23 @@ export class IPC extends EventEmitter {
 		if (receptive) {
 			return new Promise((resolve, reject) => {
 				// wait for cluster info first
-				new Promise((res: (value: Record<number, ClusterCollection>) => void) => {
-					this.once("admiralInfo", data => {
-						res(data.clusters as Record<number, ClusterCollection>);
-					});
-				}).then((clusterInfo) => {
+				this.getWorkers().then((workers) => {
 					// get responses
 					let clustersReturned = 0;
-					const datareceived: Map<number, any> = new Map();
+					const dataReceived: Map<number, any> = new Map();
 					let timeout: NodeJS.Timeout | undefined = undefined;
 					const dataReturnCallback = (msg: {clusterID: number, value: any}) => {
-						if (datareceived.get(msg.clusterID)) return;
+						if (dataReceived.get(msg.clusterID)) return;
 						clustersReturned++;
 						if (callback) {
 							callback(msg.clusterID, msg.value);
 						}
-						datareceived.set(msg.clusterID, msg.value);
+						dataReceived.set(msg.clusterID, msg.value);
 
 						// end if done
-						if (clustersReturned === Object.keys(clusterInfo).length) {
+						if (clustersReturned === workers.clusters.size) {
 							if (timeout) clearTimeout(timeout);
-							resolve(datareceived);
+							resolve(dataReceived);
 							this.removeListener(UUID, dataReturnCallback);
 						}
 					};
