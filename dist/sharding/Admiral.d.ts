@@ -5,10 +5,16 @@ import { IPC } from "./../util/IPC";
 import { EventEmitter } from "events";
 import { Collection } from "../util/Collection";
 import Eris from "eris";
+export interface ShardUpdate {
+    shardID: number;
+    clusterID: number;
+    /** Whether the cluster is the one serving users. This is true for the first start and false for all soft cluster restarts or reshards. */
+    liveCluster: boolean;
+}
 export interface ServiceCreator {
     /** Unique name of the service */
     name: string;
-    /** Aboslute path to the service (class should extend {@link BaseServiceWorker}) */
+    /** Absolute path to the service (class should extend {@link BaseServiceWorker}) */
     path?: string;
     /** Your ServiceWorker class (must extend {@link BaseServiceWorker}) */
     ServiceWorker?: typeof BaseServiceWorker;
@@ -148,6 +154,7 @@ export interface Options {
     /**
      * Whether to load your cluster class as soon as possible or wait until Eris's ready event.
      * If you use this, your bot file must listen for the Eris ready event before doing anything which requires all shards to be connected.
+     * Also note that this will allow or your BotWorker to listen for events already being listened for in the old cluster during a soft restart. Be careful to avoid responding to an event twice.
      * @defaultValue false
      */
     loadCodeImmediately?: boolean;
@@ -302,6 +309,10 @@ export interface ServiceCollection {
  * @fires Admiral#ready Fires when the queue is empty.
  * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
  * @fires Admiral#reshardingComplete Fires when resharding completes.
+ * @fires Admiral#shardReady Fires when a shard is ready. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardConnect Fires when a shard connects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardDisconnect Fires when a shard disconnects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardResume Fires when a shard resumes. Supplies {@link ShardUpdate}.
 */
 export declare class Admiral extends EventEmitter {
     /** Map of clusters by ID */

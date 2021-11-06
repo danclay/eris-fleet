@@ -56,6 +56,10 @@ const ErrorHandler_1 = require("../util/ErrorHandler");
  * @fires Admiral#ready Fires when the queue is empty.
  * @fires Admiral#stats Fires when stats are ready. Supplies {@link Stats}
  * @fires Admiral#reshardingComplete Fires when resharding completes.
+ * @fires Admiral#shardReady Fires when a shard is ready. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardConnect Fires when a shard connects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardDisconnect Fires when a shard disconnects. Supplies {@link ShardUpdate}.
+ * @fires Admiral#shardResume Fires when a shard resumes. Supplies {@link ShardUpdate}.
 */
 class Admiral extends events_1.EventEmitter {
     /**
@@ -424,6 +428,44 @@ class Admiral extends events_1.EventEmitter {
                         }
                         case "centralApiRequest": {
                             this.centralApiRequest(worker, message.request.UUID, message.request.data);
+                            break;
+                        }
+                        case "shardUpdate": {
+                            let liveCluster = true;
+                            const cluster = this.clusters.get(message.clusterID);
+                            if (cluster) {
+                                if (cluster.workerID !== worker.id) {
+                                    liveCluster = false;
+                                }
+                            }
+                            const shardEmit = {
+                                clusterID: message.clusterID,
+                                shardID: message.shardID,
+                                liveCluster
+                            };
+                            switch (message.type) {
+                                case "shardReady": {
+                                    if (this.whatToLog.includes("shard_ready"))
+                                        this.ipcLog("log", `Shard ${message.shardID} is ready!`, worker);
+                                    break;
+                                }
+                                case "shardConnect": {
+                                    if (this.whatToLog.includes("shard_connect"))
+                                        this.ipcLog("log", `Shard ${message.shardID} connected!`, worker);
+                                    break;
+                                }
+                                case "shardDisconnect": {
+                                    if (this.whatToLog.includes("shard_disconnect"))
+                                        this.ipcLog("log", `Shard ${message.shardID} disconnected with error ${message.err}`, worker);
+                                    break;
+                                }
+                                case "shardResume": {
+                                    if (this.whatToLog.includes("shard_resume"))
+                                        this.ipcLog("log", `Shard ${message.shardID} resumed!`, worker);
+                                    break;
+                                }
+                            }
+                            this.emit(message.type, shardEmit);
                             break;
                         }
                         default: {

@@ -335,24 +335,44 @@ class Cluster {
         if (this.loadClusterCodeImmediately && !this.resharding)
             this.loadCode();
         bot.on("connect", (id) => {
-            if (this.whatToLog.includes("shard_connect"))
-                this.ipc.log(`Shard ${id} connected!`);
+            if (process.send)
+                process.send({
+                    op: "shardUpdate",
+                    shardID: id,
+                    clusterID: this.clusterID,
+                    type: "shardConnect"
+                });
         });
         bot.on("shardDisconnect", (err, id) => {
-            if (!this.shutdown)
-                if (this.whatToLog.includes("shard_disconnect"))
-                    this.ipc.log(`Shard ${id} disconnected with error: ${(0, util_1.inspect)(err)}`);
+            if (process.send)
+                process.send({
+                    op: "shardUpdate",
+                    shardID: id,
+                    clusterID: this.clusterID,
+                    type: "shardDisconnect",
+                    err: (0, util_1.inspect)(err)
+                });
         });
         bot.once("shardReady", () => {
             setStatus();
         });
         bot.on("shardReady", (id) => {
-            if (this.whatToLog.includes("shard_ready"))
-                this.ipc.log(`Shard ${id} is ready!`);
+            if (process.send)
+                process.send({
+                    op: "shardUpdate",
+                    shardID: id,
+                    clusterID: this.clusterID,
+                    type: "shardReady"
+                });
         });
         bot.on("shardResume", (id) => {
-            if (this.whatToLog.includes("shard_resume"))
-                this.ipc.log(`Shard ${id} has resumed!`);
+            if (process.send)
+                process.send({
+                    op: "shardUpdate",
+                    shardID: id,
+                    clusterID: this.clusterID,
+                    type: "shardResume"
+                });
         });
         bot.on("warn", (message, id) => {
             this.ipc.warn(message, `Cluster ${this.clusterID}, Shard ${id}`);

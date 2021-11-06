@@ -18,7 +18,7 @@ class CentralStore {
     }
     /**
      * Copy of the central data store map
-     * @returns A promise with the central data store map
+     * @returns A promise with the central data store map. Note that modifying this map will not modify the central data store.
      */
     copyMap() {
         const UUID = "centralStoreCopyMapComplete";
@@ -549,7 +549,7 @@ class IPC extends events_1.EventEmitter {
             message = null;
         if (!receptive)
             receptive = false;
-        const UUID = "allClusterCommand" + crypto_1.default.randomBytes(16).toString("hex");
+        const UUID = "allClustersCommand" + crypto_1.default.randomBytes(16).toString("hex");
         const sendCommand = () => {
             this.sendMessage({ op: "allClustersCommand",
                 command: {
@@ -562,28 +562,24 @@ class IPC extends events_1.EventEmitter {
         if (receptive) {
             return new Promise((resolve, reject) => {
                 // wait for cluster info first
-                new Promise((res) => {
-                    this.once("admiralInfo", data => {
-                        res(data.clusters);
-                    });
-                }).then((clusterInfo) => {
+                this.getWorkers().then((workers) => {
                     // get responses
                     let clustersReturned = 0;
-                    const datareceived = new Map();
+                    const dataReceived = new Map();
                     let timeout = undefined;
                     const dataReturnCallback = (msg) => {
-                        if (datareceived.get(msg.clusterID))
+                        if (dataReceived.get(msg.clusterID))
                             return;
                         clustersReturned++;
                         if (callback) {
                             callback(msg.clusterID, msg.value);
                         }
-                        datareceived.set(msg.clusterID, msg.value);
+                        dataReceived.set(msg.clusterID, msg.value);
                         // end if done
-                        if (clustersReturned === Object.keys(clusterInfo).length) {
+                        if (clustersReturned === workers.clusters.size) {
                             if (timeout)
                                 clearTimeout(timeout);
-                            resolve(datareceived);
+                            resolve(dataReceived);
                             this.removeListener(UUID, dataReturnCallback);
                         }
                     };

@@ -23,7 +23,7 @@ export declare class CentralStore {
     constructor(ipc: IPC);
     /**
      * Copy of the central data store map
-     * @returns A promise with the central data store map
+     * @returns A promise with the central data store map. Note that modifying this map will not modify the central data store.
      */
     copyMap(): Promise<Map<string, any>>;
     /**
