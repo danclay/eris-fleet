@@ -27,7 +27,7 @@ export class CentralRequestHandler {
 		});
 	}
 
-	public request(method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.MessageFile, _route?: string, short?: boolean): Promise<unknown> {
+	public request(method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.FileContent, _route?: string, short?: boolean): Promise<unknown> {
 		const UUID = crypto.randomBytes(16).toString("hex");
 
 		let fileString;

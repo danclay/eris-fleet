@@ -41,7 +41,7 @@ export interface ObjectLog {
 } 
 
 export interface StartingStatus {
-	status: "online" | "idle" | "dnd" | "offline";
+	status: Eris.Status;
 	game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
 
@@ -110,7 +110,10 @@ export interface Options {
 	 * @defaultValue "auto"
 	 */
 	clusters?: number | "auto";
-	/** Options to pass to the Eris client constructor */
+	/** 
+	 * Options to pass to the Eris client constructor.
+	 * Intents default to all non-privilaged intents.
+	 */
 	clientOptions?: Eris.ClientOptions;
 	/** 
 	 * How long to wait for shards to connect to discord
@@ -240,7 +243,7 @@ export interface ShardStats {
 	latency: number;
 	id: number;
 	ready: boolean;
-	status: "disconnected" | "connecting" | "handshaking" | "ready" | "resuming";
+	status: Eris.Shard["status"];
 	guilds: number;
 	/**
 	 * @deprecated Use {@link ShardStats.members}
@@ -300,7 +303,7 @@ export interface Stats {
 	shardCount: number;
 	clusters: ClusterStats[];
 	services: ServiceStats[];
-	/** Timestamp of when the stats were collected */
+	/** Timestamp of when the stats were collected in ms since Unix Epoch */
 	timestamp: number;
 	/** Latency for the request handler if using the central request handler */
 	centralRequestHandlerLatencyRef?: Eris.LatencyRef;
@@ -461,7 +464,7 @@ export class Admiral extends EventEmitter {
 		this.guildsPerShard = options.guildsPerShard ?? 1300;
 		this.shardCount = options.shards ?? "auto";
 		this.clusterCount = options.clusters ?? "auto";
-		this.clientOptions = options.clientOptions ?? {};
+		this.clientOptions = options.clientOptions ?? {intents: Eris.Constants.Intents.allNonPrivileged};
 		this.clusterTimeout = options.clusterTimeout ?? 5e3;
 		this.serviceTimeout = options.serviceTimeout ?? 0;
 		this.killTimeout = options.killTimeout ?? 10e3;
@@ -1652,7 +1655,7 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private centralApiRequest(worker: master.Worker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.MessageFile, fileString?: string, _route?: string, short?: boolean}) {
+	private centralApiRequest(worker: master.Worker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.FileContent, fileString?: string, _route?: string, short?: boolean}) {
 		const reply = (resolved: boolean, value: unknown) => {
 			worker.send({
 				op: "centralApiResponse",
