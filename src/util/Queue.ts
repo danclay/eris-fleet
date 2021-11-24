@@ -68,7 +68,7 @@ export class Queue extends EventEmitter {
 		if (this.queue.length === 1) this.execute(true, override);
 	}
 
-	public bunkItems(items: QueueItem[], override?: string): void {
+	public bulkItems(items: QueueItem[], override?: string): void {
 		if (this.override && override !== this.override) return;
 		const execute = this.queue.length === 0;
 		this.queue = this.queue.concat(items);

@@ -1719,7 +1719,7 @@ export class Admiral extends EventEmitter {
 				}
 				// run
 				if (completed >= this.clusters.size) {
-					this.queue.bunkItems(queueItems);
+					this.queue.bulkItems(queueItems);
 				}
 			});
 		});
@@ -1764,7 +1764,7 @@ export class Admiral extends EventEmitter {
 		
 				// run
 				if (completed >= this.services.size) {
-					this.queue.bunkItems(queueItems);
+					this.queue.bulkItems(queueItems);
 				}
 			});
 		});
@@ -1874,7 +1874,7 @@ export class Admiral extends EventEmitter {
 				completedVal++;
 				if (completedVal >= this.clusters.size + this.services.size + this.launchingWorkers.size) {
 					if (this.shutdownTogether) {
-						this.queue.bunkItems(queueItems, "shutdownWorker");
+						this.queue.bulkItems(queueItems, "shutdownWorker");
 					} else {
 						queueItems.forEach(qi => this.queue.item(qi, "shutdownWorker"));
 					}
@@ -1982,7 +1982,7 @@ export class Admiral extends EventEmitter {
 					}
 				});
 
-				this.queue.bunkItems(queueItems);
+				this.queue.bulkItems(queueItems);
 			});
 		} else {
 			this.error("Already resharding!", "Admiral");
@@ -2077,7 +2077,7 @@ export class Admiral extends EventEmitter {
 				}
 			}
 			// add all items at once
-			this.queue.bunkItems(queueItems);
+			this.queue.bulkItems(queueItems);
 		}
 		process.nextTick(() => {
 			if (this.whatToLog.includes("all_services_launched")) {
@@ -2160,7 +2160,7 @@ export class Admiral extends EventEmitter {
 			});
 		}
 		if (this.whatToLog.includes("shards_spread")) this.log("All shards spread!", "Admiral");
-		this.queue.bunkItems(queueItems);
+		this.queue.bulkItems(queueItems);
 	}
 
 	private async calculateShards() {
