@@ -76,7 +76,7 @@ class Admiral extends events_1.EventEmitter {
         this.guildsPerShard = (_b = options.guildsPerShard) !== null && _b !== void 0 ? _b : 1300;
         this.shardCount = (_c = options.shards) !== null && _c !== void 0 ? _c : "auto";
         this.clusterCount = (_d = options.clusters) !== null && _d !== void 0 ? _d : "auto";
-        this.clientOptions = (_e = options.clientOptions) !== null && _e !== void 0 ? _e : {};
+        this.clientOptions = (_e = options.clientOptions) !== null && _e !== void 0 ? _e : { intents: eris_1.default.Constants.Intents.allNonPrivileged };
         this.clusterTimeout = (_f = options.clusterTimeout) !== null && _f !== void 0 ? _f : 5e3;
         this.serviceTimeout = (_g = options.serviceTimeout) !== null && _g !== void 0 ? _g : 0;
         this.killTimeout = (_h = options.killTimeout) !== null && _h !== void 0 ? _h : 10e3;
@@ -1349,7 +1349,7 @@ class Admiral extends events_1.EventEmitter {
                 }
                 // run
                 if (completed >= this.clusters.size) {
-                    this.queue.bunkItems(queueItems);
+                    this.queue.bulkItems(queueItems);
                 }
             });
         });
@@ -1393,7 +1393,7 @@ class Admiral extends events_1.EventEmitter {
                 }
                 // run
                 if (completed >= this.services.size) {
-                    this.queue.bunkItems(queueItems);
+                    this.queue.bulkItems(queueItems);
                 }
             });
         });
@@ -1502,7 +1502,7 @@ class Admiral extends events_1.EventEmitter {
                 completedVal++;
                 if (completedVal >= this.clusters.size + this.services.size + this.launchingWorkers.size) {
                     if (this.shutdownTogether) {
-                        this.queue.bunkItems(queueItems, "shutdownWorker");
+                        this.queue.bulkItems(queueItems, "shutdownWorker");
                     }
                     else {
                         queueItems.forEach(qi => this.queue.item(qi, "shutdownWorker"));
@@ -1617,7 +1617,7 @@ class Admiral extends events_1.EventEmitter {
                         queueItems.push(shutdownItem);
                     }
                 });
-                this.queue.bunkItems(queueItems);
+                this.queue.bulkItems(queueItems);
             });
         }
         else {
@@ -1711,7 +1711,7 @@ class Admiral extends events_1.EventEmitter {
                 }
             }
             // add all items at once
-            this.queue.bunkItems(queueItems);
+            this.queue.bulkItems(queueItems);
         }
         process.nextTick(() => {
             if (this.whatToLog.includes("all_services_launched")) {
@@ -1792,7 +1792,7 @@ class Admiral extends events_1.EventEmitter {
         }
         if (this.whatToLog.includes("shards_spread"))
             this.log("All shards spread!", "Admiral");
-        this.queue.bunkItems(queueItems);
+        this.queue.bulkItems(queueItems);
     }
     async calculateShards() {
         let shards = this.shardCount;

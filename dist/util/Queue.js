@@ -26,7 +26,7 @@ class Queue extends events_1.EventEmitter {
         if (this.queue.length === 1)
             this.execute(true, override);
     }
-    bunkItems(items, override) {
+    bulkItems(items, override) {
         if (this.override && override !== this.override)
             return;
         const execute = this.queue.length === 0;

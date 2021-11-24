@@ -10,6 +10,6 @@ export declare class CentralRequestHandler {
     constructor(ipc: IPC, options: CentralRequestHandlerOptions);
     request(method: Eris.RequestMethod, url: string, auth?: boolean, body?: {
         [s: string]: unknown;
-    }, file?: Eris.MessageFile, _route?: string, short?: boolean): Promise<unknown>;
+    }, file?: Eris.FileContent, _route?: string, short?: boolean): Promise<unknown>;
 }
 export {};

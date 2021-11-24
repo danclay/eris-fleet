@@ -46,5 +46,5 @@ export declare class Queue extends EventEmitter {
     constructor();
     execute(first?: boolean, override?: string): void;
     item(item: QueueItem, override?: string): void;
-    bunkItems(items: QueueItem[], override?: string): void;
+    bulkItems(items: QueueItem[], override?: string): void;
 }

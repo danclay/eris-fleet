@@ -25,7 +25,7 @@ export interface ObjectLog {
     message: unknown;
 }
 export interface StartingStatus {
-    status: "online" | "idle" | "dnd" | "offline";
+    status: Eris.Status;
     game?: Eris.ActivityPartial<Eris.BotActivityType>;
 }
 /** Possible options to put in the logging options array */
@@ -66,7 +66,10 @@ export interface Options {
      * @defaultValue "auto"
      */
     clusters?: number | "auto";
-    /** Options to pass to the Eris client constructor */
+    /**
+     * Options to pass to the Eris client constructor.
+     * Intents default to all non-privilaged intents.
+     */
     clientOptions?: Eris.ClientOptions;
     /**
      * How long to wait for shards to connect to discord
@@ -195,7 +198,7 @@ export interface ShardStats {
     latency: number;
     id: number;
     ready: boolean;
-    status: "disconnected" | "connecting" | "handshaking" | "ready" | "resuming";
+    status: Eris.Shard["status"];
     guilds: number;
     /**
      * @deprecated Use {@link ShardStats.members}
@@ -252,7 +255,7 @@ export interface Stats {
     shardCount: number;
     clusters: ClusterStats[];
     services: ServiceStats[];
-    /** Timestamp of when the stats were collected */
+    /** Timestamp of when the stats were collected in ms since Unix Epoch */
     timestamp: number;
     /** Latency for the request handler if using the central request handler */
     centralRequestHandlerLatencyRef?: Eris.LatencyRef;
