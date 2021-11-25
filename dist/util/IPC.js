@@ -603,10 +603,9 @@ class IPC extends events_1.EventEmitter {
     getStats() {
         return new Promise((resolve) => {
             const callback = (r) => {
-                //this.removeListener("statsReturn", callback);
                 resolve(r);
             };
-            this.on("statsReturn", callback);
+            this.once("statsReturn", callback);
             this.sendMessage({ op: "getStats" });
         });
     }
