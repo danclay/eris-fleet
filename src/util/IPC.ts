@@ -637,11 +637,10 @@ export class IPC extends EventEmitter {
 	public getStats(): Promise<Stats> {
 		return new Promise((resolve) => {
 			const callback = (r: Stats) => {
-				//this.removeListener("statsReturn", callback);
 				resolve(r);
 			};
 
-			this.on("statsReturn", callback);
+			this.once("statsReturn", callback);
 			this.sendMessage({op: "getStats"});
 		});
 	}
