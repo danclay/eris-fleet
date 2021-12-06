@@ -30,10 +30,10 @@ export interface StartingStatus {
 }
 /** Possible options to put in the logging options array */
 export declare type LoggingOptions = "gateway_shards" | "admiral_start" | "shards_spread" | "stats_update" | "all_clusters_launched" | "all_services_launched" | "cluster_launch" | "service_launch" | "cluster_start" | "service_start" | "service_ready" | "cluster_ready" | "code_loaded" | "shard_connect" | "shard_ready" | "shard_disconnect" | "shard_resume" | "service_restart" | "cluster_restart" | "service_shutdown" | "cluster_shutdown" | "total_shutdown" | "resharding_transition_complete" | "resharding_transition" | "resharding_worker_killed" | "concurrency_group_starting";
-/** Options for resharding */
+/** Options for resharding (defaults to existing settings) */
 export interface ReshardOptions {
     /** Guilds per shard */
-    guildsPerShard?: number;
+    guildsPerShard?: number | "auto";
     /** First shard ID to use on this instance of eris-fleet */
     firstShardID?: number;
     /** Last shard ID to use on this instance of eris-fleet */
@@ -52,10 +52,10 @@ export interface Options {
     /** Bot token */
     token: string;
     /**
-     * Guilds per shard
-     * @defaultValue 1300
+     * Guilds per shard. "auto" uses the gateway's recommended shard count.
+     * @defaultValue "auto"
      */
-    guildsPerShard?: number;
+    guildsPerShard?: number | "auto";
     /**
      * Number of shards
      * @defaultValue "auto"
@@ -334,7 +334,7 @@ export declare class Admiral extends EventEmitter {
     /** BotWorker class used when starting clusters */
     BotWorker?: typeof BaseClusterWorker;
     private token;
-    guildsPerShard: number;
+    guildsPerShard: number | "auto";
     shardCount: number | "auto";
     clusterCount: number | "auto";
     lastShardID: number;

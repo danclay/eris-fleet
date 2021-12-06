@@ -73,7 +73,7 @@ class Admiral extends events_1.EventEmitter {
         this.path = options.path;
         this.BotWorker = options.BotWorker;
         this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
-        this.guildsPerShard = (_b = options.guildsPerShard) !== null && _b !== void 0 ? _b : 1300;
+        this.guildsPerShard = (_b = options.guildsPerShard) !== null && _b !== void 0 ? _b : "auto";
         this.shardCount = (_c = options.shards) !== null && _c !== void 0 ? _c : "auto";
         this.clusterCount = (_d = options.clusters) !== null && _d !== void 0 ? _d : "auto";
         this.clientOptions = (_e = options.clientOptions) !== null && _e !== void 0 ? _e : { intents: eris_1.default.Constants.Intents.allNonPrivileged };
@@ -1807,8 +1807,12 @@ class Admiral extends events_1.EventEmitter {
             if (shards === 1) {
                 return Promise.resolve(shards);
             }
-            else {
+            else if (this.guildsPerShard !== "auto") {
                 return Promise.resolve(Math.ceil((shards * 1000) / this.guildsPerShard));
+            }
+            else {
+                // return the gateway recommended shards
+                return Promise.resolve(shards);
             }
         }
         else {
