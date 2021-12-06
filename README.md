@@ -18,6 +18,8 @@ A spin-off of [eris-sharder](https://github.com/discordware/eris-sharder) and [m
 
 For detailed documentation check the [docs](https://danclay.github.io/eris-fleet/).
 
+eris-fleet currently supports Eris v0.16.x.
+
 ## Highlighted Features:
 
 - Clustering across cores
@@ -227,6 +229,10 @@ Visit [the docs](https://danclay.github.io/eris-fleet/classes/fleet.html) for a 
 ### Central Request Handler
 
 The central request handler forwards Eris requests to the master process where the request is sent to a single Eris request handler instance. This helps to prevent 429 errors from occurring when you have x number of clusters keeping track of ratelimiting separately. When a response is received, it is sent back to the cluster's Eris client.
+
+## Large Bots
+
+If you are using a "very large bot," Discord's special gateway settings apply. Ensure your shard count is a multiple of the number set by Discord or set `options.shards` and `options.guildsPerShard` to `"auto"`. You may also be able to use concurrency (see below).
 
 ### Concurrency
 

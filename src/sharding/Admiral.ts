@@ -73,10 +73,10 @@ export type LoggingOptions = "gateway_shards" |
 	"resharding_worker_killed" |
 	"concurrency_group_starting";
 
-/** Options for resharding */
+/** Options for resharding (defaults to existing settings) */
 export interface ReshardOptions {
 	/** Guilds per shard */
-	guildsPerShard?: number;
+	guildsPerShard?: number | "auto";
 	/** First shard ID to use on this instance of eris-fleet */
 	firstShardID?: number;
 	/** Last shard ID to use on this instance of eris-fleet */
@@ -96,10 +96,10 @@ export interface Options {
 	/** Bot token */
 	token: string;
 	/** 
-	 * Guilds per shard
-	 * @defaultValue 1300
+	 * Guilds per shard. "auto" uses the gateway's recommended shard count.
+	 * @defaultValue "auto"
 	 */
-	guildsPerShard?: number;
+	guildsPerShard?: number | "auto";
 	/** 
 	 * Number of shards
 	 * @defaultValue "auto"
@@ -400,7 +400,7 @@ export class Admiral extends EventEmitter {
 	/** BotWorker class used when starting clusters */
 	public BotWorker?: typeof BaseClusterWorker;
 	private token: string;
-	public guildsPerShard: number;
+	public guildsPerShard: number | "auto";
 	public shardCount: number | "auto";
 	public clusterCount: number | "auto";
 	public lastShardID: number;
@@ -461,7 +461,7 @@ export class Admiral extends EventEmitter {
 		this.path = options.path;
 		this.BotWorker = options.BotWorker;
 		this.token = options.token.startsWith("Bot ") ? options.token : `Bot ${options.token}`;
-		this.guildsPerShard = options.guildsPerShard ?? 1300;
+		this.guildsPerShard = options.guildsPerShard ?? "auto";
 		this.shardCount = options.shards ?? "auto";
 		this.clusterCount = options.clusters ?? "auto";
 		this.clientOptions = options.clientOptions ?? {intents: Eris.Constants.Intents.allNonPrivileged};
@@ -2177,10 +2177,11 @@ export class Admiral extends EventEmitter {
 			shards = Number(gateway.shards);
 			if (shards === 1) {
 				return Promise.resolve(shards);
+			} else if (this.guildsPerShard !== "auto") {
+				return Promise.resolve(Math.ceil((shards * 1000) / this.guildsPerShard));
 			} else {
-				return Promise.resolve(
-					Math.ceil((shards * 1000) / this.guildsPerShard),
-				);
+				// return the gateway recommended shards
+				return Promise.resolve(shards);
 			}
 		} else {
 			return Promise.resolve(shards);
