@@ -112,7 +112,7 @@ export interface Options {
 	clusters?: number | "auto";
 	/** 
 	 * Options to pass to the Eris client constructor.
-	 * Intents default to all non-privilaged intents.
+	 * Intents default to all non-privileged intents.
 	 */
 	clientOptions?: Eris.ClientOptions;
 	/** 
