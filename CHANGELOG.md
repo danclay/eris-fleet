@@ -2,7 +2,7 @@
 
 This may skip some little bug fixes.
 
-## 0.3.9-dev
+## 1.0.0
 
 ### Breaking changes:
 
