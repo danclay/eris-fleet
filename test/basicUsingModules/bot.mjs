@@ -1,6 +1,6 @@
-const { BaseClusterWorker } = require('../../dist/index');
+import {BaseClusterWorker} from '../../dist/index.js';
 
-module.exports = class BotWorker extends BaseClusterWorker {
+class BotWorker extends BaseClusterWorker {
     constructor(setup) {
         // Do not delete this super.
         super(setup);
@@ -11,9 +11,7 @@ module.exports = class BotWorker extends BaseClusterWorker {
     async handleMessage(msg) {
         if (msg.content === "!ping" && !msg.author.bot) {
             this.bot.createMessage(msg.channel.id, "Pong!");
-			// Cluster commands can be called like this.
-			const data = await this.ipc.clusterCommand(0, null, true);
-			this.bot.createMessage(msg.channel.id, data);
+			const data = await this.ipc.clusterCommand(0, null, true)
         }
     }
 
@@ -27,3 +25,5 @@ module.exports = class BotWorker extends BaseClusterWorker {
         done(); // Use this function when you are done gracefully shutting down.
     }
 }
+
+export {BotWorker}

@@ -1,5 +1,6 @@
 # Dist
-#dist
+dist/
+docs/
 
 # Logs
 logs

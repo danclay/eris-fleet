@@ -1,28 +1,43 @@
 import {worker} from "cluster";
 import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
+import { IPC } from "../util/IPC";
+import { LoggingOptions, ServiceCreator } from "../sharding/Admiral";
+import { ServiceConnectMessage } from "../util/Queue";
+
+interface ServiceInput {
+	fetchTimeout: number;
+	overrideConsole: boolean;
+	servicesToCreate: ServiceCreator[];
+}
 
 export class Service {
-	path!: string;
+	path?: string;
 	serviceName!: string;
 	app?: BaseServiceWorker;
 	timeout!: number;
-	whatToLog!: string[];
+	whatToLog!: LoggingOptions[];
+	ipc: IPC;
+	connectedTimestamp?: number;
+	private ServiceWorker?: typeof BaseServiceWorker;
 
-	constructor() {
+	constructor(input: ServiceInput) {
+		this.ipc = new IPC({fetchTimeout: input.fetchTimeout});
 
-		console.log = (str: unknown) => {if (process.send) process.send({op: "log", msg: str});};
-		console.debug = (str: unknown) => {if (process.send) process.send({op: "debug", msg: str});};
-		console.error = (str: unknown) => {if (process.send) process.send({op: "error", msg: str});};
-		console.warn = (str: unknown) => {if (process.send) process.send({op: "warn", msg: str});};
+		if (input.overrideConsole) {
+			console.log = (str: unknown) => {this.ipc.log(str);};
+			console.debug = (str: unknown) => {this.ipc.debug(str);};
+			console.error = (str: unknown) => {this.ipc.error(str);};
+			console.warn = (str: unknown) => {this.ipc.warn(str);};
+		}
 
 		// Spawns
 		process.on("uncaughtException", (err: Error) => {
-			if (process.send) process.send({op: "error", msg: inspect(err)});
+			this.ipc.error(err);
 		});
 
 		process.on("unhandledRejection", (reason, promise) => {
-			if (process.send) process.send({op: "error", msg: "Unhandled Rejection at: " + inspect(promise) + " reason: " + reason});
+			this.ipc.error("Unhandled Rejection at: " + inspect(promise) + " reason: " + reason);
 		});
 
 		if (process.send) process.send({op: "launched"});
@@ -31,15 +46,20 @@ export class Service {
 			if (message.op) {
 				switch (message.op) {
 				case "connect": {
-					this.path = message.path;
-					this.serviceName = message.serviceName;
-					this.timeout = message.timeout;
-					this.whatToLog = message.whatToLog;
+					const connectMessage = message as ServiceConnectMessage;
+					this.path = connectMessage.path;
+					this.serviceName = connectMessage.serviceName;
+					this.timeout = connectMessage.timeout;
+					this.whatToLog = connectMessage.whatToLog;
+
+					if (!this.path) {
+						this.ServiceWorker = input.servicesToCreate.find(s => s.name === this.serviceName)!.ServiceWorker;
+					}
 					this.loadCode();
 					break;
 				}
 				case "return": {
-					if (this.app) this.app.ipc.emit(message.id, message.value);
+					if (this.app) this.ipc.emit(message.id, message.value);
 					break;
 				}
 				case "command": {
@@ -47,9 +67,10 @@ export class Service {
 						const res = {err: `Service ${this.serviceName} cannot handle commands!`};
 						if (process.send) process.send({op: "return", value: {
 							id: message.command.UUID,
-							value: res
+							value: res,
+							serviceName: this.serviceName
 						}, UUID: message.UUID});
-						console.error("I can't handle commands!");
+						this.ipc.error("I can't handle commands!");
 					};
 					if (this.app) {
 						if (this.app.handleCommand) {
@@ -57,7 +78,8 @@ export class Service {
 							if (message.command.receptive) {
 								if (process.send) process.send({op: "return", value: {
 									id: message.command.UUID,
-									value: res
+									value: res,
+									serviceName: this.serviceName
 								}, UUID: message.UUID});
 							}
 						} else {
@@ -65,6 +87,35 @@ export class Service {
 						}
 					} else {
 						noHandle();
+					}
+
+					break;
+				}
+				case "eval": {
+					const errorEncountered = (err: unknown) => {
+						if (message.request.receptive) {
+							if (process.send) process.send({op: "return", value: {
+								id: message.request.UUID,
+								value: {err},
+								serviceName: this.serviceName
+							}, UUID: message.UUID});
+						}
+					};
+					if (this.app) {
+						this.app.runEval(message.request.stringToEvaluate)
+							.then((res: unknown) => {
+								if (message.request.receptive) {
+									if (process.send) process.send({op: "return", value: {
+										id: message.request.UUID,
+										value: res,
+										serviceName: this.serviceName
+									}, UUID: message.UUID});
+								}
+							}).catch((error: unknown) => {
+								errorEncountered(error);
+							});
+					} else {
+						errorEncountered("Cluster is not ready!");
 					}
 
 					break;
@@ -87,7 +138,9 @@ export class Service {
 				}
 				case "collectStats": {
 					if (process.send) process.send({op: "collectStats", stats: {
-						ram: process.memoryUsage().rss / 1e6
+						uptime: this.connectedTimestamp ? new Date().getTime() - this.connectedTimestamp : 0,
+						ram: process.memoryUsage().rss / 1e6,
+						ipcLatency: new Date().getTime()
 					}});
 
 					break;
@@ -98,41 +151,49 @@ export class Service {
 	}
  
 	private async loadCode() {
-		if (this.whatToLog.includes("service_start")) console.log(`Starting service ${this.serviceName}`);
+		if (this.app) return;
+		if (this.whatToLog.includes("service_start")) this.ipc.log(`Starting service ${this.serviceName}`);
 
-		let App = (await import(this.path));
-		if (App.ServiceWorker) {
-			App = App.ServiceWorker;
+		let App;
+		if (this.ServiceWorker) {
+			App = this.ServiceWorker;
+			try {
+				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+			} catch (e) {
+				this.ipc.error(e);
+				process.exit(1);
+			}
 		} else {
-			App = App.default ? App.default : App;
-		}
-		this.app = new App({serviceName: this.serviceName, workerID: worker.id});
-
-		let ready = false;
-		if (this.app) this.app.readyPromise.then(() => {
-			if (this.whatToLog.includes("service_ready")) console.log(`Service ${this.serviceName} is ready!`);
-			if (process.send) process.send({op: "connected"});
-			ready = true;
-		}).catch((err: unknown) => {
-			console.error(`Service ${this.serviceName} had an error starting: ${inspect(err)}`);
-			process.kill(0);
-		});
-
-		// Timeout
-		if (this.timeout !== 0) {
-			setTimeout(() => {
-				if (!ready) {
-					console.error(`Service ${this.serviceName} took too long to start.`);
-					process.kill(0);
+			try {
+				App = await import(this.path!);
+				if (App.ServiceWorker) {
+					App = App.ServiceWorker;
+				} else {
+					App = App.default ? App.default : App;
 				}
+				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+			} catch (e) {
+				this.ipc.error(e);
+				process.exit(1);
+			}
+		}
+
+		let timeout: NodeJS.Timeout;
+		if (this.timeout !== 0) {
+			timeout = setTimeout(() => {
+				this.ipc.error(`Service ${this.serviceName} took too long to start.`);
+				process.exit(1);
 			}, this.timeout);
 		}
 
-		/* this.app.admiral.on("broadcast", (m) => {
-			if (!m.event) console.error(`Service ${this.serviceName} | My emit cannot be completed since the message doesn't have a "message"!`);
-			if (!m.msg) m.msg = null;
-			//@ts-ignore
-			process.send({op: "broadcast", event: {op: m.event, msg: m.msg}});
-		}) */
+		if (this.app) this.app.readyPromise.then(() => {
+			if (process.send) process.send({op: "connected"});
+			if (process.send) process.send({op: "codeLoaded"});
+			if (timeout) clearTimeout(timeout);
+			this.connectedTimestamp = new Date().getTime();
+		}).catch((e: unknown) => {
+			this.ipc.error(e);
+			process.exit(1);
+		});
 	}
 }

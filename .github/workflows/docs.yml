@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+    - master
+name: Publish docs
+jobs:
+  build:
+    name: Publish project documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14.x'
+    - run: yarn install
+    - run: yarn typedoc
+    - name: Publish docs
+      uses: peaceiris/actions-gh-pages@v3.8.0
+      with:
+        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        publish_branch: docs
+        publish_dir: ./docs
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'

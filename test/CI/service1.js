@@ -23,15 +23,15 @@ module.exports = class ServiceWorker extends BaseServiceWorker {
         });
     }
     async handleCommand(dataSentInCommand) {
-        if (dataSentInCommand == "test1Complete") this.ipc.admiralBroadcast("ready");
-        if (dataSentInCommand == "readyI") {
+        if (dataSentInCommand === "test1Complete") this.ipc.admiralBroadcast("ready");
+        if (dataSentInCommand === "readyI") {
             readyI++;
-            if (readyI == 4) {
+            if (readyI === 4) {
                 this.ipc.admiralBroadcast("ready");
-            } else if (readyI == 6) {
+            } else if (readyI === 6) {
                 this.ipc.admiralBroadcast("ready");
-            };
-        };
+            }
+        }
         return dataSentInCommand.test;
     }
 

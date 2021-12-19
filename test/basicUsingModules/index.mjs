@@ -1,12 +1,19 @@
-const { isMaster } = require('cluster');
-const { Fleet } = require('../../dist/index');
-const path = require('path');
-const { inspect } = require('util');
+import {isMaster} from "cluster"
+import {Fleet} from "../../dist/index.js"
+import path from "path"
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import {inspect} from "util"
+import {BotWorker} from "./bot.mjs"
 
-require('dotenv').config();
+import dotenv from "dotenv"
+dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const options = {
-    path: path.join(__dirname, "./bot.js"),
+    BotWorker: BotWorker,
     token: process.env.token,
     startingStatus: {
         status: "dnd",

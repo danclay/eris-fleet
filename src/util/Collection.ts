@@ -1,9 +1,9 @@
 /** Collection-ish */
-export class Collection extends Map {
-	public constructor() {
-		super();
+export class Collection<KeyType, ValueType> extends Map<KeyType, ValueType> {
+	public constructor(iterable?: never) {
+		super(iterable);
 	}
-	public find(func: (item: any) => boolean): any {
+	public find(func: (item: ValueType) => boolean): ValueType | undefined {
 		for (const item of this.values()) {
 			if (func(item)) {
 				return item;
