@@ -8,6 +8,7 @@ This may skip some little bug fixes.
 
 - When using `ipc.register`, the message is now the actual message, not an object with the message as "msg"
 - Fetching members now returns only cached members. Use Eris' `client.getRESTGuildMember` to fetch a member which is not cached
+- `options.guildsPerShard` now includes an `"auto"` option which is the default. This just uses whatever shard count Discord recommends.
 
 ### Other changes:
 
