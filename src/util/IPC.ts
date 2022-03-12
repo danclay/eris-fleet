@@ -7,7 +7,7 @@ import { Collection } from "../util/Collection";
 import { isMaster } from "cluster";
 
 export interface IpcHandledLog {
-	op: "log" | "error" | "warn" | "debug",
+	op: "log" | "info" | "error" | "warn" | "debug",
 	ipcLogObject: boolean,
 	msg: unknown,
 	source?: string,
@@ -187,7 +187,7 @@ export class IPC extends EventEmitter {
 		}
 	}
 
-	private sendLog(type: "log" | "error" | "warn" | "debug", value: unknown, source?: string) {
+	private sendLog(type: "log" | "info" | "error" | "warn" | "debug", value: unknown, source?: string) {
 		let valueToSend = value;
 		let valueTranslatedFrom: string | undefined = undefined;
 
@@ -217,6 +217,19 @@ export class IPC extends EventEmitter {
 	 */
 	public log(message: unknown, source?: string): void {
 		this.sendLog("log", message, source);
+	}
+
+	/**
+	 * Sends an info log to the Admiral
+	 * @param message Item to log
+	 * @param source Custom error source
+	 * @example
+	 * ```js
+	 * this.ipc.info("You might want to take a look at this");
+	 * ```
+	 */
+	public info(message: unknown, source?: string): void {
+		this.sendLog("info", message, source);
 	}
 
 	/**
