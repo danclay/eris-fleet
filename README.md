@@ -67,7 +67,7 @@ To get started, you will need at least 2 files:
 1. Your file which will create the fleet. This will be called "index.js" for now.
 2. Your file containing your bot code. This will be called "bot.js" for now. This file will extend `BaseClusterWorker`
 
-In the example below, the variable `options` is passed to the admiral. [Read the docs](https://danclay.github.io/eris-fleet/interfaces/options.html) for what options you can pass.
+In the example below, the variable `options` is passed to the admiral. [Read the docs](https://danclay.github.io/eris-fleet/interfaces/Options.html) for what options you can pass.
 
 Here is an example of `index.js`:
 ```js
@@ -220,11 +220,11 @@ Below is more in-depth documentation.
 
 ### Admiral options
 
-Visit [the docs](https://danclay.github.io/eris-fleet/interfaces/options.html) for a complete list of options.
+Visit [the docs](https://danclay.github.io/eris-fleet/interfaces/Options.html) for a complete list of options.
 
 ### Admiral events
 
-Visit [the docs](https://danclay.github.io/eris-fleet/classes/fleet.html) for a complete list of events.
+Visit [the docs](https://danclay.github.io/eris-fleet/classes/Fleet.html) for a complete list of events.
 
 ### Central Request Handler
 
@@ -236,7 +236,7 @@ If you are using a "very large bot," Discord's special gateway settings apply. E
 
 ### Concurrency
 
-Eris-fleet supports concurrency by starting clusters at the same time based on your bot's `max_concurrency` value. The clusters are started together in groups. The `max_concurrency` value can be overridden with [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/options.html#maxconcurrencyoverride)
+Eris-fleet supports concurrency by starting clusters at the same time based on your bot's `max_concurrency` value. The clusters are started together in groups. The `max_concurrency` value can be overridden with [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride)
 
 ### Formats
 
@@ -244,7 +244,7 @@ Visit [the docs](https://danclay.github.io/eris-fleet/modules.html) to view the 
 
 ### Choose what to log
 
-You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are shown [on the docs](https://danclay.github.io/eris-fleet/modules.html#loggingoptions). Here is an example of choosing what to log:
+You can choose what to log by using the `whatToLog` property in the options object. You can choose either a whitelist or a blacklist of what to log. You can select what to log by using an array. To possible array elements are shown [on the docs](https://danclay.github.io/eris-fleet/modules.html#LoggingOptions). Here is an example of choosing what to log:
 ```js
 const options = {
     // Your other options
@@ -258,15 +258,15 @@ Change `whitelist` to `blacklist` if you want to use a blacklist. Change the arr
 
 ## IPC
 
-Clusters and services can use IPC to interact with other clusters, the Admiral, and services. Visit [the IPC docs](https://danclay.github.io/eris-fleet/classes/ipc.html) to view available methods.
+Clusters and services can use IPC to interact with other clusters, the Admiral, and services. Visit [the IPC docs](https://danclay.github.io/eris-fleet/classes/IPC.html) to view available methods.
 
 ## Stats
 
-Stats are given in [this](https://danclay.github.io/eris-fleet/interfaces/stats.html) format.
+Stats are given in [this](https://danclay.github.io/eris-fleet/interfaces/Stats.html) format.
 
 ## Using a specific version of Eris or a modified version of Eris
 
-You can use an extended Eris client by passing it to the Options. (see the [options.customClient](https://danclay.github.io/eris-fleet/interfaces/options.html#customclient) section).
+You can use an extended Eris client by passing it to the Options. (see the [options.customClient](https://danclay.github.io/eris-fleet/interfaces/Options.html#customclient) section).
 
 Eris-fleet is able to use packages such as eris-additions if you desire. To do so, modify your bot file to match the following template:
 ```js

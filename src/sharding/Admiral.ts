@@ -838,6 +838,7 @@ export class Admiral extends EventEmitter {
 						}
 						}
 						this.emit(message.type, shardEmit);
+						if (this.broadcastAdmiralEvents) this.broadcast(message.type, shardEmit);
 						break;
 					}
 					default: {
@@ -990,7 +991,7 @@ export class Admiral extends EventEmitter {
 	}
 
 	private ipcMessageHandler(worker: FakeWorker, message: any) {
-		const logSourced = (type: "log" | "warn" | "error" | "debug", msg: string) => {
+		const logSourced = (type: "log" | "info" | "warn" | "error" | "debug", msg: string) => {
 			let source = `Worker ${worker.id}`;
 			if (worker.id === "master") {
 				source = "Admiral";
@@ -1007,6 +1008,10 @@ export class Admiral extends EventEmitter {
 		// fallback log
 		case "log": {
 			this.ipcLog("log", message, worker);
+			break;
+		}
+		case "info": {
+			this.ipcLog("info", message, worker);
 			break;
 		}
 		case "debug": {
@@ -2592,7 +2597,7 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private ipcLog(type: "log" | "error" | "warn" | "debug", message: unknown, worker: FakeWorker) {
+	private ipcLog(type: "log" | "info" | "error" | "warn" | "debug", message: unknown, worker: FakeWorker) {
 		// convert log if convered
 		let messageToLog = message;
 		let source;
@@ -2651,7 +2656,7 @@ export class Admiral extends EventEmitter {
 		this.emitLog(type, messageToLog, source);
 	}
 
-	private emitLog(type: "log" | "error" | "warn" | "debug", message: unknown, source?: string) {
+	private emitLog(type: "log" | "info" | "error" | "warn" | "debug", message: unknown, source?: string) {
 		let log = message;
 		if (this.objectLogging) {
 			log = {
@@ -2677,6 +2682,10 @@ export class Admiral extends EventEmitter {
 
 	public log(message: unknown, source?: string): void {
 		this.emitLog("log", message, source);
+	}
+
+	public info(message: unknown, source?: string): void {
+		this.emitLog("info", message, source);
 	}
 
 	public warn(message: unknown, source?: string): void {

@@ -45,6 +45,7 @@ export class Cluster {
 
 		if (input.overrideConsole) {
 			console.log = (str: unknown) => {this.ipc.log(str);};
+			console.info = (str: unknown) => {this.ipc.info(str);};
 			console.debug = (str: unknown) => {this.ipc.debug(str);};
 			console.error = (str: unknown) => {this.ipc.error(str);};
 			console.warn = (str: unknown) => {this.ipc.warn(str);};
