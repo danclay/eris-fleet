@@ -838,6 +838,7 @@ export class Admiral extends EventEmitter {
 						}
 						}
 						this.emit(message.type, shardEmit);
+						if (this.broadcastAdmiralEvents) this.broadcast(message.type, shardEmit);
 						break;
 					}
 					default: {
