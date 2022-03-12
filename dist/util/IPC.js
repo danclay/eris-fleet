@@ -228,7 +228,7 @@ class IPC extends events_1.EventEmitter {
         this.sendLog("debug", message, source);
     }
     /**
-     * Register for an event. This will receive broadcasts and messages sent to this cluster.
+     * Register for an event. This will receive broadcasts and messages sent to this cluster. This will also recieve Admiral events if broadcastAdmiralEvents is enabled in options.
      * Events can be sent using {@link sendTo} and {@link broadcast}
      * @param event Name of the event
      * @param callback Function run when event is received

@@ -112,7 +112,7 @@ export declare class IPC extends EventEmitter {
      */
     debug(message: unknown, source?: string): void;
     /**
-     * Register for an event. This will receive broadcasts and messages sent to this cluster.
+     * Register for an event. This will receive broadcasts and messages sent to this cluster. This will also recieve Admiral events if broadcastAdmiralEvents is enabled in options.
      * Events can be sent using {@link sendTo} and {@link broadcast}
      * @param event Name of the event
      * @param callback Function run when event is received
