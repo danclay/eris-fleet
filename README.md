@@ -38,6 +38,10 @@ eris-fleet currently supports Eris v0.16.x.
 - Can use a modified version of Eris
 - Concurrency support
 
+A very basic diagram:
+
+![Basic diagram](https://cdn.discordapp.com/attachments/866590047436144641/965161462479859742/Untitled_Diagram.drawio_1.png)
+
 ## Help
 
 If you still have questions, you can join the support server on Discord: [Discord server](https://discord.gg/tk2n3naJn3)
@@ -96,9 +100,9 @@ if (isMaster) {
     Admiral.on('stats', m => console.log(m));
 }
 ```
-This creates a new Admiral that will manage `bot.js` running in other processes. [More details](https://danclay.github.io/eris-fleet/classes/baseclusterworker.html)
+This creates a new Admiral that will manage `bot.js` running in other processes. [More details](https://danclay.github.io/eris-fleet/classes/BaseClusterWorker.html)
 
-The following is an example of `bot.js`. [Read the IPC docs](https://danclay.github.io/eris-fleet/classes/ipc.html) for what you can access and do with clusters.
+The following is an example of `bot.js`. [Read the IPC docs](https://danclay.github.io/eris-fleet/classes/IPC.html) for what you can access and do with clusters.
 ```js
 const { BaseClusterWorker } = require('eris-fleet');
 
@@ -136,7 +140,7 @@ The bot above will respond with "Pong!" when it receives the command "!ping".
 
 ## Services
 
-You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! [Read the IPC docs](https://danclay.github.io/eris-fleet/classes/ipc.html) for what you can access and do with services. **Note that services always start before the clusters. Clusters will only start after all the services have started.** [More details](https://danclay.github.io/eris-fleet/classes/baseserviceworker.html)
+You can create services for your bot. Services are workers which do not interact directly with Eris. Services are useful for processing tasks, a central location to get the latest version of languages for your bot, custom statistics, and more! [Read the IPC docs](https://danclay.github.io/eris-fleet/classes/IPC.html) for what you can access and do with services. **Note that services always start before the clusters. Clusters will only start after all the services have started.** [More details](https://danclay.github.io/eris-fleet/classes/BaseServiceWorker.html)
 
 To add a service, add the following to the options you pass to the fleet:
 
@@ -266,24 +270,19 @@ Stats are given in [this](https://danclay.github.io/eris-fleet/interfaces/Stats.
 
 ## Using a specific version of Eris or a modified version of Eris
 
-You can use an extended Eris client by passing it to the Options. (see the [options.customClient](https://danclay.github.io/eris-fleet/interfaces/Options.html#customclient) section).
+You can use an extended Eris client by passing it to the Options. (see the [options.customClient](https://danclay.github.io/eris-fleet/interfaces/Options.html#customClient) section).
 
 Eris-fleet is able to use packages such as eris-additions if you desire. To do so, modify your bot file to match the following template:
 ```js
-const { BaseClusterWorker } = require('eris-fleet');
-
 // Example using eris-additions
+const { Fleet } = require("eris-fleet");
 const Eris = require("eris-additions")(require("eris"));
 
-class BotWorker extends BaseClusterWorker {
-    constructor(setup) {
-        super(setup);
-        // Your cool stuff
-    }
+const options = {
+    // other options
+    customClient: Eris
 }
-
-// This export is needed for this to work.
-module.exports = {BotWorker, Eris};
+const Admiral = new Fleet(options);
 ```
 
 ## Using ES Modules
