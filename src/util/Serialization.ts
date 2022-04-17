@@ -27,7 +27,7 @@ const reconstructError = (data: NodeJS.ErrnoException): NodeJS.ErrnoException =>
 	return result as NodeJS.ErrnoException;
 };
 
-const stringifyJSON = (data: any) => {
+const stringifyJSON = (data: unknown): any => {
 	return JSON.stringify(data, (key, value) => {
 		switch(typeof value) {
 		case "bigint": {
@@ -43,7 +43,7 @@ const stringifyJSON = (data: any) => {
 	});
 };
 
-const parseJSON = (json: string) => {
+const parseJSON = (json: string): any => {
 	return JSON.parse(json, (key, value) => {
 		if (typeof value === "string") {
 			if (value.startsWith("BIGINT::")) {
