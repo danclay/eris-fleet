@@ -15,7 +15,7 @@ const Cluster_1 = require("../clusters/Cluster");
 const Service_1 = require("../services/Service");
 const path_1 = __importDefault(require("path"));
 const util_1 = require("util");
-const ErrorHandler_1 = require("../util/ErrorHandler");
+const Serialization_1 = require("../util/Serialization");
 /**
  * The sharding manager.
  * @example
@@ -427,7 +427,8 @@ class Admiral extends events_1.EventEmitter {
                             break;
                         }
                         case "centralApiRequest": {
-                            this.centralApiRequest(worker, message.request.UUID, message.request.data);
+                            const data = (0, Serialization_1.parseJSON)(message.request.dataSerialized);
+                            this.centralApiRequest(worker, message.request.UUID, data);
                             break;
                         }
                         case "shardUpdate": {
@@ -651,6 +652,10 @@ class Admiral extends events_1.EventEmitter {
             // fallback log
             case "log": {
                 this.ipcLog("log", message, worker);
+                break;
+            }
+            case "info": {
+                this.ipcLog("info", message, worker);
                 break;
             }
             case "debug": {
@@ -1287,12 +1292,13 @@ class Admiral extends events_1.EventEmitter {
     }
     centralApiRequest(worker, UUID, data) {
         const reply = (resolved, value) => {
+            const valueSerialized = (0, Serialization_1.stringifyJSON)(value);
             worker.send({
                 op: "centralApiResponse",
                 id: UUID,
                 value: {
                     resolved,
-                    value
+                    valueSerialized
                 }
             });
         };
@@ -1309,7 +1315,7 @@ class Admiral extends events_1.EventEmitter {
                 error
             };
             if (error instanceof Error) {
-                msg.error = (0, ErrorHandler_1.errorToJSON)(error);
+                msg.error = (0, Serialization_1.errorToJSON)(error);
                 msg.convertedErrorObject = true;
             }
             reply(false, msg);
@@ -2216,7 +2222,7 @@ class Admiral extends events_1.EventEmitter {
                 if (ipcHandledMessage.valueTranslatedFrom) {
                     switch (ipcHandledMessage.valueTranslatedFrom) {
                         case "Error": {
-                            messageToLog = (0, ErrorHandler_1.reconstructError)(ipcHandledMessage.msg);
+                            messageToLog = (0, Serialization_1.reconstructError)(ipcHandledMessage.msg);
                             break;
                         }
                     }
@@ -2290,6 +2296,9 @@ class Admiral extends events_1.EventEmitter {
     }
     log(message, source) {
         this.emitLog("log", message, source);
+    }
+    info(message, source) {
+        this.emitLog("info", message, source);
     }
     warn(message, source) {
         this.emitLog("warn", message, source);

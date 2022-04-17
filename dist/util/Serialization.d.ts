@@ -7,4 +7,6 @@ interface SentError {
 }
 declare const errorToJSON: (error: NodeJS.ErrnoException) => NodeJS.ErrnoException;
 declare const reconstructError: (data: NodeJS.ErrnoException) => NodeJS.ErrnoException;
-export { reconstructError, errorToJSON, SentError };
+declare const stringifyJSON: (data: any) => string;
+declare const parseJSON: (json: string) => any;
+export { reconstructError, errorToJSON, stringifyJSON, parseJSON, SentError };

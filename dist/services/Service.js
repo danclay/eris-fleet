@@ -28,6 +28,7 @@ class Service {
         this.ipc = new IPC_1.IPC({ fetchTimeout: input.fetchTimeout });
         if (input.overrideConsole) {
             console.log = (str) => { this.ipc.log(str); };
+            console.info = (str) => { this.ipc.info(str); };
             console.debug = (str) => { this.ipc.debug(str); };
             console.error = (str) => { this.ipc.error(str); };
             console.warn = (str) => { this.ipc.warn(str); };

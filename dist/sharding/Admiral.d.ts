@@ -484,5 +484,6 @@ export declare class Admiral extends EventEmitter {
     error(message: unknown, source?: string): void;
     debug(message: unknown, source?: string): void;
     log(message: unknown, source?: string): void;
+    info(message: unknown, source?: string): void;
     warn(message: unknown, source?: string): void;
 }

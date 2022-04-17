@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPC = exports.CentralStore = void 0;
 const events_1 = require("events");
 const crypto_1 = __importDefault(require("crypto"));
-const ErrorHandler_1 = require("./ErrorHandler");
+const Serialization_1 = require("./Serialization");
 const path_1 = __importDefault(require("path"));
 const Collection_1 = require("../util/Collection");
 const cluster_1 = require("cluster");
@@ -167,7 +167,7 @@ class IPC extends events_1.EventEmitter {
         let valueTranslatedFrom = undefined;
         if (value instanceof Error) {
             valueTranslatedFrom = "Error";
-            valueToSend = (0, ErrorHandler_1.errorToJSON)(value);
+            valueToSend = (0, Serialization_1.errorToJSON)(value);
         }
         this.sendMessage({
             op: type,
@@ -190,6 +190,18 @@ class IPC extends events_1.EventEmitter {
      */
     log(message, source) {
         this.sendLog("log", message, source);
+    }
+    /**
+     * Sends an info log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     * @example
+     * ```js
+     * this.ipc.info("You might want to take a look at this");
+     * ```
+     */
+    info(message, source) {
+        this.sendLog("info", message, source);
     }
     /**
      * Sends an error log to the Admiral

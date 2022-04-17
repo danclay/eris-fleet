@@ -3,7 +3,7 @@ import { EventEmitter } from "events";
 import { ClusterCollection, ServiceCollection, Stats, ReshardOptions } from "../sharding/Admiral";
 import { Collection } from "../util/Collection";
 export interface IpcHandledLog {
-    op: "log" | "error" | "warn" | "debug";
+    op: "log" | "info" | "error" | "warn" | "debug";
     ipcLogObject: boolean;
     msg: unknown;
     source?: string;
@@ -81,6 +81,16 @@ export declare class IPC extends EventEmitter {
      * ```
      */
     log(message: unknown, source?: string): void;
+    /**
+     * Sends an info log to the Admiral
+     * @param message Item to log
+     * @param source Custom error source
+     * @example
+     * ```js
+     * this.ipc.info("You might want to take a look at this");
+     * ```
+     */
+    info(message: unknown, source?: string): void;
     /**
      * Sends an error log to the Admiral
      * @param message Item to log

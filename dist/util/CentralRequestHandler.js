@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CentralRequestHandler = void 0;
 const crypto_1 = __importDefault(require("crypto"));
-const ErrorHandler_1 = require("./ErrorHandler");
+const Serialization_1 = require("./Serialization");
 class CentralRequestHandler {
     constructor(ipc, options) {
         this.timeout = options.timeout;
@@ -15,6 +15,7 @@ class CentralRequestHandler {
             if (message.op === "centralApiResponse") {
                 const request = this.requests.get(message.id);
                 if (request) {
+                    message.value.value = (0, Serialization_1.parseJSON)(message.value.valueSerialized);
                     request(message.value);
                 }
             }
@@ -30,8 +31,9 @@ class CentralRequestHandler {
             }
         }
         const data = { method, url, auth, body, file, fileString, _route, short };
+        const dataSerialized = (0, Serialization_1.stringifyJSON)(data);
         if (process.send)
-            process.send({ op: "centralApiRequest", request: { UUID, data } });
+            process.send({ op: "centralApiRequest", request: { UUID, dataSerialized } });
         return new Promise((resolve, reject) => {
             // timeout
             const timeout = setTimeout(() => {
@@ -47,7 +49,7 @@ class CentralRequestHandler {
                 else {
                     const value = r.value;
                     if (value.convertedErrorObject) {
-                        reject((0, ErrorHandler_1.reconstructError)(value.error));
+                        reject((0, Serialization_1.reconstructError)(value.error));
                     }
                     else {
                         reject(value.error);
