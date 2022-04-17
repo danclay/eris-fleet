@@ -1,7 +1,7 @@
 import {EventEmitter} from "events";
 import {ClusterCollection, ServiceCollection, Stats, ReshardOptions} from "../sharding/Admiral";
 import crypto from "crypto";
-import { errorToJSON } from "./ErrorHandler";
+import { errorToJSON } from "./Serialization";
 import path from "path";
 import { Collection } from "../util/Collection";
 import { isMaster } from "cluster";

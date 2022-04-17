@@ -11,7 +11,7 @@ import {Cluster} from "../clusters/Cluster";
 import {Service} from "../services/Service";
 import path from "path";
 import { inspect } from "util";
-import { errorToJSON, reconstructError } from "../util/ErrorHandler";
+import { errorToJSON, parseJSON, reconstructError, stringifyJSON } from "../util/Serialization";
 
 export interface ShardUpdate {
 	shardID: number;
@@ -803,7 +803,8 @@ export class Admiral extends EventEmitter {
 						break;
 					}
 					case "centralApiRequest": {
-						this.centralApiRequest(worker, message.request.UUID, message.request.data);
+						const data = parseJSON(message.request.dataSerialized);
+						this.centralApiRequest(worker, message.request.UUID, data);
 						break;
 					}
 					case "shardUpdate": {
@@ -1662,12 +1663,13 @@ export class Admiral extends EventEmitter {
 
 	private centralApiRequest(worker: master.Worker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.FileContent, fileString?: string, _route?: string, short?: boolean}) {
 		const reply = (resolved: boolean, value: unknown) => {
+			const valueSerialized = stringifyJSON(value);
 			worker.send({
 				op: "centralApiResponse",
 				id: UUID,
 				value: {
 					resolved,
-					value
+					valueSerialized
 				}
 			});
 		};

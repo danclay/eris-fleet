@@ -1,6 +1,6 @@
 import { IPC } from "./IPC";
 import crypto from "crypto";
-import { reconstructError } from "./ErrorHandler";
+import { parseJSON, reconstructError, stringifyJSON } from "./Serialization";
 import Eris from "eris";
 
 interface CentralRequestHandlerOptions {
@@ -21,6 +21,7 @@ export class CentralRequestHandler {
 			if (message.op === "centralApiResponse") {
 				const request = this.requests.get(message.id);
 				if (request) {
+					message.value.value = parseJSON(message.value.valueSerialized);
 					request(message.value);
 				}
 			}
@@ -38,8 +39,9 @@ export class CentralRequestHandler {
 			}
 		}
 		const data = {method, url, auth, body, file, fileString, _route, short};
+		const dataSerialized = stringifyJSON(data);
 
-		if (process.send) process.send({op: "centralApiRequest", request: {UUID, data}});
+		if (process.send) process.send({op: "centralApiRequest", request: {UUID, dataSerialized}});
 
 		return new Promise((resolve, reject) => {
 			// timeout
