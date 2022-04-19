@@ -27,4 +27,33 @@ const reconstructError = (data: NodeJS.ErrnoException): NodeJS.ErrnoException =>
 	return result as NodeJS.ErrnoException;
 };
 
-export {reconstructError, errorToJSON, SentError};
+const stringifyJSON = (data: unknown): any => {
+	return JSON.stringify(data, (key, value) => {
+		switch(typeof value) {
+		case "bigint": {
+			return `BIGINT::${value}`;
+		}
+		case "undefined": {
+			return "UNDEFINED::";
+		}
+		default: {
+			return value;
+		}
+		}
+	});
+};
+
+const parseJSON = (json: string): any => {
+	return JSON.parse(json, (key, value) => {
+		if (typeof value === "string") {
+			if (value.startsWith("BIGINT::")) {
+				return BigInt(value.substring(8)); 
+			} else if (value.startsWith("UNDEFINED::")) {
+				return undefined;
+			}
+		}
+		return value;
+	});
+};
+
+export {reconstructError, errorToJSON, stringifyJSON, parseJSON, SentError};

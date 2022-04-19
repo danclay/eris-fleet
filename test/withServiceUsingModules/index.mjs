@@ -1,11 +1,11 @@
 import { isMaster } from 'cluster';
 import { Fleet } from '../../dist/index.js';
-import path from 'path';
 import { inspect } from 'util';
-import dotenv from 'dotenv';
-dotenv.config();
 import { ServiceWorker } from "./service.mjs";
 import { BotWorker } from './bot.mjs';
+
+import dotenv from "dotenv"
+dotenv.config()
 
 const options = {
     BotWorker,
