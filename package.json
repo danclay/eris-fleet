@@ -13,7 +13,7 @@
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
     "dotenv": "^10.0.0",
-    "eris": "~0.16.0",
+    "eris": "~0.17.1",
     "eslint": "^7.32.0",
     "typedoc": "^0.22.15",
     "typescript": "4.4.x"
@@ -34,6 +34,6 @@
     "discord sharder"
   ],
   "peerDependencies": {
-    "eris": "~0.16.0"
+    "eris": "~0.17.1"
   }
 }
