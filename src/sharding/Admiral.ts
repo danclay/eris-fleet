@@ -241,7 +241,7 @@ export interface Options {
 	 * Amount of time to wait before proceeding with a soft kill after the new cluster is ready. 
 	 * @defaultValue 0
 	 */
-	softKillWarningPeriod?: number;
+	softKillNotificationPeriod?: number;
 }
 
 export interface ShardStats {
@@ -432,7 +432,7 @@ export class Admiral extends EventEmitter {
 	private collectingStats!: boolean;
 	private whatToLog: LoggingOptions[];
 	private softKills: Map<number, {fn: (failed?: boolean) => void, type?: "cluster" | "service", id?: string | number}>;
-	private softKillWarningPeriod: number;
+	private softKillNotificationPeriod: number;
 	private launchingManager: Map<number, { waiting: () => void } | "launched">;
 	private objectLogging: boolean;
 	private startingStatus?: StartingStatus;
@@ -484,7 +484,7 @@ export class Admiral extends EventEmitter {
 		this.loadClusterCodeImmediately = options.loadCodeImmediately ?? false;
 		this.overrideConsole = options.overrideConsole ?? true;
 		this.startServicesTogether = options.startServicesTogether ?? false;
-		this.softKillWarningPeriod = options.softKillWarningPeriod ?? 0;
+		this.softKillNotificationPeriod = options.softKillNotificationPeriod ?? 0;
 		this.maxConcurrencyOverride = options.maxConcurrencyOverride;
 		this.maxConcurrency = this.maxConcurrencyOverride ?? 1;
 		this.shutdownTogether = options.shutdownTogether ?? false;
@@ -2390,9 +2390,9 @@ export class Admiral extends EventEmitter {
 				this.pauseStats = true;
 				this.softKills.set(newWorker.id, {
 					fn: () => {
-						if (this.softKillWarningPeriod > 0) {
-							this.log(`Killing old worker after 'softKillWarningPeriod' of: ${this.softKillWarningPeriod}ms`);
-							this.ipc.sendTo(cluster.clusterID, "softRestartPending", this.softKillWarningPeriod);
+						if (this.softKillNotificationPeriod > 0) {
+							this.log(`Killing old worker after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
+							this.ipc.sendTo(cluster.clusterID, "softRestartPending", this.softKillNotificationPeriod);
 						}	
 						
 						setTimeout(() => {
@@ -2413,7 +2413,7 @@ export class Admiral extends EventEmitter {
 								this.pauseStats = false;
 							});
 							this.queue.item(shutdownItem);
-						}, this.softKillWarningPeriod);
+						}, this.softKillNotificationPeriod);
 					},
 					type: "cluster",
 					id: cluster.clusterID,
