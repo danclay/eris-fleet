@@ -237,6 +237,11 @@ export interface Options {
 	 * @defaultValue 5
 	 */
 	maxRestarts?: number;
+	/**
+	 * Amount of time to wait before proceeding with a soft kill after the new cluster is ready. 
+	 * @defaultValue 0
+	 */
+	softKillWarningPeriod?: number;
 }
 
 export interface ShardStats {
@@ -427,6 +432,7 @@ export class Admiral extends EventEmitter {
 	private collectingStats!: boolean;
 	private whatToLog: LoggingOptions[];
 	private softKills: Map<number, {fn: (failed?: boolean) => void, type?: "cluster" | "service", id?: string | number}>;
+	private softKillWarningPeriod: number;
 	private launchingManager: Map<number, { waiting: () => void } | "launched">;
 	private objectLogging: boolean;
 	private startingStatus?: StartingStatus;
@@ -478,6 +484,7 @@ export class Admiral extends EventEmitter {
 		this.loadClusterCodeImmediately = options.loadCodeImmediately ?? false;
 		this.overrideConsole = options.overrideConsole ?? true;
 		this.startServicesTogether = options.startServicesTogether ?? false;
+		this.softKillWarningPeriod = options.softKillWarningPeriod ?? 0;
 		this.maxConcurrencyOverride = options.maxConcurrencyOverride;
 		this.maxConcurrency = this.maxConcurrencyOverride ?? 1;
 		this.shutdownTogether = options.shutdownTogether ?? false;
@@ -2383,23 +2390,29 @@ export class Admiral extends EventEmitter {
 				this.pauseStats = true;
 				this.softKills.set(newWorker.id, {
 					fn: () => {
-						this.softKills.delete(newWorker.id);
-						if (this.whatToLog.includes("cluster_restart")) {
-							this.log(`Killing old worker for cluster ${cluster.clusterID}`, "Admiral");
-						}
-						const shutdownItem = this.shutdownWorker(worker, true, () => {
+						if (this.softKillWarningPeriod > 0) {
+							this.log(`Killing old worker after 'softKillWarningPeriod' of: ${this.softKillWarningPeriod}ms`);
+						}	
+						
+						setTimeout(() => {
+							this.softKills.delete(newWorker.id);
 							if (this.whatToLog.includes("cluster_restart")) {
-								this.log(`Killed old worker for cluster ${cluster.clusterID}`, "Admiral");
+								this.log(`Killing old worker for cluster ${cluster.clusterID}`, "Admiral");
 							}
-							newWorker.send({op: "loadCode"});
-							this.clusters.delete(cluster.clusterID);
-							this.clusters.set(
-								cluster.clusterID,
-								Object.assign(cluster, {workerID: newWorker.id}),
-							);
-							this.pauseStats = false;
-						});
-						this.queue.item(shutdownItem);
+							const shutdownItem = this.shutdownWorker(worker, true, () => {
+								if (this.whatToLog.includes("cluster_restart")) {
+									this.log(`Killed old worker for cluster ${cluster.clusterID}`, "Admiral");
+								}
+								newWorker.send({op: "loadCode"});
+								this.clusters.delete(cluster.clusterID);
+								this.clusters.set(
+									cluster.clusterID,
+									Object.assign(cluster, {workerID: newWorker.id}),
+								);
+								this.pauseStats = false;
+							});
+							this.queue.item(shutdownItem);
+						}, this.softKillWarningPeriod);
 					},
 					type: "cluster",
 					id: cluster.clusterID,
