@@ -2391,7 +2391,7 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(newWorker.id, {
 					fn: () => {
 						if (this.softKillNotificationPeriod > 0) {
-							this.log(`Killing old worker after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
+							this.log(`Killing old worker for cluster ${cluster.clusterID} after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
 							this.ipc.sendTo(cluster.clusterID, "softRestartPending", this.softKillNotificationPeriod);
 						}	
 						
