@@ -366,10 +366,9 @@ enquirer@^2.3.5:
   dependencies:
     ansi-colors "^4.1.1"
 
-eris@~0.16.0:
-  version "0.16.1"
-  resolved "https://registry.yarnpkg.com/eris/-/eris-0.16.1.tgz#44b0a9220944fc73dd74538cd614826bfbfcde61"
-  integrity sha512-fqjgaddSvUlUjA7s85OvZimLrgCwX58Z6FXOIxdNFJdT6XReJ/LOWZKdew2CaalM8BvN2JKzn98HmKYb3zMhKg==
+"eris@https://github.com/Brainicism/eris#6de9de0":
+  version "0.1.0-dev"
+  resolved "https://github.com/Brainicism/eris#6de9de0dcebe89ecafb98960675e9e33049b7f89"
   dependencies:
     ws "^8.2.3"
   optionalDependencies:

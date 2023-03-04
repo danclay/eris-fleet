@@ -464,7 +464,7 @@ export class Admiral extends EventEmitter {
 		this.guildsPerShard = options.guildsPerShard ?? "auto";
 		this.shardCount = options.shards ?? "auto";
 		this.clusterCount = options.clusters ?? "auto";
-		this.clientOptions = options.clientOptions ?? {intents: Eris.Constants.Intents.allNonPrivileged};
+		this.clientOptions = options.clientOptions ?? {gateway: {intents: Eris.Constants.Intents.allNonPrivileged}};
 		this.clusterTimeout = options.clusterTimeout ?? 5e3;
 		this.serviceTimeout = options.serviceTimeout ?? 0;
 		this.killTimeout = options.killTimeout ?? 10e3;
@@ -515,8 +515,6 @@ export class Admiral extends EventEmitter {
 				}
 			});
 		}
-
-		if (options.timeout) this.clientOptions.connectionTimeout = options.timeout;
 
 		const allLogOptions = [
 			"gateway_shards",
