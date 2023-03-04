@@ -193,6 +193,11 @@ export interface Options {
      * @defaultValue 5
      */
     maxRestarts?: number;
+    /**
+     * Amount of time to wait before proceeding with a soft kill after the new cluster is ready.
+     * @defaultValue 0
+     */
+    softKillNotificationPeriod?: number;
 }
 export interface ShardStats {
     latency: number;
@@ -361,6 +366,7 @@ export declare class Admiral extends EventEmitter {
     private collectingStats;
     private whatToLog;
     private softKills;
+    private softKillNotificationPeriod;
     private launchingManager;
     private objectLogging;
     private startingStatus?;

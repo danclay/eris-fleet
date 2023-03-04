@@ -67,7 +67,7 @@ class Admiral extends events_1.EventEmitter {
      * @param options Options to configure the sharding manager
     */
     constructor(options) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
         super();
         this.objectLogging = (_a = options.objectLogging) !== null && _a !== void 0 ? _a : false;
         this.path = options.path;
@@ -90,11 +90,12 @@ class Admiral extends events_1.EventEmitter {
         this.loadClusterCodeImmediately = (_q = options.loadCodeImmediately) !== null && _q !== void 0 ? _q : false;
         this.overrideConsole = (_r = options.overrideConsole) !== null && _r !== void 0 ? _r : true;
         this.startServicesTogether = (_s = options.startServicesTogether) !== null && _s !== void 0 ? _s : false;
+        this.softKillNotificationPeriod = (_t = options.softKillNotificationPeriod) !== null && _t !== void 0 ? _t : 0;
         this.maxConcurrencyOverride = options.maxConcurrencyOverride;
-        this.maxConcurrency = (_t = this.maxConcurrencyOverride) !== null && _t !== void 0 ? _t : 1;
-        this.shutdownTogether = (_u = options.shutdownTogether) !== null && _u !== void 0 ? _u : false;
-        this.broadcastAdmiralEvents = (_v = options.broadcastAdmiralEvents) !== null && _v !== void 0 ? _v : true;
-        this.maxRestarts = (_w = options.maxRestarts) !== null && _w !== void 0 ? _w : 5;
+        this.maxConcurrency = (_u = this.maxConcurrencyOverride) !== null && _u !== void 0 ? _u : 1;
+        this.shutdownTogether = (_v = options.shutdownTogether) !== null && _v !== void 0 ? _v : false;
+        this.broadcastAdmiralEvents = (_w = options.broadcastAdmiralEvents) !== null && _w !== void 0 ? _w : true;
+        this.maxRestarts = (_x = options.maxRestarts) !== null && _x !== void 0 ? _x : 5;
         this.resharding = false;
         this.statsStarted = false;
         if (options.startingStatus)
@@ -2002,20 +2003,26 @@ class Admiral extends events_1.EventEmitter {
                 this.pauseStats = true;
                 this.softKills.set(newWorker.id, {
                     fn: () => {
-                        this.softKills.delete(newWorker.id);
-                        if (this.whatToLog.includes("cluster_restart")) {
-                            this.log(`Killing old worker for cluster ${cluster.clusterID}`, "Admiral");
+                        if (this.softKillNotificationPeriod > 0) {
+                            this.log(`Killing old worker for cluster ${cluster.clusterID} after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
+                            this.ipc.sendTo(cluster.clusterID, "softRestartPending", this.softKillNotificationPeriod);
                         }
-                        const shutdownItem = this.shutdownWorker(worker, true, () => {
+                        setTimeout(() => {
+                            this.softKills.delete(newWorker.id);
                             if (this.whatToLog.includes("cluster_restart")) {
-                                this.log(`Killed old worker for cluster ${cluster.clusterID}`, "Admiral");
+                                this.log(`Killing old worker for cluster ${cluster.clusterID}`, "Admiral");
                             }
-                            newWorker.send({ op: "loadCode" });
-                            this.clusters.delete(cluster.clusterID);
-                            this.clusters.set(cluster.clusterID, Object.assign(cluster, { workerID: newWorker.id }));
-                            this.pauseStats = false;
-                        });
-                        this.queue.item(shutdownItem);
+                            const shutdownItem = this.shutdownWorker(worker, true, () => {
+                                if (this.whatToLog.includes("cluster_restart")) {
+                                    this.log(`Killed old worker for cluster ${cluster.clusterID}`, "Admiral");
+                                }
+                                newWorker.send({ op: "loadCode" });
+                                this.clusters.delete(cluster.clusterID);
+                                this.clusters.set(cluster.clusterID, Object.assign(cluster, { workerID: newWorker.id }));
+                                this.pauseStats = false;
+                            });
+                            this.queue.item(shutdownItem);
+                        }, this.softKillNotificationPeriod);
                     },
                     type: "cluster",
                     id: cluster.clusterID,
