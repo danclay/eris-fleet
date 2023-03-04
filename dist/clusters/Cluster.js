@@ -59,6 +59,10 @@ class Cluster {
                         this.shardCount = connectMessage.shardCount;
                         this.shards = (this.lastShardID - this.firstShardID) + 1;
                         this.clientOptions = connectMessage.clientOptions;
+                        this.clientOptions.gateway = {
+                            firstShardID: connectMessage.firstShardID,
+                            lastShardID: connectMessage.lastShardID
+                        };
                         this.token = connectMessage.token;
                         this.whatToLog = connectMessage.whatToLog;
                         this.useCentralRequestHandler = connectMessage.useCentralRequestHandler;
@@ -285,7 +289,7 @@ class Cluster {
     async connect() {
         if (this.whatToLog.includes("cluster_start"))
             this.ipc.log(`Connecting with ${this.shards} shard(s)`);
-        const options = Object.assign(this.clientOptions, { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount });
+        const options = Object.assign(this.clientOptions, { gateway: { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount } });
         let bot;
         let App;
         if (this.BotWorker) {

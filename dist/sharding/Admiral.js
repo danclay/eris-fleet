@@ -76,7 +76,7 @@ class Admiral extends events_1.EventEmitter {
         this.guildsPerShard = (_b = options.guildsPerShard) !== null && _b !== void 0 ? _b : "auto";
         this.shardCount = (_c = options.shards) !== null && _c !== void 0 ? _c : "auto";
         this.clusterCount = (_d = options.clusters) !== null && _d !== void 0 ? _d : "auto";
-        this.clientOptions = (_e = options.clientOptions) !== null && _e !== void 0 ? _e : { intents: eris_1.default.Constants.Intents.allNonPrivileged };
+        this.clientOptions = (_e = options.clientOptions) !== null && _e !== void 0 ? _e : { gateway: { intents: eris_1.default.Constants.Intents.allNonPrivileged } };
         this.clusterTimeout = (_f = options.clusterTimeout) !== null && _f !== void 0 ? _f : 5e3;
         this.serviceTimeout = (_g = options.serviceTimeout) !== null && _g !== void 0 ? _g : 0;
         this.killTimeout = (_h = options.killTimeout) !== null && _h !== void 0 ? _h : 10e3;
@@ -131,8 +131,6 @@ class Admiral extends events_1.EventEmitter {
                 }
             });
         }
-        if (options.timeout)
-            this.clientOptions.connectionTimeout = options.timeout;
         const allLogOptions = [
             "gateway_shards",
             "admiral_start",

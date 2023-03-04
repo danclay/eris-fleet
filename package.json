@@ -13,7 +13,7 @@
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
     "dotenv": "^10.0.0",
-    "eris": "~0.16.0",
+    "eris": "https://github.com/Brainicism/eris#6de9de0",
     "eslint": "^7.32.0",
     "typedoc": "^0.22.15",
     "typescript": "4.4.x"
