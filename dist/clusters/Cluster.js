@@ -59,10 +59,6 @@ class Cluster {
                         this.shardCount = connectMessage.shardCount;
                         this.shards = (this.lastShardID - this.firstShardID) + 1;
                         this.clientOptions = connectMessage.clientOptions;
-                        this.clientOptions.gateway = {
-                            firstShardID: connectMessage.firstShardID,
-                            lastShardID: connectMessage.lastShardID
-                        };
                         this.token = connectMessage.token;
                         this.whatToLog = connectMessage.whatToLog;
                         this.useCentralRequestHandler = connectMessage.useCentralRequestHandler;
@@ -289,22 +285,22 @@ class Cluster {
     async connect() {
         if (this.whatToLog.includes("cluster_start"))
             this.ipc.log(`Connecting with ${this.shards} shard(s)`);
-        const options = Object.assign(this.clientOptions, { gateway: { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount } });
+        Object.assign(this.clientOptions.gateway, { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount });
         let bot;
         let App;
         if (this.BotWorker) {
             App = this.BotWorker;
-            bot = new this.erisClient(this.token, options);
+            bot = new this.erisClient(this.token, this.clientOptions);
         }
         else {
             try {
                 App = await Promise.resolve().then(() => __importStar(require(this.path)));
                 if (App.Eris) {
-                    bot = new App.Eris.Client(this.token, options);
+                    bot = new App.Eris.Client(this.token, this.clientOptions);
                     App = App.BotWorker;
                 }
                 else {
-                    bot = new this.erisClient(this.token, options);
+                    bot = new this.erisClient(this.token, this.clientOptions);
                     if (App.BotWorker) {
                         App = App.BotWorker;
                     }
