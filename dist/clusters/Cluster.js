@@ -284,7 +284,7 @@ class Cluster {
     }
     async connect() {
         if (this.whatToLog.includes("cluster_start"))
-            this.ipc.log(`Connecting with ${this.shards} shard(s)`);
+            this.ipc.log(`Connecting with ${this.shards} shard(s) (${this.firstShardID} - ${this.lastShardID})`);
         const options = Object.assign(this.clientOptions, { autoreconnect: true, firstShardID: this.firstShardID, lastShardID: this.lastShardID, maxShards: this.shardCount });
         let bot;
         let App;

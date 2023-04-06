@@ -1197,6 +1197,16 @@ class Admiral extends events_1.EventEmitter {
                         this.lastShardID = shards - 1;
                     }
                     this.shardCount = shards;
+                    // concurrency checks
+                    if (this.maxConcurrency > 1) {
+                        const admiralShardCount = this.lastShardID - this.firstShardID + 1;
+                        if (admiralShardCount % this.clusterCount !== 0) {
+                            throw "Concurrency bucket error: clusters must be multiple of shards";
+                        }
+                        if (this.maxConcurrency % (admiralShardCount / this.clusterCount) !== 0) {
+                            this.warn("Concurrency cluster warning: The number of clusters selected means concurrency cannot happen between shards. Eris will still do concurrency within shards. See README.md for more info.", "Admiral");
+                        }
+                    }
                     // Chunk
                     const shardsByID = [];
                     for (let i = this.firstShardID; i <= this.lastShardID; i++) {
@@ -1774,6 +1784,7 @@ class Admiral extends events_1.EventEmitter {
             });
         // Connects shards
         const queueItems = [];
+        const clusterInfoArr = [];
         for (const i of Array(this.clusterCount).keys()) {
             const ID = Number(i);
             const cluster = this.launchingWorkers.find((w) => { var _a; return ((_a = w.cluster) === null || _a === void 0 ? void 0 : _a.clusterID) === ID; }).cluster;
@@ -1797,9 +1808,11 @@ class Admiral extends events_1.EventEmitter {
                     resharding: this.resharding
                 },
             });
+            // to show debug info
+            clusterInfoArr.push(`${cluster.clusterID}:${cluster.firstShardID}-${cluster.lastShardID}`);
         }
         if (this.whatToLog.includes("shards_spread"))
-            this.log("All shards spread!", "Admiral");
+            this.log(`All shards spread! (${clusterInfoArr.join(",")})`, "Admiral");
         this.queue.bulkItems(queueItems);
     }
     async calculateShards() {
@@ -1827,14 +1840,35 @@ class Admiral extends events_1.EventEmitter {
             return Promise.resolve(shards);
         }
     }
-    chunkConcurrencyGroups() {
-        const clusterGroupMap = new Map();
+    /*private chunkConcurrencyGroups() {
+        const clusterGroupMap = new Map<number, number>();
         let currentGroup = 0;
-        for (let i = 0; i < this.clusterCount; i++) {
+        for (let i = 0; i < (this.clusterCount as number); i++) {
             if (i - currentGroup * this.maxConcurrency === this.maxConcurrency) {
                 currentGroup++;
             }
             clusterGroupMap.set(i, currentGroup);
+        }
+        return clusterGroupMap;
+    }*/
+    getShardConcurrencyBucket(shardID) {
+        return (shardID - (shardID % this.maxConcurrency)) / this.maxConcurrency;
+    }
+    chunkConcurrencyGroups() {
+        const clusterGroupMap = new Map();
+        // check multiples of shards
+        const trueShardCount = this.lastShardID - this.firstShardID + 1;
+        if (this.maxConcurrency % (trueShardCount / this.clusterCount) === 0 && this.maxConcurrency > 1) {
+            this.chunks.forEach((chunk, clusterID) => {
+                const firstShardID = Math.min(...chunk);
+                const firstShardBucket = this.getShardConcurrencyBucket(firstShardID);
+                clusterGroupMap.set(clusterID, firstShardBucket);
+            });
+        }
+        else {
+            for (let i = 0; i < this.clusterCount; i++) {
+                clusterGroupMap.set(i, i);
+            }
         }
         return clusterGroupMap;
     }

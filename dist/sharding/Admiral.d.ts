@@ -472,6 +472,7 @@ export declare class Admiral extends EventEmitter {
     private startService;
     private startCluster;
     private calculateShards;
+    private getShardConcurrencyBucket;
     private chunkConcurrencyGroups;
     private chunk;
     private shutdownWorker;
