@@ -238,7 +238,8 @@ export interface Options {
 	 */
 	maxRestarts?: number;
 	/**
-	 * Amount of time to wait before proceeding with a soft kill after the new cluster is ready. 
+	 * Amount of time (milliseconds) to wait before proceeding with a soft kill after the new cluster is ready.
+	 * Set to 0 to disable (default)
 	 * @defaultValue 0
 	 */
 	softKillNotificationPeriod?: number;
@@ -326,6 +327,12 @@ export interface ServiceCollection {
 	workerID: number;
 	/** Path only returned if the service was created using a path */
 	path?: string;
+}
+
+export interface SoftKillNotification {
+	softKillNotificationPeriod: number;
+	/** Epoch in ms when cluster will begin shutdown */
+	killTime: number;
 }
 
 /** @internal */
@@ -2391,8 +2398,11 @@ export class Admiral extends EventEmitter {
 				this.softKills.set(newWorker.id, {
 					fn: () => {
 						if (this.softKillNotificationPeriod > 0) {
-							this.log(`Killing old worker for cluster ${cluster.clusterID} after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
-							this.ipc.sendTo(cluster.clusterID, "softRestartPending", this.softKillNotificationPeriod);
+							if (this.whatToLog.includes("cluster_restart")) this.log(`Killing old worker for cluster ${cluster.clusterID} after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
+							this.ipc.sendTo(cluster.clusterID, "softRestartPending", {
+								softKillNotificationPeriod: this.softKillNotificationPeriod,
+								killTime: Date.now() + this.softKillNotificationPeriod
+							});
 						}	
 						
 						setTimeout(() => {
