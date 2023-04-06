@@ -66,6 +66,7 @@ export interface Options {
     shutdownTogether?: boolean;
     broadcastAdmiralEvents?: boolean;
     maxRestarts?: number;
+    softKillNotificationPeriod?: number;
 }
 export interface ShardStats {
     latency: number;
@@ -123,6 +124,10 @@ export interface ServiceCollection {
     workerID: number;
     path?: string;
 }
+export interface SoftKillNotification {
+    softKillNotificationPeriod: number;
+    killTime: number;
+}
 export declare class Admiral extends EventEmitter {
     clusters: Collection<number, ClusterCollection>;
     services: Collection<string, ServiceCollection>;
@@ -155,6 +160,7 @@ export declare class Admiral extends EventEmitter {
     private collectingStats;
     private whatToLog;
     private softKills;
+    private softKillNotificationPeriod;
     private launchingManager;
     private objectLogging;
     private startingStatus?;
