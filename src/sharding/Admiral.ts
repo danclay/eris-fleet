@@ -785,7 +785,7 @@ export class Admiral extends EventEmitter {
 									if (a.id > b.id) return 1;
 									return 0;
 								};
-								this.stats = Object.assign(this.prelimStats, {
+								this.stats = Object.assign(this.prelimStats!, {
 									clusters: this.prelimStats!.clusters.sort(compare),
 									timestamp: new Date().getTime()
 								});
@@ -1567,6 +1567,17 @@ export class Admiral extends EventEmitter {
 					}
 					this.shardCount = shards;
 
+					// concurrency checks
+					if (this.maxConcurrency > 1) {
+						const admiralShardCount = this.lastShardID - this.firstShardID + 1;
+						if (admiralShardCount % (this.clusterCount as number) !== 0) {
+							throw "Concurrency bucket error: clusters must be multiple of shards";
+						}
+						if (this.maxConcurrency % (admiralShardCount / (this.clusterCount as number)) !== 0) {
+							this.warn("Concurrency cluster warning: The number of clusters selected means concurrency cannot happen between shards. Eris will still do concurrency within shards. See README.md for more info.", "Admiral");
+						}
+					}
+
 					// Chunk
 					const shardsByID = [];
 					for (let i = this.firstShardID; i <= this.lastShardID; i++) {
@@ -2098,7 +2109,7 @@ export class Admiral extends EventEmitter {
 	}
 
 	private startCluster() {
-		for (let i = 0; i < this.clusterCount; i++) {
+		for (let i = 0; i < (this.clusterCount as number); i++) {
 			const worker = master.fork({
 				type: "cluster",
 				NODE_ENV: process.env.NODE_ENV,
@@ -2142,6 +2153,7 @@ export class Admiral extends EventEmitter {
 		});
 		// Connects shards
 		const queueItems: QueueItem[] = [];
+		const clusterInfoArr: string[] = [];
 		for (const i of Array(this.clusterCount).keys()) {
 			const ID = Number(i);
 
@@ -2168,8 +2180,12 @@ export class Admiral extends EventEmitter {
 					resharding: this.resharding
 				},
 			});
+
+			// to show debug info
+			clusterInfoArr.push(`${cluster.clusterID}:${cluster.firstShardID}-${cluster.lastShardID}`);
 		}
-		if (this.whatToLog.includes("shards_spread")) this.log("All shards spread!", "Admiral");
+		
+		if (this.whatToLog.includes("shards_spread")) this.log(`All shards spread! (${clusterInfoArr.join(",")})`, "Admiral");
 		this.queue.bulkItems(queueItems);
 	}
 
@@ -2195,14 +2211,36 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private chunkConcurrencyGroups() {
+	/*private chunkConcurrencyGroups() {
 		const clusterGroupMap = new Map<number, number>();
 		let currentGroup = 0;
-		for (let i = 0; i < this.clusterCount; i++) {
+		for (let i = 0; i < (this.clusterCount as number); i++) {
 			if (i - currentGroup * this.maxConcurrency === this.maxConcurrency) {
 				currentGroup++;
 			}
 			clusterGroupMap.set(i, currentGroup);
+		}
+		return clusterGroupMap;
+	}*/
+
+	private getShardConcurrencyBucket(shardID: number) {
+		return (shardID - (shardID % this.maxConcurrency)) / this.maxConcurrency;
+	}
+
+	private chunkConcurrencyGroups() {
+		const clusterGroupMap = new Map<number, number>();
+		// check multiples of shards
+		const trueShardCount = this.lastShardID - this.firstShardID + 1;
+		if (this.maxConcurrency % (trueShardCount / (this.clusterCount as number)) === 0 && this.maxConcurrency > 1) {
+				this.chunks!.forEach((chunk, clusterID) => {
+					const firstShardID = Math.min(...chunk);
+					const firstShardBucket = this.getShardConcurrencyBucket(firstShardID);
+					clusterGroupMap.set(clusterID, firstShardBucket);
+				});
+		} else {
+			for (let i = 0; i < (this.clusterCount as number); i++) {
+				clusterGroupMap.set(i, i);
+			}
 		}
 		return clusterGroupMap;
 	}

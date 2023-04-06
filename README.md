@@ -3,14 +3,15 @@
   <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Discord Library" /></a>
     <a href="https://www.npmjs.com/package/eris-fleet"><img src="https://img.shields.io/npm/v/eris-fleet.svg?cacheSeconds=3600&style=flat-square&label=version&logo=npm" alt="NPM version" /></a>
     <a href="https://raw.githubusercontent.com/danclay/eris-fleet/master/LICENSE"><img alt="License" src="https://img.shields.io/npm/l/eris-fleet?style=flat-square">
-    <a href="https://github.com/danclay/eris-fleet/actions/workflows/ci.yml"><img src="https://img.shields.io/github/workflow/status/danclay/eris-fleet/Node.js%20CI/master?style=flat-square&logo=github" alt="Node.js CI" /></a>
+    <!--<a href="https://github.com/danclay/eris-fleet/actions/workflows/ci.yml"><img src="https://img.shields.io/github/workflow/status/danclay/eris-fleet/Node.js%20CI/master?style=flat-square&logo=github" alt="Node.js CI" /></a>-->
+    <a href="https://github.com/danclay/eris-fleet"><img alt="License" src="https://img.shields.io/github/stars/danclay/eris-fleet?style=social">
   </p>
   <p>
-    <a href="https://www.npmjs.com/package/eris-fleet/"><img src="https://nodeico.herokuapp.com/eris-fleet.svg"></a>
+    <a href="https://www.npmjs.com/package/eris-fleet/"><img src="https://nodei.co/npm/eris-fleet.svg"></a>
   </p>
 </div>
 
-### [Documentation](https://danclay.github.io/eris-fleet/) | [Eris](https://github.com/abalabahaha/eris)
+### [Documentation](https://danclay.github.io/eris-fleet/) | [Github](https://github.com/danclay/eris-fleet) | [Eris](https://github.com/abalabahaha/eris)
 
 # About eris-fleet
 
@@ -240,7 +241,7 @@ If you are using a "very large bot," Discord's special gateway settings apply. E
 
 ### Concurrency
 
-Eris-fleet supports concurrency by starting clusters at the same time based on your bot's `max_concurrency` value. The clusters are started together in groups. The `max_concurrency` value can be overridden with [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride)
+Eris-fleet supports concurrency by starting clusters at the same time based on your bot's `max_concurrency` value. The clusters are started together in groups. The `max_concurrency` value can be overridden with [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride). Ensure the number of clusters is a multiple of the number of shards being started on this instance (`(last shard ID - first shard ID + 1) % clusters = 0`). Also make sure the number of shards per cluster is greater than the max concurrency value if you want concurrency to occur across clusters (`max concurrency % ((last shard ID - first shard ID + 1) / clusters) = 0`). If not, Eris can still do concurrency on each cluster as per the concurrency buckets. If you would like to supress the warning set [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride) to 1.
 
 ### Formats
 
