@@ -1,6 +1,6 @@
 import { ClusterConnectMessage } from "./../util/Queue";
 import * as Eris from "eris";
-import {worker} from "cluster";
+import nodeCluster from "cluster";
 import {BaseClusterWorker} from "./BaseClusterWorker";
 import {inspect} from "util";
 import {LoggingOptions, StartingStatus, ShardStats} from "../sharding/Admiral";
@@ -62,7 +62,7 @@ export class Cluster {
 
 		if (process.send) process.send({op: "launched"});
 		
-		process.on("message", async message => {
+		process.on("message", async (message: any) => {
 			if (message.op) {
 				switch (message.op) {
 				case "connect": {
@@ -393,7 +393,7 @@ export class Cluster {
 		//let App = (await import(this.path)).default;
 		//App = App.default ? App.default : App;
 		try {
-			this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: worker.id, ipc: this.ipc});
+			this.app = new this.App({bot: this.bot, clusterID: this.clusterID, workerID: nodeCluster.worker!.id, ipc: this.ipc});
 			if (!this.app) return;
 			if (process.send) process.send({op: "codeLoaded"});
 		} catch (e) {

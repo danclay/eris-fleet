@@ -36,8 +36,9 @@ eris-fleet currently supports Eris v0.16.x.
 - Graceful shutdowns
 - Central request handler
 - Central data store
-- Can use a modified version of Eris
+- Can use a modified version of the Eris client
 - Concurrency support
+- Fully typed for Typescript
 
 A very basic diagram:
 
@@ -70,7 +71,7 @@ Some working examples are in [test/](https://github.com/danclay/eris-fleet/tree/
 ## Get Started
 To get started, you will need at least 2 files:
 1. Your file which will create the fleet. This will be called "index.js" for now.
-2. Your file containing your bot code. This will be called "bot.js" for now. This file will extend `BaseClusterWorker`
+2. Your file containing your bot code. This will be called "bot.js" for now. This file will extend [BaseClusterWorker](https://danclay.github.io/eris-fleet/classes/BaseClusterWorker.html)
 
 In the example below, the variable `options` is passed to the admiral. [Read the docs](https://danclay.github.io/eris-fleet/interfaces/Options.html) for what options you can pass.
 
@@ -243,7 +244,7 @@ If you are using a "very large bot," Discord's special gateway settings apply. E
 
 Eris-fleet supports concurrency by starting clusters at the same time based on your bot's `max_concurrency` value. The clusters are started together in groups. The `max_concurrency` value can be overridden with [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride). Ensure the number of clusters is a multiple of the number of shards being started on this instance (`(last shard ID - first shard ID + 1) % clusters = 0`). Also make sure the number of shards per cluster is greater than the max concurrency value if you want concurrency to occur across clusters (`max concurrency % ((last shard ID - first shard ID + 1) / clusters) = 0`). If not, Eris can still do concurrency on each cluster as per the concurrency buckets. If you would like to supress the warning set [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride) to 1.
 
-### Formats
+### Typescript
 
 Visit [the docs](https://danclay.github.io/eris-fleet/modules.html) to view the Typescript interfaces.
 

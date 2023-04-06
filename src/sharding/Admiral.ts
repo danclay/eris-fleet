@@ -3,7 +3,7 @@ import { BaseServiceWorker } from "./../services/BaseServiceWorker";
 import { IPC, IpcHandledLog } from "./../util/IPC";
 import {EventEmitter} from "events";
 import {cpus} from "os";
-import master from "cluster";
+import nodeCluster, {Worker as NodeWorker} from "cluster";
 import {Collection} from "../util/Collection";
 import {Queue, QueueItem, ClusterConnectMessage, ServiceConnectMessage} from "../util/Queue";
 import Eris from "eris";
@@ -631,8 +631,8 @@ export class Admiral extends EventEmitter {
 
 		this.launch();
 
-		if (master.isMaster) {
-			master.on("message", (worker, message) => {
+		if (nodeCluster.isMaster) {
+			nodeCluster.on("message", (worker, message) => {
 				if (message.op) {
 					switch (message.op) {
 					case "launched": {
@@ -850,7 +850,7 @@ export class Admiral extends EventEmitter {
 				}
 			});
 
-			master.on("disconnect", (worker) => {
+			nodeCluster.on("disconnect", (worker) => {
 				const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
 				const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
 				if (cluster) {
@@ -860,7 +860,7 @@ export class Admiral extends EventEmitter {
 				}
 			});
 
-			master.on("exit", (worker/*, code, signal*/) => {
+			nodeCluster.on("exit", (worker/*, code, signal*/) => {
 				const cluster = this.clusters.find((c: ClusterCollection) => c.workerID === worker.id);
 				const service = this.services.find((s: ServiceCollection) => s.workerID === worker.id);
 				const name = () => {
@@ -913,7 +913,7 @@ export class Admiral extends EventEmitter {
 			});
 
 			this.queue.on("execute", (item: QueueItem/*, prevItem?: QueueItem*/) => {
-				const worker = master.workers[item.workerID];
+				const worker = nodeCluster.workers![item.workerID];
 				if (worker) {
 					if (item.message.op === "connect") {
 						const concurrency = () => {
@@ -962,7 +962,7 @@ export class Admiral extends EventEmitter {
 						worker.send(item.message);
 						setTimeout(() => {
 							if (this.queue.queue[0]) if (this.queue.queue[0].workerID === item.workerID) {
-								const worker = master.workers[item.workerID];
+								const worker = nodeCluster.workers![item.workerID];
 								if (worker) {
 									worker.kill();
 									const name = () => {
@@ -1038,7 +1038,7 @@ export class Admiral extends EventEmitter {
 		case "serviceCommand": {
 			const service = this.services.get(message.command.service) as ServiceCollection;
 			if (service) {
-				const serviceWorker = master.workers[service.workerID];
+				const serviceWorker = nodeCluster.workers![service.workerID];
 				if (serviceWorker) {
 					serviceWorker.send({
 						op: "command",
@@ -1079,7 +1079,7 @@ export class Admiral extends EventEmitter {
 		case "clusterCommand": {
 			const cluster = this.clusters.get(message.command.clusterID) as ClusterCollection;
 			if (cluster) {
-				const clusterWorker = master.workers[cluster.workerID];
+				const clusterWorker = nodeCluster.workers![cluster.workerID];
 				if (clusterWorker) {
 					clusterWorker.send({
 						op: "command",
@@ -1119,7 +1119,7 @@ export class Admiral extends EventEmitter {
 		}
 		case "allClustersCommand": {
 			this.clusters.forEach((c: ClusterCollection) => {
-				const clusterWorker = master.workers[c.workerID];
+				const clusterWorker = nodeCluster.workers![c.workerID];
 				if (clusterWorker) {
 					process.nextTick(() => clusterWorker.send({
 						op: "command",
@@ -1147,7 +1147,7 @@ export class Admiral extends EventEmitter {
 		case "clusterEval": {
 			const cluster = this.clusters.get(message.request.clusterID) as ClusterCollection;
 			if (cluster) {
-				const clusterWorker = master.workers[cluster.workerID];
+				const clusterWorker = nodeCluster.workers![cluster.workerID];
 				if (clusterWorker) {
 					clusterWorker.send({
 						op: "eval",
@@ -1188,7 +1188,7 @@ export class Admiral extends EventEmitter {
 		case "serviceEval": {
 			const service = this.services.get(message.request.serviceName) as ServiceCollection;
 			if (service) {
-				const serviceWorker = master.workers[service.workerID];
+				const serviceWorker = nodeCluster.workers![service.workerID];
 				if (serviceWorker) {
 					serviceWorker.send({
 						op: "eval",
@@ -1228,7 +1228,7 @@ export class Admiral extends EventEmitter {
 		}
 		case "allClustersEval": {
 			this.clusters.forEach((c: ClusterCollection) => {
-				const clusterWorker = master.workers[c.workerID];
+				const clusterWorker = nodeCluster.workers![c.workerID];
 				if (clusterWorker) {
 					process.nextTick(() => clusterWorker.send({
 						op: "eval",
@@ -1305,7 +1305,7 @@ export class Admiral extends EventEmitter {
 		case "sendTo": {
 			const clusterObj = this.clusters.get(message.cluster) as ClusterCollection;
 			if (!clusterObj) return;
-			const worker = master.workers[clusterObj.workerID];
+			const worker = nodeCluster.workers![clusterObj.workerID];
 			if (!worker) return;
 			worker.send({op: "ipcEvent", event: message.event.op, msg: message.event.msg});
 
@@ -1550,7 +1550,7 @@ export class Admiral extends EventEmitter {
 		this.launchingWorkers.clear();
 		this.pauseStats = true;
 
-		if (master.isMaster) {
+		if (nodeCluster.isMaster) {
 			process.on("uncaughtException", (e) => this.error(e));
 
 			process.nextTick(() => {
@@ -1604,7 +1604,7 @@ export class Admiral extends EventEmitter {
 							silent: false,
 						};
 					}
-					master.setupMaster(opts);
+					nodeCluster.setupMaster(opts);
 
 					// Start stuff
 					if (this.servicesToCreate && !this.resharding) {
@@ -1614,7 +1614,7 @@ export class Admiral extends EventEmitter {
 					}
 				});
 			});
-		} else if (master.isWorker) {
+		} else if (nodeCluster.isWorker) {
 			if (process.env.type === "cluster") {
 				new Cluster({
 					erisClient: this.erisClient,
@@ -1637,7 +1637,7 @@ export class Admiral extends EventEmitter {
 			if (message.UUID === "master") {
 				this.ipc.emit(message.value.id, value);
 			} else {
-				const requestingWorker = master.workers[message.UUID];
+				const requestingWorker = nodeCluster.workers![message.UUID];
 				if (requestingWorker) {
 					requestingWorker.send({
 						op: "return",
@@ -1672,7 +1672,7 @@ export class Admiral extends EventEmitter {
 		}
 	}
 
-	private centralApiRequest(worker: master.Worker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.FileContent, fileString?: string, _route?: string, short?: boolean}) {
+	private centralApiRequest(worker: NodeWorker, UUID: string, data: {method: Eris.RequestMethod, url: string, auth?: boolean, body?: { [s: string]: unknown }, file?: Eris.FileContent, fileString?: string, _route?: string, short?: boolean}) {
 		const reply = (resolved: boolean, value: unknown) => {
 			const valueSerialized = stringifyJSON(value);
 			worker.send({
@@ -1715,7 +1715,7 @@ export class Admiral extends EventEmitter {
 		const clusterObj = this.clusters.get(clusterID) as ClusterCollection;
 		if (!clusterObj) return;
 		const workerID = clusterObj.workerID;
-		const worker = master.workers![workerID];
+		const worker = nodeCluster.workers![workerID];
 		if (worker) {
 			const restartItem = this.restartWorker(worker, true, hard ? false : true);
 			if (restartItem) this.queue.item(restartItem);
@@ -1733,7 +1733,7 @@ export class Admiral extends EventEmitter {
 			process.nextTick(() => {
 				completed++;
 				const workerID = cluster.workerID;
-				const worker = master.workers[workerID];
+				const worker = nodeCluster.workers![workerID];
 				if (worker) {
 					const restartItem = this.restartWorker(worker, true, hard ? false : true);
 					if (restartItem) queueItems.push(restartItem);
@@ -1755,7 +1755,7 @@ export class Admiral extends EventEmitter {
 		const serviceObj = this.services.get(serviceName) as ServiceCollection;
 		if (!serviceObj) return;
 		const workerID = serviceObj.workerID;
-		const worker = master.workers[workerID];
+		const worker = nodeCluster.workers![workerID];
 		if (worker) {
 			const restartItem = this.restartWorker(worker, true, hard ? false : true);
 			if (restartItem) this.queue.item(restartItem);
@@ -1776,7 +1776,7 @@ export class Admiral extends EventEmitter {
 				const serviceObj = this.services.get(service.serviceName) as ServiceCollection;
 				if (serviceObj) {
 					const workerID = serviceObj.workerID;
-					const worker = master.workers[workerID];
+					const worker = nodeCluster.workers![workerID];
 					if (worker) {
 						const restartItem = this.restartWorker(worker, true, hard ? false : true);
 						if (restartItem) queueItems.push(restartItem);
@@ -1800,7 +1800,7 @@ export class Admiral extends EventEmitter {
 		const clusterObj = this.clusters.get(clusterID) as ClusterCollection;
 		if (!clusterObj) return;
 		const workerID = clusterObj.workerID;
-		const worker = master.workers[workerID];
+		const worker = nodeCluster.workers![workerID];
 		if (worker) {
 			const shutdownItem = this.shutdownWorker(worker, hard ? false : true);
 			this.queue.item(shutdownItem);
@@ -1816,7 +1816,7 @@ export class Admiral extends EventEmitter {
 		const serviceObj = this.services.get(serviceName);
 		if (!serviceObj) return;
 		const workerID = serviceObj.workerID;
-		const worker = master.workers[workerID];
+		const worker = nodeCluster.workers![workerID];
 		if (worker) {
 			const shutdownItem = this.shutdownWorker(worker, hard ? false : true);
 			this.queue.item(shutdownItem);
@@ -1904,7 +1904,7 @@ export class Admiral extends EventEmitter {
 			this.clusters.forEach((cluster) => {
 				total++;
 				process.nextTick(() => {
-					const worker = master.workers[cluster.workerID];
+					const worker = nodeCluster.workers![cluster.workerID];
 					if (worker) {
 						const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
 						queueItems.push(shutdownItem);
@@ -1915,7 +1915,7 @@ export class Admiral extends EventEmitter {
 			this.services.forEach((service) => {
 				total++;
 				process.nextTick(() => {
-					const worker = master.workers[service.workerID];
+					const worker = nodeCluster.workers![service.workerID];
 					if (worker) {
 						const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
 						queueItems.push(shutdownItem);
@@ -1926,7 +1926,7 @@ export class Admiral extends EventEmitter {
 			this.launchingWorkers.forEach((workerData, workerID) => {
 				total++;
 				process.nextTick(() => {
-					const worker = master.workers[workerID];
+					const worker = nodeCluster.workers![workerID];
 					if (worker) {
 						const shutdownItem = this.shutdownWorker(worker, hard ? false : true, doneFn);
 						queueItems.push(shutdownItem);
@@ -1965,7 +1965,7 @@ export class Admiral extends EventEmitter {
 				let i = 0;
 				const queueItems: QueueItem[] = [];
 				oldClusters.forEach((c) => {
-					const oldWorker = master.workers[c.workerID];
+					const oldWorker = nodeCluster.workers![c.workerID];
 					if (oldWorker) {
 						const shutdownItem = this.shutdownWorker(oldWorker, true, () => {
 							if (this.whatToLog.includes("resharding_worker_killed")) {
@@ -1974,7 +1974,7 @@ export class Admiral extends EventEmitter {
 							const newWorkerClusterObj = this.clusters.get(c.clusterID) as ClusterCollection;
 							let newWorker;
 							if (newWorkerClusterObj) {
-								newWorker = master.workers[newWorkerClusterObj.workerID];
+								newWorker = nodeCluster.workers![newWorkerClusterObj.workerID];
 							}
 							if (this.whatToLog.includes("resharding_transition")) {
 								this.log(`Transitioning to new worker for cluster ${c.clusterID}`, "Admiral");
@@ -1985,7 +1985,7 @@ export class Admiral extends EventEmitter {
 								// load code for new clusters
 								this.clusters.forEach((c: ClusterCollection) => {
 									if (!oldClusters.get(c.clusterID)) {
-										const newWorker = master.workers[c.workerID];
+										const newWorker = nodeCluster.workers![c.workerID];
 										if (newWorker) newWorker.send({op: "loadCode"});
 										if (this.whatToLog.includes("resharding_transition")) {
 											this.log(`Loaded code for new cluster ${c.clusterID}`, "Admiral");
@@ -2023,11 +2023,11 @@ export class Admiral extends EventEmitter {
 	public broadcast(op: string, msg?: unknown): void {
 		if (!msg) msg = null;
 		this.clusters.forEach((c: ClusterCollection) => {
-			const worker = master.workers[c.workerID];
+			const worker = nodeCluster.workers![c.workerID];
 			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
 		});
 		this.services.forEach((s: ServiceCollection) => {
-			const worker = master.workers[s.workerID];
+			const worker = nodeCluster.workers![s.workerID];
 			if (worker) process.nextTick(() => worker.send({op: "ipcEvent", event: op, msg}));
 		});
 		this.ipc.emit("ipcEvent", {
@@ -2064,7 +2064,7 @@ export class Admiral extends EventEmitter {
 			const queueItems: QueueItem[] = [];
 			for (let i = 0; i < servicesToStart.length; i++) {
 				const service = servicesToStart[i];
-				const worker = master.fork({
+				const worker = nodeCluster.fork({
 					type: "service",
 					NODE_ENV: process.env.NODE_ENV,
 				});
@@ -2110,7 +2110,7 @@ export class Admiral extends EventEmitter {
 
 	private startCluster() {
 		for (let i = 0; i < (this.clusterCount as number); i++) {
-			const worker = master.fork({
+			const worker = nodeCluster.fork({
 				type: "cluster",
 				NODE_ENV: process.env.NODE_ENV,
 			});
@@ -2268,7 +2268,7 @@ export class Admiral extends EventEmitter {
 		return r;
 	}
 
-	private shutdownWorker(worker: master.Worker, soft?: boolean, callback?: () => void, customMaps?: { clusters?: Collection<number, ClusterCollection>; services?: Collection<string, ServiceCollection>; launchingWorkers?: Collection<number, WorkerCollection> }) {
+	private shutdownWorker(worker: NodeWorker, soft?: boolean, callback?: () => void, customMaps?: { clusters?: Collection<number, ClusterCollection>; services?: Collection<string, ServiceCollection>; launchingWorkers?: Collection<number, WorkerCollection> }) {
 		let cluster: ClusterCollection | undefined;
 		let service: ServiceCollection | undefined;
 		let launchingWorker: WorkerCollection | undefined;
@@ -2394,7 +2394,7 @@ export class Admiral extends EventEmitter {
 		return item;
 	}
 
-	private restartWorker(worker: master.Worker, manual?: boolean, soft?: boolean) {
+	private restartWorker(worker: NodeWorker, manual?: boolean, soft?: boolean) {
 		const cluster = this.clusters.find(
 			(c: ClusterCollection) => c.workerID === worker.id,
 		);
@@ -2404,7 +2404,7 @@ export class Admiral extends EventEmitter {
 
 		let item;
 		if (cluster) {
-			const newWorker = master.fork({
+			const newWorker = nodeCluster.fork({
 				NODE_ENV: process.env.NODE_ENV,
 				type: "cluster",
 			});
@@ -2483,7 +2483,7 @@ export class Admiral extends EventEmitter {
 				},
 			};
 		} else if (service) {
-			const newWorker = master.fork({
+			const newWorker = nodeCluster.fork({
 				NODE_ENV: process.env.NODE_ENV,
 				type: "service",
 			});
@@ -2571,7 +2571,7 @@ export class Admiral extends EventEmitter {
 		for (let i = 0; this.clusters.get(i); i++) {
 			process.nextTick(() => {
 				const cluster = this.clusters.get(i) as ClusterCollection;
-				const worker = master.workers[cluster.workerID];
+				const worker = nodeCluster.workers![cluster.workerID];
 				if (worker) worker.send({op, id, UUID});
 			});
 		}
@@ -2611,13 +2611,13 @@ export class Admiral extends EventEmitter {
 		this.statsWorkersCounted = 0;
 		this.clusters.forEach((c: ClusterCollection) => {
 			process.nextTick(() => {
-				const worker = master.workers[c.workerID];
+				const worker = nodeCluster.workers![c.workerID];
 				if (worker) worker.send({ op: "collectStats" });
 			});
 		});
 		this.services.forEach((s: ServiceCollection) => {
 			process.nextTick(() => {
-				const worker = master.workers[s.workerID];
+				const worker = nodeCluster.workers![s.workerID];
 				if (worker) worker.send({ op: "collectStats" });
 			});
 		});

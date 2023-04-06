@@ -10,14 +10,14 @@ interface CentralRequestHandlerOptions {
 export class CentralRequestHandler {
 	private timeout: number;
 	private ipc: IPC;
-	private requests: Map<string, (r: {resolved: boolean, value: unknown}) => void>
+	private requests: Map<string, (r: {resolved: boolean, value: unknown}) => void>;
 
 	constructor(ipc: IPC, options: CentralRequestHandlerOptions) {
 		this.timeout = options.timeout;
 		this.ipc = ipc;
 		this.requests = new Map();
 
-		process.on("message", message => {
+		process.on("message", (message: any) => {
 			if (message.op === "centralApiResponse") {
 				const request = this.requests.get(message.id);
 				if (request) {

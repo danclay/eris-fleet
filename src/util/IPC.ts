@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { errorToJSON } from "./Serialization";
 import path from "path";
 import { Collection } from "../util/Collection";
-import { isMaster } from "cluster";
+import nodeCluster from "cluster";
 
 export interface IpcHandledLog {
 	op: "log" | "info" | "error" | "warn" | "debug",
@@ -171,7 +171,7 @@ export class IPC extends EventEmitter {
 				});
 			}
 		};
-		if (isMaster) {
+		if (nodeCluster.isMaster) {
 			this.on("ipcEvent", ipcEventListener);
 		} else {
 			process.on("message", ipcEventListener);

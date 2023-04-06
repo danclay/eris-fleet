@@ -1,4 +1,4 @@
-import {worker} from "cluster";
+import nodeCluster from "cluster";
 import {BaseServiceWorker} from "./BaseServiceWorker";
 import {inspect} from "util";
 import { IPC } from "../util/IPC";
@@ -43,7 +43,7 @@ export class Service {
 
 		if (process.send) process.send({op: "launched"});
 
-		process.on("message", async message => {
+		process.on("message", async (message: any) => {
 			if (message.op) {
 				switch (message.op) {
 				case "connect": {
@@ -159,7 +159,7 @@ export class Service {
 		if (this.ServiceWorker) {
 			App = this.ServiceWorker;
 			try {
-				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+				this.app = new App({serviceName: this.serviceName, workerID: nodeCluster.worker!.id, ipc: this.ipc});
 			} catch (e) {
 				this.ipc.error(e);
 				process.exit(1);
@@ -172,7 +172,7 @@ export class Service {
 				} else {
 					App = App.default ? App.default : App;
 				}
-				this.app = new App({serviceName: this.serviceName, workerID: worker.id, ipc: this.ipc});
+				this.app = new App({serviceName: this.serviceName, workerID: nodeCluster.worker!.id, ipc: this.ipc});
 			} catch (e) {
 				this.ipc.error(e);
 				process.exit(1);
