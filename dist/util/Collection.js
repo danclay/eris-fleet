@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Collection = void 0;
-/** Collection-ish */
 class Collection extends Map {
     constructor(iterable) {
         super(iterable);

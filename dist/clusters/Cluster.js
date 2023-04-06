@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -18,9 +22,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cluster = void 0;
-const cluster_1 = require("cluster");
+const cluster_1 = __importDefault(require("cluster"));
 const util_1 = require("util");
 const CentralRequestHandler_1 = require("../util/CentralRequestHandler");
 const IPC_1 = require("../util/IPC");
@@ -28,7 +35,6 @@ class Cluster {
     constructor(input) {
         this.erisClient = input.erisClient;
         this.BotWorker = input.BotWorker;
-        // add ipc
         this.ipc = new IPC_1.IPC({ fetchTimeout: input.fetchTimeout });
         if (input.overrideConsole) {
             console.log = (str) => { this.ipc.log(str); };
@@ -37,7 +43,6 @@ class Cluster {
             console.error = (str) => { this.ipc.error(str); };
             console.warn = (str) => { this.ipc.warn(str); };
         }
-        //Spawns
         process.on("uncaughtException", (err) => {
             this.ipc.error(err);
         });
@@ -253,7 +258,6 @@ class Cluster {
                         this.shutdown = true;
                         if (this.app) {
                             if (this.app.shutdown) {
-                                // Ask app to shutdown
                                 this.app.shutdown(() => {
                                     this.bot.disconnect({ reconnect: false });
                                     if (process.send)
@@ -294,7 +298,7 @@ class Cluster {
         }
         else {
             try {
-                App = await Promise.resolve().then(() => __importStar(require(this.path)));
+                App = await Promise.resolve(`${this.path}`).then(s => __importStar(require(s)));
                 if (App.Eris) {
                     bot = new App.Eris.Client(this.token, options);
                     App = App.BotWorker;
@@ -315,7 +319,6 @@ class Cluster {
             }
         }
         this.App = App;
-        // central request handler
         if (this.useCentralRequestHandler) {
             bot.requestHandler = new CentralRequestHandler_1.CentralRequestHandler(this.ipc, {
                 timeout: bot.options.requestTimeout
@@ -332,7 +335,6 @@ class Cluster {
                 }
             }
         };
-        // load code if immediate code loading is enabled
         if (this.loadClusterCodeImmediately && !this.resharding)
             this.loadCode();
         bot.on("connect", (id) => {
@@ -389,16 +391,13 @@ class Cluster {
             if (process.send)
                 process.send({ op: "connected" });
         });
-        // Connects the bot
         bot.connect();
     }
     async loadCode() {
         if (this.app)
             return;
-        //let App = (await import(this.path)).default;
-        //App = App.default ? App.default : App;
         try {
-            this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.worker.id, ipc: this.ipc });
+            this.app = new this.App({ bot: this.bot, clusterID: this.clusterID, workerID: cluster_1.default.worker.id, ipc: this.ipc });
             if (!this.app)
                 return;
             if (process.send)
@@ -406,10 +405,8 @@ class Cluster {
         }
         catch (e) {
             this.ipc.error(e);
-            // disconnect bot
             if (this.bot)
                 this.bot.disconnect({ reconnect: false });
-            // kill cluster
             process.exit(1);
         }
     }

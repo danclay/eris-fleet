@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -18,9 +22,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Service = void 0;
-const cluster_1 = require("cluster");
+const cluster_1 = __importDefault(require("cluster"));
 const util_1 = require("util");
 const IPC_1 = require("../util/IPC");
 class Service {
@@ -33,7 +40,6 @@ class Service {
             console.error = (str) => { this.ipc.error(str); };
             console.warn = (str) => { this.ipc.warn(str); };
         }
-        // Spawns
         process.on("uncaughtException", (err) => {
             this.ipc.error(err);
         });
@@ -128,7 +134,6 @@ class Service {
                     case "shutdown": {
                         if (this.app) {
                             if (this.app.shutdown) {
-                                // Ask app to shutdown
                                 this.app.shutdown(() => {
                                     if (process.send)
                                         process.send({ op: "shutdown" });
@@ -167,7 +172,7 @@ class Service {
         if (this.ServiceWorker) {
             App = this.ServiceWorker;
             try {
-                this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id, ipc: this.ipc });
+                this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.default.worker.id, ipc: this.ipc });
             }
             catch (e) {
                 this.ipc.error(e);
@@ -176,14 +181,14 @@ class Service {
         }
         else {
             try {
-                App = await Promise.resolve().then(() => __importStar(require(this.path)));
+                App = await Promise.resolve(`${this.path}`).then(s => __importStar(require(s)));
                 if (App.ServiceWorker) {
                     App = App.ServiceWorker;
                 }
                 else {
                     App = App.default ? App.default : App;
                 }
-                this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.worker.id, ipc: this.ipc });
+                this.app = new App({ serviceName: this.serviceName, workerID: cluster_1.default.worker.id, ipc: this.ipc });
             }
             catch (e) {
                 this.ipc.error(e);

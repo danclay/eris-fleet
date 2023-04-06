@@ -11,7 +11,7 @@ class CentralRequestHandler {
         this.timeout = options.timeout;
         this.ipc = ipc;
         this.requests = new Map();
-        process.on("message", message => {
+        process.on("message", (message) => {
             if (message.op === "centralApiResponse") {
                 const request = this.requests.get(message.id);
                 if (request) {
@@ -35,7 +35,6 @@ class CentralRequestHandler {
         if (process.send)
             process.send({ op: "centralApiRequest", request: { UUID, dataSerialized } });
         return new Promise((resolve, reject) => {
-            // timeout
             const timeout = setTimeout(() => {
                 this.requests.delete(UUID);
                 reject(`Request timed out (>${this.timeout}ms)`);

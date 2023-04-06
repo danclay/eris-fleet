@@ -2,7 +2,6 @@
 import { EventEmitter } from "events";
 import { ClientOptions } from "eris";
 import { StartingStatus, LoggingOptions } from "../sharding/Admiral";
-/** @internal */
 export interface ClusterConnectMessage {
     clusterID: number;
     clusterCount: number;
@@ -19,11 +18,9 @@ export interface ClusterConnectMessage {
     loadClusterCodeImmediately: boolean;
     resharding: boolean;
 }
-/** @internal */
 export interface ShutdownMessage {
     op: "shutdown" | string;
 }
-/** @internal */
 export interface ServiceConnectMessage {
     serviceName: string;
     path?: string;
@@ -31,17 +28,13 @@ export interface ServiceConnectMessage {
     timeout: number;
     whatToLog: LoggingOptions[];
 }
-/** @internal */
 export interface QueueItem {
     type: "service" | "cluster" | string;
     workerID: number;
     message: ClusterConnectMessage | ServiceConnectMessage | ShutdownMessage;
 }
-/** @internal */
 export declare class Queue extends EventEmitter {
-    /** The queue */
     queue: QueueItem[];
-    /** Pauses all non-authorized executions */
     override: string | undefined;
     constructor();
     execute(first?: boolean, override?: string): void;

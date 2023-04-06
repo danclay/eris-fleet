@@ -12,5 +12,4 @@ Object.defineProperty(exports, "Collection", { enumerable: true, get: function (
 var IPC_1 = require("./util/IPC");
 Object.defineProperty(exports, "IPC", { enumerable: true, get: function () { return IPC_1.IPC; } });
 Object.defineProperty(exports, "CentralStore", { enumerable: true, get: function () { return IPC_1.CentralStore; } });
-//export {Queue, QueueItem, ClusterConnectMessage, ServiceConnectMessage, ShutdownMessage} from "./util/Queue";
 //# sourceMappingURL=index.js.map
