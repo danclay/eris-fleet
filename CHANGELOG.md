@@ -2,6 +2,17 @@
 
 This may skip some little bug fixes.
 
+## x.x.x
+
+### Breaking changes:
+
+- Reworked concurrency. 
+From README.md: "Ensure the number of clusters is a multiple of the number of shards being started on this instance (`(last shard ID - first shard ID + 1) % clusters = 0`). Also make sure the number of shards per cluster is greater than the max concurrency value if you want concurrency to occur across clusters (`max concurrency % ((last shard ID - first shard ID + 1) / clusters) = 0`). If not, Eris can still do concurrency on each cluster as per the concurrency buckets. If you would like to supress the warning set [options.maxConcurrencyOverride](https://danclay.github.io/eris-fleet/interfaces/Options.html#maxConcurrencyOverride) to 1."
+
+### Other changes:
+
+- Added `softKillNotificationPeriod` which broadcasts 
+
 ## 1.0.0
 
 ### Breaking changes:
