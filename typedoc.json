@@ -4,5 +4,14 @@
 	"out": "docs",
 	"includeVersion": true,
 	"gitRevision": "master",
-	"excludeInternal": true
+	"excludeInternal": true,
+	"gaID": "G-JSKFC9JPLR",
+	"visibilityFilters": {
+        "protected": true,
+        "private": true,
+        "inherited": true,
+        "external": true,
+        "@alpha": true,
+        "@beta": true
+    }
 }

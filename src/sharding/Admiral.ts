@@ -2026,7 +2026,7 @@ export class Admiral extends EventEmitter {
 
 	/**
 	 * Broadcast an event to all clusters and services. 
-	 * The event can be listened to with {@link register}
+	 * The event can be listened to with {@link IPC.register}
 	 * @param op Name of the event
 	 * @param message Message to send
 	 * @example
