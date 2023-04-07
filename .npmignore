@@ -9,6 +9,7 @@ typedoc.json
 docs
 .eslintignore
 .travis.yml
+sider.yml
 .gitattributes
 test/
 
