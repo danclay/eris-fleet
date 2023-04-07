@@ -1854,10 +1854,19 @@ class Admiral extends events_1.EventEmitter {
                         if (this.softKillNotificationPeriod > 0) {
                             if (this.whatToLog.includes("cluster_restart"))
                                 this.log(`Killing old worker for cluster ${cluster.clusterID} after 'softKillNotificationPeriod' of: ${this.softKillNotificationPeriod}ms`);
-                            this.ipc.sendTo(cluster.clusterID, "softRestartPending", {
+                            const notif = {
                                 softKillNotificationPeriod: this.softKillNotificationPeriod,
-                                killTime: Date.now() + this.softKillNotificationPeriod
-                            });
+                                killTime: Date.now() + this.softKillNotificationPeriod,
+                                clusterID: cluster.clusterID
+                            };
+                            this.emit("softRestartPending", notif);
+                            if (this.broadcastAdmiralEvents) {
+                                this.broadcast("softRestartPending", notif);
+                            }
+                            else {
+                                this.ipc.sendTo(cluster.clusterID, "softRestartPending", notif);
+                            }
+                            ;
                         }
                         setTimeout(() => {
                             this.softKills.delete(newWorker.id);

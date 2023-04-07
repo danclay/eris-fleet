@@ -127,6 +127,7 @@ export interface ServiceCollection {
 export interface SoftKillNotification {
     softKillNotificationPeriod: number;
     killTime: number;
+    clusterID: number;
 }
 export declare class Admiral extends EventEmitter {
     clusters: Collection<number, ClusterCollection>;
