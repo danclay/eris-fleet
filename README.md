@@ -1,3 +1,7 @@
+**This repo will no longer be updated since eris-fleet has been moved to a monorepo to make adaptation of it for the [Oceanic library](https://github.com/OceanicJS/Oceanic) easier. This monorepo is  [wumpus-navy](https://github.com/danclay/wumpus-navy). For the latest version see the monorepo. Eris-fleet is not deprecated and the npm package will be updated under the same name as before.**
+
+**The documentation has moved as well: [https://danclay.github.io/wumpus-navy/](https://danclay.github.io/wumpus-navy/)**
+
 <div align="center">
   <p>
   <a href="https://github.com/abalabahaha/eris"><img src="https://img.shields.io/badge/Discord%20Library-Eris-blue?style=flat-square" alt="Discord Library" /></a>
