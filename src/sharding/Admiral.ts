@@ -2180,7 +2180,13 @@ export class Admiral extends EventEmitter {
 
 	private async calculateShards() {
 		let shards = this.shardCount;
-		const gateway = await this.eris.getBotGateway();
+		let gateway;
+		try {
+			gateway = await this.eris.getBotGateway();
+		} catch (e) {
+			this.error("Unable to acquire bot gateway, bot token potentially incorrect?");
+			process.exit(1);
+		}
 		if (!this.maxConcurrencyOverride) this.maxConcurrency = gateway.session_start_limit.max_concurrency;
 		if (this.whatToLog.includes("gateway_shards")) {
 			this.log(`Gateway recommends ${gateway.shards} shards. Using ${this.maxConcurrency} max concurrency.`, "Admiral");
